@@ -1,0 +1,8 @@
+{
+    "ext": "js",
+    "ignore": [
+        "dist",
+        "node_modules"
+    ],
+    "exec": "node --experimental-modules --es-module-specifier-resolution=node ./src/index.js"
+}

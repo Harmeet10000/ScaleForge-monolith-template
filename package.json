@@ -1,0 +1,68 @@
+{
+  "name": "ghgv2",
+  "version": "1.0.0",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "dev": "cross-env NODE_ENV=development nodemon --config nodemon.json",
+    "start": "cross-env NODE_ENV=production node dist/index.js",
+    "build": "npx tsc -p .",
+    "test": "node test.js",
+    "prepare": "husky",
+    "lint": "eslint",
+    "lint:fix": "eslint --fix",
+    "format:check": "prettier . --check",
+    "format:fix": "prettier . --fix",
+    "migrate:dev": "cross-env MIGRATE_MODE=development node script/migration.js",
+    "migrate:prod": "cross-env MIGRATE_MODE=production node script/migration.js"
+  },
+  "keywords": [],
+  "author": "Harmeet Singh",
+  "license": "ISC",
+  "lint-staged": {
+    "*.ts": [
+      "npm run lint:fix",
+      "npm run format:fix"
+    ]
+  },
+  "description": "",
+  "devDependencies": {
+    "@commitlint/cli": "^19.7.1",
+    "@commitlint/config-conventional": "^19.7.1",
+    "@eslint/js": "^9.21.0",
+    "@types/cookie-parser": "^1.4.8",
+    "@types/cors": "^2.8.17",
+    "@types/dotenv-flow": "^3.3.3",
+    "@types/eslint__js": "^8.42.3",
+    "@types/express": "^5.0.0",
+    "@types/express-rate-limit": "^5.1.3",
+    "@types/helmet": "^0.0.48",
+    "@types/node": "^22.13.5",
+    "@types/source-map-support": "^0.5.10",
+    "eslint": "^9.21.0",
+    "eslint-config-prettier": "^10.0.1",
+    "husky": "^9.1.7",
+    "lint-staged": "^15.4.3",
+    "nodemon": "^3.1.9",
+    "prettier": "3.5.2"
+  },
+  "dependencies": {
+    "colorette": "^2.0.20",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "cross-env": "^7.0.3",
+    "dotenv-flow": "^4.1.0",
+    "express": "^4.21.2",
+    "express-mongo-sanitize": "^2.2.0",
+    "express-rate-limit": "^7.5.0",
+    "helmet": "^8.0.0",
+    "mongoose": "^8.10.1",
+    "rate-limiter-flexible": "^5.0.5",
+    "source-map-support": "^0.5.21",
+    "ts-migrate-mongoose": "^4.0.1",
+    "winston": "^3.17.0",
+    "winston-mongodb": "^6.0.0",
+    "xss": "^1.0.15",
+    "xss-clean": "^0.1.4"
+  }
+}
