@@ -1,0 +1,19 @@
+export const SUCCESS = 'The operation has been successful'
+export const SOMETHING_WENT_WRONG = 'Something went wrong!'
+export const NOT_FOUND = (entity) => `${entity} not found`
+export const TOO_MANY_REQUESTS = 'Too many requests! Please try again after some time'
+export const ALREADY_EXIST = (entity, identifier) => `${entity} already exist with ${identifier}`
+export const INVALID_PHONE_NUMBER = `Invalid phone number`
+export const INVALID_TIMEZONE = `Invalid timezone`
+export const INVALID_EMAIL = `Invalid email address`
+export const INVALID_PASSWORD = `Invalid password`
+export const INVALID_ACCOUNT_CONFIRMATION_TOKEN_OR_CODE = `Invalid account confirmation token or code`
+export const ACCOUNT_ALREADY_CONFIRMED = `Account already confirmed`
+export const INVALID_EMAIL_OR_PASSWORD = `Invalid email address or password`
+export const UNAUTHORIZED = `You are not authorized to perform this action`
+export const ACCOUNT_CONFIRMATION_REQUIRED = `Account Confirmation Required`
+export const EXPIRED_URL = `Your password reset url is expired`
+export const INVALID_REQUEST = `Invalid request`
+export const INVALID_OLD_PASSWORD = `Invalid old password`
+export const PASSWORD_MATCHING_WITH_OLD_PASSWORD = `Password matching with old password`
+

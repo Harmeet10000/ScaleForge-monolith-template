@@ -1,5 +1,5 @@
-import { logger } from '../Utils/logger.js'
-import { httpError } from '../Utils/httpError.js'
+import { logger } from '../utils/logger.js'
+import { httpError } from '../utils/httpError.js'
 
 const handleCastErrorDB = (err, next, req) => {
     const message = `Invalid ${err.path}: ${err.value}`
@@ -65,9 +65,9 @@ const sendErrorProd = (err, res) => {
 }
 
 export const globalErrorHandler = (err, req, res, next) => {
-    if (config.NODE_ENV === 'development') {
+    if (process.env.NODE_ENV === 'development') {
         sendErrorDev(err, res)
-    } else if (config.NODE_ENV === 'production') {
+    } else if (process.env.NODE_ENV === 'production') {
         let error = { ...err }
 
         if (error.name === 'CastError') error = handleCastErrorDB(error, next, req)

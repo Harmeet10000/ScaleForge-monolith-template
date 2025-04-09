@@ -1,48 +1,69 @@
 import express from 'express'
-// import rateLimit from 'express-rate-limit'
+import rateLimit from 'express-rate-limit'
 import helmet from 'helmet'
 import mongoSanitize from 'express-mongo-sanitize'
 // import xss from 'xss'
 // import hpp from "hpp";
 import cors from 'cors'
-import globalErrorHandler from './Middlewares/globalErrorHandler.js'
-// import cookieParser from 'cookie-parser'
-// import authRoutes from './routes/authRoutes'
-// import userRoutes from './routes/userRoutes'
+import globalErrorHandler from './middlewares/globalErrorHandler.js'
+import cookieParser from 'cookie-parser'
+import swaggerUi from 'swagger-ui-express'
+import fs from 'fs'
+import path from 'path'
+import { fileURLToPath } from 'url'
+import authRoutes from './routes/authRoutes.js'
+import healthRoutes from './routes/healthRoutes.js'
+import { httpError } from './utils/httpError.js'
 // import requestLogger from './utils/requestLogger'
 
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
 
-const app = express()
+// Read the swagger document - with proper error handling
+let swaggerDocument
+try {
+    swaggerDocument = JSON.parse(fs.readFileSync(path.join(__dirname, '../docs/swagger-output.json'), 'utf8'))
+} catch (error) {
+    console.warn('Swagger documentation not found or invalid. API docs will not be available.')
+    swaggerDocument = {
+        info: {
+            title: 'API Documentation',
+            description: "Documentation not available. Run 'npm run generate-swagger' to generate it."
+        }
+    }
+}
+
+const server = express()
 
 // 1) GLOBAL MIDDLEWARES
 // Set security HTTP headers
-app.use(helmet())
+server.use(helmet())
 
 // Limit requests from same API
-// const limiter = rateLimit({
-//     max: 500,
-//     windowMs: 60 * 60 * 1000,
-//     message: 'Too many requests from this IP, please try again in an hour!'
-// })
-// app.use('/api', limiter)
+const limiter = rateLimit({
+    max: 500,
+    windowMs: 60 * 60 * 1000,
+    message: 'Too many requests from this IP, please try again in an hour!'
+})
+server.use('/api', limiter)
 
 // Body parser, reading data from body into req.body
-app.use(express.json({ limit: '16kb' }))
+server.use(express.json({ limit: '16kb' }))
 
 // Middleware to handle URL-encoded data
-app.use(express.urlencoded({ extended: true }))
+server.use(express.urlencoded({ extended: true }))
 
 // Parse cookies
-// app.use(cookieParser() as express.RequestHandler)
+server.use(cookieParser())
 
 // Data sanitization against NoSQL query injection
-app.use(mongoSanitize())
+server.use(mongoSanitize())
 
 // Data sanitization against XSS
-// app.use(xss())
+// server.use(xss())
 
 // Prevent parameter pollution
-// app.use(
+// server.use(
 //   hpp({
 //     whitelist: [
 //     ],
@@ -56,28 +77,39 @@ const corsOptions = {
     credentials: true
 }
 
-app.use(cors(corsOptions))
+server.use(cors(corsOptions))
 
 // 3) ROUTES
-app.get('/', (req, res) => {
-    res.status(200).json({ message: 'Welcome to the GHG API 🚀. Running in ECS 🎉' })
-})
+// Swagger setup
+server.use(
+    '/api-docs',
+    swaggerUi.serve,
+    swaggerUi.setup(swaggerDocument, {
+        explorer: true,
+        customCss: '.swagger-ui .topbar { display: none }',
+        swaggerOptions: {
+            docExpansion: 'none',
+            filter: true,
+            showRequestDuration: true
+        }
+    })
+)
 
-app.get('/health', (req, res) => {
-    res.status(200).json({ message: 'Everything is good here 👀' })
+// Endpoint to serve the swagger.json file
+server.get('/swagger.json', (req, res) => {
+    res.setHeader('Content-Type', 'application/json')
+    res.send(swaggerDocument)
 })
-
-// app.use('/api/v1/auth', authRoutes)
-// app.use('/api/v1/users', userRoutes)
+server.use('/health', healthRoutes)
+server.use('/api/v1/auth', authRoutes)
+// server.use('/api/v1/users', userRoutes)
 
 // 4) CATCHES ALL ROUTES THAT ARE NOT DEFINED
-app.all('*', (req, res, next) => {
+server.all('*', (req, res, next) => {
     httpError(next, new Error(`Can't find ${req.originalUrl} on this server!`), req, 404)
 })
 
-app.use(globalErrorHandler)
+server.use(globalErrorHandler)
 
-const server = app
 export default server
-
 

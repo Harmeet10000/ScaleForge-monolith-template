@@ -1,7 +1,7 @@
-import "./Config/dotenvConfig.js"
+import './config/dotenvConfig.js'
 import app from './app.js'
 import connectDB from './db/connect.js'
-import { logger } from './Utils/logger.js'
+import { logger } from './utils/logger.js'
 
 connectDB()
     .then(() => {
@@ -26,3 +26,4 @@ connectDB()
     .catch((err) => {
         logger.error('Database Connection Failed!', { error: err })
     })
+

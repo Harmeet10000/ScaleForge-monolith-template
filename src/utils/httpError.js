@@ -1,5 +1,5 @@
-import { EApplicationEnvironment } from '../Constant/application.js'
-import { SOMETHING_WENT_WRONG } from '../Constant/responseMessage.js'
+import { EApplicationEnvironment } from '../constant/application.js'
+import { SOMETHING_WENT_WRONG } from '../constant/responseMessage.js'
 import { logger } from './logger.js'
 
 export const httpError = (nextFunc, err, req, errorStatusCode = 500) => {
@@ -28,7 +28,7 @@ const errorObject = (err, req, errorStatusCode = 500) => {
     })
 
     // Production Env check
-    if (config.NODE_ENV === EApplicationEnvironment.PRODUCTION) {
+    if (process.env.NODE_ENV === EApplicationEnvironment.PRODUCTION) {
         delete errorObj.request.ip
         delete errorObj.trace
     }

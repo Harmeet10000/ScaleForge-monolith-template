@@ -1,13 +1,13 @@
 import util from 'util'
 import 'winston-mongodb'
 import { createLogger, format, transports } from 'winston'
-import { EApplicationEnvironment } from '../Constant/application.js'
+import { EApplicationEnvironment } from '../constant/application.js'
 import { red, blue, yellow, green, magenta } from 'colorette'
 // import { ConsoleTransportInstance, FileTransportInstance } from 'winston/lib/winston/transports'
 // import { MongoDBTransportInstance } from 'winston-mongodb'
 import * as sourceMapSupport from 'source-map-support'
 import path, { dirname } from 'path'
-import { fileURLToPath } from 'url'   
+import { fileURLToPath } from 'url'
 
 // Linking Trace Support
 sourceMapSupport.install()
@@ -92,11 +92,10 @@ const fileLogFormat = format.printf((info) => {
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 
-
 const FileTransport = () => {
     return [
         new transports.File({
-            filename: path.join(__dirname, '../', '../', 'logs', `${(process.env.NODE_ENV)}.log`),
+            filename: path.join(__dirname, '../', '../', 'logs', `${process.env.NODE_ENV}.log`),
             level: 'info',
             format: format.combine(format.timestamp(), fileLogFormat)
         })
@@ -128,8 +127,6 @@ export const logger = createLogger({
     defaultMeta: {
         meta: {}
     },
-    transports: [...FileTransport(),...consoleTransport()]
+    transports: [...FileTransport(), ...consoleTransport()]
 })
-
-
 
