@@ -1,5 +1,5 @@
-import mongoose, { Schema } from 'mongoose'
-import { EUserRole } from '../constant/application.js'
+import mongoose, { Schema } from 'mongoose';
+import { EUserRole } from '../constant/application.js';
 
 const userSchema = new Schema(
     {
@@ -90,7 +90,6 @@ const userSchema = new Schema(
         }
     },
     { timestamps: true }
-)
+);
 
-export const User = mongoose.model('User', userSchema)
-
+export const User = mongoose.model('User', userSchema);

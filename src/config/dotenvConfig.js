@@ -12,9 +12,9 @@
 //     DATABASE_URL: process.env.DATABASE_URL
 // }
 
-import dotenv from 'dotenv'
+import dotenv from 'dotenv';
 
 dotenv.config({
     path: './.env.development'
 
-})
+});

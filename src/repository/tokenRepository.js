@@ -1,13 +1,7 @@
-import { RefreshToken } from '../models/refreshToken.js'
+import { RefreshToken } from '../models/refreshToken.js';
 
-export const createRefreshToken = async (tokenData) => {
-    return await RefreshToken.create(tokenData)
-}
+export const createRefreshToken = async (tokenData) => await RefreshToken.create(tokenData);
 
-export const findRefreshToken = async (token) => {
-    return await RefreshToken.findOne({ token })
-}
+export const findRefreshToken = async (token) => await RefreshToken.findOne({ token });
 
-export const deleteRefreshToken = async (token) => {
-    return await RefreshToken.findOneAndDelete({ token })
-}
+export const deleteRefreshToken = async (token) => await RefreshToken.findOneAndDelete({ token });

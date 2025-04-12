@@ -1,26 +1,25 @@
-import express from 'express'
+import express from 'express';
 import {
-    changePassword,
-    confirmation,
-    forgotPassword,
-    login,
-    logout,
-    refreshToken,
-    register,
-    resetPassword,
-} from '../controllers/authController.js'
-import { protect } from '../middlewares/authMiddleware.js'
+  changePassword,
+  confirmation,
+  forgotPassword,
+  genNewAccessToken,
+  login,
+  logout,
+  register,
+  resetPassword
+} from '../controllers/authController.js';
+import { protect } from '../middlewares/authMiddleware.js';
 
-const router = express.Router()
+const router = express.Router();
 
-router.post('/register', register)
-router.put('/confirmation/:token', confirmation)
-router.post('/login', login)
-router.put('/logout', protect, logout)
-router.post('/refresh-token', refreshToken)
-router.put('/forgot-password', forgotPassword)
-router.put('/reset-password/:token', resetPassword)
-router.put('/change-password', protect, changePassword)
+router.post('/register', register);
+router.put('/confirmation/:token', confirmation);
+router.post('/login', login);
+router.put('/logout', protect, logout);
+router.post('/refresh-token', genNewAccessToken);
+router.put('/forgot-password', forgotPassword);
+router.put('/reset-password/:token', resetPassword);
+router.put('/change-password', protect, changePassword);
 
-export default router
-
+export default router;

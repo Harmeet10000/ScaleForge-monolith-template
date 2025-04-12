@@ -1,4 +1,4 @@
-import mongoose, { Schema } from 'mongoose'
+import mongoose, { Schema } from 'mongoose';
 
 const refreshTokenSchema = new Schema(
     {
@@ -8,14 +8,13 @@ const refreshTokenSchema = new Schema(
         }
     },
     { timestamps: true }
-)
+);
 
 refreshTokenSchema.index(
     {
         createdAt: -1
     },
     { expireAfterSeconds: process.env.REFRESH_TOKEN_EXPIRY }
-)
+);
 
-export const RefreshToken = mongoose.model('RefreshToken', refreshTokenSchema)
-
+export const RefreshToken = mongoose.model('RefreshToken', refreshTokenSchema);
