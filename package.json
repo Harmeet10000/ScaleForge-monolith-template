@@ -9,7 +9,9 @@
     "dev:prod": "nodemon dist/index.cjs",
     "start": "node dist/index.cjs",
     "swagger": "node ./docs/swagger.js",
-    "test": "node test/test.js",
+    "test": "node --test test/",
+    "test:watch": "node --test --watch test/",
+    "test:coverage": "node --test --coverage test/",
     "prepare": "husky",
     "lint": "eslint",
     "lint:fix": "eslint --fix",
@@ -57,6 +59,7 @@
     "lint-staged": "^15.4.3",
     "nodemon": "^3.1.9",
     "prettier": "3.5.2",
+    "supertest": "^7.1.0",
     "webpack-cli": "^6.0.1",
     "webpack-node-externals": "^3.0.0"
   },

@@ -16,6 +16,7 @@ export default [
       'scripts/',
       'nginx/',
       'docs/',
+      'test/'
     ]
   },
 
