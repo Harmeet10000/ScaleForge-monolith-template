@@ -1,17 +1,21 @@
 {
-  "name": "Auth_Service_Backend",
+  "name": "auth_service_backend",
   "version": "1.0.0",
   "main": "index.js",
   "type": "module",
+  "engines": {
+    "node": ">=22.14.0",
+    "npm": ">=10.7.0"
+  },
   "scripts": {
     "dev": "nodemon  src/index.js",
     "build": "rm -rf dist && npx webpack --config webpack.config.js",
     "dev:prod": "nodemon dist/index.cjs",
     "start": "node dist/index.cjs",
     "swagger": "node ./docs/swagger.js",
-    "test": "node --test test/",
-    "test:watch": "node --test --watch test/",
-    "test:coverage": "node --test --coverage test/",
+    "test": "node test-runner.js",
+    "test:watch": "node --watch test-runner.js",
+    "test:coverage": "node --test --coverage test-runner.js",
     "prepare": "husky",
     "lint": "eslint",
     "lint:fix": "eslint --fix",
