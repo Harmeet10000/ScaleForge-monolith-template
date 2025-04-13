@@ -1,20 +1,34 @@
-# Using Lightweight docker image for node
-FROM node:20-alpine AS base
+# Using multistage builds for development environment
+# Stage 1: Dependencies
+FROM node:20-alpine AS deps
 
 # Setting Up Working Directory
 WORKDIR /usr/src/backend-app
 
-# Copying Package Files
+# Copy package files
 COPY package*.json ./
 
-# Installing Dependencies
+# Install all dependencies (including dev dependencies)
 RUN npm ci
 
-# Copying Files
+# Stage 2: Development
+FROM node:20-alpine AS development
+
+# Setting environment variable
+ENV NODE_ENV=development
+
+# Setting Up Working Directory
+WORKDIR /usr/src/backend-app
+
+# Copy dependencies from deps stage
+COPY --from=deps /usr/src/backend-app/node_modules ./node_modules
+COPY package*.json ./
+
+# Copy the rest of the application code
 COPY . .
 
 # Exposing Port
-EXPOSE 3000
+EXPOSE 8000
 
-# Start Application
+# Start Application in development mode
 CMD ["npm", "run", "dev"]

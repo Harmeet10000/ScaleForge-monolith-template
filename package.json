@@ -22,7 +22,9 @@
     "format": "prettier . --check",
     "format:fix": "prettier . --fix",
     "migrate:dev": "cross-env MIGRATE_MODE=development node script/migration.js",
-    "migrate:prod": "cross-env MIGRATE_MODE=production node script/migration.js"
+    "migrate:prod": "cross-env MIGRATE_MODE=production node script/migration.js",
+    "backup:start": "node scripts/dbBackup.js",
+    "backup:once": "cross-env RUN_BACKUP_ONCE=true node scripts/dbBackup.js"
   },
   "keywords": [],
   "author": "Harmeet Singh",
@@ -68,6 +70,7 @@
     "webpack-node-externals": "^3.0.0"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.531.0",
     "bcryptjs": "^3.0.2",
     "colorette": "^2.0.20",
     "cookie-parser": "^1.4.7",
@@ -84,6 +87,7 @@
     "jsonwebtoken": "^9.0.2",
     "libphonenumber-js": "^1.12.6",
     "mongoose": "^8.10.1",
+    "node-cron": "^3.0.3",
     "rate-limiter-flexible": "^5.0.5",
     "redis": "^4.7.0",
     "resend": "^4.2.0",

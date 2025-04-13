@@ -95,6 +95,12 @@ EMAIL_FROM=noreply@yourservice.com
 
 # Frontend
 FRONTEND_URL=http://localhost:5173
+
+# Backup Configuration
+S3_BACKUP_ENABLED=true
+S3_BUCKET_NAME=your-backup-bucket
+AWS_REGION=us-east-1
+S3_PREFIX=mongodb-backups/
 ```
 
 ### Running the Application

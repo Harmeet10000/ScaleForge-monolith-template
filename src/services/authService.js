@@ -218,9 +218,11 @@ export const refreshUserToken = async (refreshToken, req, next) => {
   }
 
   const domain = getDomainFromUrl(process.env.SERVER_URL);
+    let userId = null;
 
   try {
-    const { userId } = verifyToken(refreshToken, process.env.REFRESH_TOKEN_SECRET);
+    const decryptedJwt = verifyToken(refreshToken, process.env.REFRESH_TOKEN_SECRET);
+    userId = decryptedJwt.userId;
   } catch (err) {
     return httpError(next, new Error(UNAUTHORIZED), req, 401);
   }
