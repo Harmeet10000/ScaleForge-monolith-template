@@ -28,13 +28,13 @@ try {
   );
 } catch (error) {
   logger.warn('Swagger documentation not found or invalid. API docs will not be available.', {
-    error: error.message,
+    error: error.message
   });
   swaggerDocument = {
     info: {
       title: 'API Documentation',
-      description: "Documentation not available. Run 'npm run generate-swagger' to generate it.",
-    },
+      description: "Documentation not available. Run 'npm run generate-swagger' to generate it."
+    }
   };
 }
 
@@ -48,7 +48,7 @@ server.use(helmet());
 const limiter = rateLimit({
   max: 500,
   windowMs: 60 * 60 * 1000,
-  message: 'Too many requests from this IP, please try again in an hour!',
+  message: 'Too many requests from this IP, please try again in an hour!'
 });
 server.use('/api', limiter);
 
@@ -79,7 +79,7 @@ const corsOptions = {
   origin: [process.env.FRONTEND_URL],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Authorization', 'Content-Type'],
-  credentials: true,
+  credentials: true
 };
 
 server.use(cors(corsOptions));
@@ -95,8 +95,8 @@ server.use(
     swaggerOptions: {
       docExpansion: 'none',
       filter: true,
-      showRequestDuration: true,
-    },
+      showRequestDuration: true
+    }
   })
 );
 

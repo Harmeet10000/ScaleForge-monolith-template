@@ -63,7 +63,7 @@ export const login = catchAsync(async (req, res, next) => {
   });
 });
 
-export const logout = catchAsync(async (req, res, next) => {
+export const logout = catchAsync(async (req, res) => {
   await authService.logoutUser(req.cookies.refreshToken);
 
   const DOMAIN = getDomainFromUrl(process.env.SERVER_URL);

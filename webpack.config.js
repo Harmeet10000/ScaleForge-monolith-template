@@ -28,7 +28,7 @@ export default {
   },
   plugins: [
     new Dotenv({
-      path: './.env.development', // Use .env.sample file
+      path: './.env.development', // Use .env.development file
       systemvars: true // Allow system variables to override
     })
   ],

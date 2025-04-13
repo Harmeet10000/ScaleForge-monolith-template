@@ -1,5 +1,5 @@
 import { Resend } from 'resend';
-import { httpError } from '../utils/httpError';
+import { httpError } from '../utils/httpError.js';
 
 const resend = new Resend(process.env.RESEND_KEY);
 
