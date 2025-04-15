@@ -1,0 +1,56 @@
+# Set default behavior to automatically normalize line endings
+* text=auto eol=lf
+
+# JS and TS files
+*.js text eol=lf
+*.ts text eol=lf
+*.jsx text eol=lf
+*.tsx text eol=lf
+*.json text eol=lf
+
+# Config files
+*.yml text eol=lf
+*.yaml text eol=lf
+*.toml text eol=lf
+*.ini text eol=lf
+*.conf text eol=lf
+
+# Documentation
+*.md text eol=lf
+*.txt text eol=lf
+
+# Serialisation
+*.csv text eol=lf
+
+# Shell scripts should use LF
+*.sh text eol=lf
+*.bash text eol=lf
+
+# Web assets
+*.css text eol=lf
+*.scss text eol=lf
+*.html text eol=lf
+
+# Docker
+Dockerfile text eol=lf
+docker-compose.yml text eol=lf
+
+# Graphics - treat as binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.svg text
+
+# Exclude files from exporting
+.gitattributes export-ignore
+.gitignore export-ignore
+.eslintrc.js export-ignore
+.prettierrc export-ignore
+README.md export-ignore
+jest.config.js export-ignore
+
+# Linguist language overrides
+*.js linguist-language=JavaScript
+*.ts linguist-language=TypeScript

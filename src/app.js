@@ -2,7 +2,7 @@ import express from 'express';
 import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
 import mongoSanitize from 'express-mongo-sanitize';
-import compression from 'compression'; // Added compression middleware
+// import compression from 'compression'; // Added compression middleware
 // import xss from 'xss'
 // import hpp from "hpp";
 import cors from 'cors';
@@ -12,11 +12,10 @@ import swaggerUi from 'swagger-ui-express';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import authRoutes from './routes/authRoutes.js';
-import healthRoutes from './routes/healthRoutes.js';
 import { httpError } from './utils/httpError.js';
 import { logger } from './utils/logger.js';
-// import requestLogger from './utils/requestLogger'
+import authRoutes from './routes/authRoutes.js';
+import healthRoutes from './routes/healthRoutes.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -34,7 +33,7 @@ try {
   swaggerDocument = {
     info: {
       title: 'API Documentation',
-      description: "Documentation not available. Run 'npm run generate-swagger' to generate it."
+      description: "Documentation not available. Run 'npm run swagger' to generate it."
     }
   };
 }
