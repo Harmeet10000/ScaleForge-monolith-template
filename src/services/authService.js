@@ -218,7 +218,7 @@ export const refreshUserToken = async (refreshToken, req, next) => {
   }
 
   const domain = getDomainFromUrl(process.env.SERVER_URL);
-    let userId = null;
+  let userId = null;
 
   try {
     const decryptedJwt = verifyToken(refreshToken, process.env.REFRESH_TOKEN_SECRET);

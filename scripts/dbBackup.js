@@ -2,7 +2,7 @@
 
 /**
  * Database Backup Script
- * 
+ *
  * This script creates daily backups of MongoDB database using mongodump
  * It uses node-cron to schedule backups at a specific time each day
  * Backups are stored with timestamps and old backups are automatically cleaned up
@@ -31,17 +31,17 @@ const __dirname = path.dirname(__filename);
 const config = {
   // Database connection string from environment variables
   dbUrl: process.env.DATABASE_URL || 'mongodb://localhost:27017/auth-service',
-  
+
   // Backup directory - created relative to this script
   backupDir: path.join(__dirname, '../backups'),
-  
+
   // Backup schedule (default: 2:00 AM every day)
   // Cron format: minute hour day-of-month month day-of-week
   schedule: '0 2 * * *',
-  
+
   // Number of days to keep backups (older backups will be deleted)
   retentionDays: 7,
-  
+
   // S3 configuration
   s3: {
     enabled: process.env.S3_BACKUP_ENABLED === 'true',
@@ -68,29 +68,29 @@ async function compressBackup(dirPath) {
     const outputPath = `${dirPath}.tar.gz`;
     const gzip = zlib.createGzip({ level: zlib.constants.Z_BEST_COMPRESSION });
     const output = createWriteStream(outputPath);
-    
+
     console.log(`Compressing backup: ${dirPath}`);
-    
+
     const tar = exec(tarCommand);
-    
+
     // Create pipeline: tar output -> gzip -> file
     tar.stdout.pipe(gzip).pipe(output);
-    
+
     output.on('finish', () => {
       console.log(`Compression complete: ${outputPath}`);
       resolve(outputPath);
     });
-    
+
     tar.on('error', (err) => {
       console.error(`Tar error: ${err.message}`);
       reject(err);
     });
-    
+
     gzip.on('error', (err) => {
       console.error(`Gzip error: ${err.message}`);
       reject(err);
     });
-    
+
     output.on('error', (err) => {
       console.error(`Output file error: ${err.message}`);
       reject(err);
@@ -108,21 +108,21 @@ async function uploadToS3(filePath) {
     console.log('S3 uploads are disabled. Skipping upload.');
     return false;
   }
-  
+
   try {
     // Initialize S3 client
     const s3Client = new S3Client({
       region: config.s3.region
     });
-    
+
     const fileName = path.basename(filePath);
     const key = `${config.s3.prefix}${fileName}`;
-    
+
     console.log(`Uploading ${fileName} to S3 bucket ${config.s3.bucket}...`);
-    
+
     // Create readable stream for the file
     const fileStream = createReadStream(filePath);
-    
+
     // Upload to S3
     const command = new PutObjectCommand({
       Bucket: config.s3.bucket,
@@ -130,12 +130,12 @@ async function uploadToS3(filePath) {
       Body: fileStream,
       ContentType: 'application/gzip'
     });
-    
+
     const response = await s3Client.send(command);
-    
+
     console.log(`Upload complete! ETag: ${response.ETag}`);
     console.log(`File available at: s3://${config.s3.bucket}/${key}`);
-    
+
     return true;
   } catch (err) {
     console.error(`S3 upload error: ${err.message}`);
@@ -149,13 +149,13 @@ async function uploadToS3(filePath) {
 async function performBackup() {
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
   const backupPath = path.join(config.backupDir, `backup-${timestamp}`);
-  
+
   // Create command for mongodump
   // Using --uri for connection with authentication included
   const cmd = `mongodump --uri="${config.dbUrl}" --out="${backupPath}"`;
-  
+
   console.log(`Starting database backup at ${new Date().toLocaleString()}...`);
-  
+
   try {
     // Execute mongodump
     await new Promise((resolve, reject) => {
@@ -165,28 +165,28 @@ async function performBackup() {
           reject(error);
           return;
         }
-        
+
         if (stderr) {
           console.error(`Backup stderr: ${stderr}`);
         }
-        
+
         console.log(`Backup completed successfully to: ${backupPath}`);
         console.log(`Stdout: ${stdout}`);
         resolve();
       });
     });
-    
+
     // Compress the backup
     const compressedPath = await compressBackup(backupPath);
-    
+
     // Upload to S3 if enabled
     if (config.s3.enabled) {
       await uploadToS3(compressedPath);
     }
-    
+
     // Clean up old backups
     await cleanupOldBackups();
-    
+
     // If it's a one-time backup, exit after completion
     if (process.env.RUN_BACKUP_ONCE === 'true') {
       console.log('One-time backup completed. Exiting...');
@@ -194,7 +194,7 @@ async function performBackup() {
     }
   } catch (error) {
     console.error(`Backup process failed: ${error.message}`);
-    
+
     // If it's a one-time backup, exit with error code
     if (process.env.RUN_BACKUP_ONCE === 'true') {
       process.exit(1);
@@ -211,24 +211,24 @@ function cleanupOldBackups() {
       console.error(`Error reading backup directory: ${err.message}`);
       return;
     }
-    
+
     const now = new Date().getTime();
     const retentionMs = config.retentionDays * 24 * 60 * 60 * 1000;
-    
-    files.forEach(file => {
+
+    files.forEach((file) => {
       const filePath = path.join(config.backupDir, file);
-      
+
       fs.stat(filePath, (err, stats) => {
         if (err) {
           console.error(`Error getting file stats: ${err.message}`);
           return;
         }
-        
+
         // Check if the file/directory is older than retention period
         if (now - stats.mtime.getTime() > retentionMs) {
           // If it's a directory, use recursive removal
           if (stats.isDirectory()) {
-            fs.rm(filePath, { recursive: true, force: true }, err => {
+            fs.rm(filePath, { recursive: true, force: true }, (err) => {
               if (err) {
                 console.error(`Error removing old backup directory ${filePath}: ${err.message}`);
               } else {
@@ -237,7 +237,7 @@ function cleanupOldBackups() {
             });
           } else {
             // For files, use unlink
-            fs.unlink(filePath, err => {
+            fs.unlink(filePath, (err) => {
               if (err) {
                 console.error(`Error removing old backup file ${filePath}: ${err.message}`);
               } else {

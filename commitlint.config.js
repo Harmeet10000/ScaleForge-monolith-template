@@ -4,19 +4,7 @@ export default {
     'type-enum': [
       2,
       'always',
-      [
-        'feat',
-        'fix',
-        'docs',
-        'style',
-        'refactor',
-        'perf',
-        'test',
-        'build',
-        'ci',
-        'chore',
-        'revert'
-      ]
+      ['feat', 'fix', 'docs', 'style', 'refactor', 'perf', 'test', 'build', 'ci', 'chore', 'revert']
     ],
     'subject-case': [2, 'always', 'sentence-case']
   }

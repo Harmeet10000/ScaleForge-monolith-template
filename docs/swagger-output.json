@@ -35,10 +35,7 @@
       "description": "User operations"
     }
   ],
-  "schemes": [
-    "http",
-    "https"
-  ],
+  "schemes": ["http", "https"],
   "securityDefinitions": {
     "bearerAuth": {
       "type": "http",
@@ -51,12 +48,8 @@
       "name": "jwt"
     }
   },
-  "consumes": [
-    "application/json"
-  ],
-  "produces": [
-    "application/json"
-  ],
+  "consumes": ["application/json"],
+  "produces": ["application/json"],
   "paths": {
     "/register": {
       "post": {
@@ -283,10 +276,7 @@
                 },
                 "enum": {
                   "type": "array",
-                  "example": [
-                    "user",
-                    "admin"
-                  ],
+                  "example": ["user", "admin"],
                   "items": {
                     "type": "string"
                   }
@@ -410,11 +400,7 @@
         },
         "required": {
           "type": "array",
-          "example": [
-            "name",
-            "email",
-            "password"
-          ],
+          "example": ["name", "email", "password"],
           "items": {
             "type": "string"
           }
