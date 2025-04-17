@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 🤔 Questions and Help
+    url: https://github.com/Harmeet10000/production-grade-auth-template/discussions
+    about: Please use the discussions forum for questions and help
+  - name: 💬 Community Discord
+    url: https://discord.gg/your-discord-link
+    about: Chat with the community and maintainers
+  - name: 📖 Documentation
+    url: https://github.com/Harmeet10000/production-grade-auth-template#readme
+    about: Check out the project documentation
