@@ -48,6 +48,22 @@ Promise.all([connectDB(), connectRedis()])
         process.exit(0);
       });
     });
+    // Handle SIGINT (Ctrl+C)
+    process.on('SIGINT', () => {
+      logger.info('SIGINT received. Shutting down gracefully...');
+      server.close(async () => {
+        if (redisClient.isOpen) {
+          try {
+            await redisClient.quit();
+            logger.info('Redis client disconnected gracefully.');
+          } catch (redisErr) {
+            logger.error('Error during Redis disconnection on SIGINT:', { error: redisErr });
+          }
+        }
+        logger.info('HTTP server closed. Process terminated!');
+        process.exit(0);
+      });
+    });
   })
   .catch((err) => {
     logger.error('Application startup failed!', { error: err });
