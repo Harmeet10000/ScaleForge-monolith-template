@@ -2,7 +2,7 @@ import express from 'express';
 import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
 import mongoSanitize from 'express-mongo-sanitize';
-// import compression from 'compression'; // Added compression middleware
+import compression from 'compression';
 // import xss from 'xss'
 // import hpp from "hpp";
 import cors from 'cors';
@@ -45,22 +45,22 @@ const server = express();
 server.use(helmet());
 
 // Add compression middleware - compress all responses
-// server.use(
-//   compression({
-//     // Compression level (0-9), 6 is the default compression level
-//     level: 6,
-//     // Filter function to decide which responses to compress - skips small responses
-//     filter: (req, res) => {
-//       if (req.headers['x-no-compression']) {
-//         // Don't compress responses with this header
-//         return false;
-//       }
-//       // Compress responses larger than 500 bytes
-//       return compression.filter(req, res);
-//     },
-//     threshold: 500 // Only compress responses above 500 bytes
-//   })
-// );
+server.use(
+  compression({
+    // Compression level (0-9), 6 is the default compression level
+    level: 6,
+    // Filter function to decide which responses to compress - skips small responses
+    filter: (req, res) => {
+      if (req.headers['x-no-compression']) {
+        // Don't compress responses with this header
+        return false;
+      }
+      // Compress responses larger than 500 bytes
+      return compression.filter(req, res);
+    },
+    threshold: 50 * 1000 // Only compress responses above 50KB
+  })
+);
 
 // Limit requests from same API
 const limiter = rateLimit({
