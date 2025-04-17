@@ -1,13 +1,13 @@
 name: 💡 Feature Request
 description: Suggest an idea for this project
-title: "[Feature]: "
-labels: ["enhancement"]
+title: '[Feature]: '
+labels: ['enhancement']
 body:
   - type: markdown
     attributes:
       value: |
         Thanks for taking the time to suggest a new feature!
-        
+
   - type: checkboxes
     attributes:
       label: Prerequisites
