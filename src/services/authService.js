@@ -145,6 +145,7 @@ export const confirmAccount = async (token, code, req, next) => {
 
 export const loginUser = async (credentials, req, next) => {
   const { emailAddress, password } = credentials;
+  const userIp = req.ip;
 
   // * Find User
   const user = await authRepository.findUserByEmailAddress(emailAddress, `+password`);
@@ -165,14 +166,16 @@ export const loginUser = async (credentials, req, next) => {
   // * Access Token & Refresh Token
   const accessToken = generateToken(
     {
-      userId: user.id
+      userId: user.id,
+      userIp
     },
     process.env.ACCESS_TOKEN_SECRET,
     3600
   );
   const refreshToken = generateToken(
     {
-      userId: user.id
+      userId: user.id,
+      userIp
     },
     process.env.REFRESH_TOKEN_SECRET,
     3600
@@ -234,7 +237,8 @@ export const refreshUserToken = async (refreshToken, req, next) => {
   // * Generate new Access Token
   const newAccessToken = generateToken(
     {
-      userId
+      userId,
+      userIp: req.ip
     },
     process.env.ACCESS_TOKEN_SECRET,
     process.env.ACCESS_TOKEN_EXPIRY

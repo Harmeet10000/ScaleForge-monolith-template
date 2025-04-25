@@ -49,6 +49,37 @@ class APIFeatures {
 
     return this;
   }
+
+  cursorPaginate() {
+    const limit = this.queryString.limit ? parseInt(this.queryString.limit, 10) : 10;
+    const cursor = this.queryString.cursor || null;
+    const direction = this.queryString.direction?.toLowerCase() === 'prev' ? 'prev' : 'next';
+    const sortField = this.queryString.sortField || '_id';
+
+    // We need to build the query based on cursor, direction, and sortField
+    if (cursor) {
+      // For next page, we get items after the cursor
+      if (direction === 'next') {
+        this.query = this.query.find({ [sortField]: { $gt: cursor } });
+      }
+      // For previous page, we get items before the cursor
+      else {
+        this.query = this.query.find({ [sortField]: { $lt: cursor } });
+      }
+    }
+
+    // Set the limit
+    this.query = this.query.limit(limit);
+
+    // Sort in appropriate direction
+    if (direction === 'next') {
+      this.query = this.query.sort({ [sortField]: 1 });
+    } else {
+      this.query = this.query.sort({ [sortField]: -1 });
+    }
+
+    return this;
+  }
 }
 
 export default APIFeatures;

@@ -8,9 +8,9 @@ import { connectRedis, redisClient } from './db/connectRedis.js';
 // Use Promise.all to connect concurrently, or connect sequentially if preferred/needed
 Promise.all([connectDB(), connectRedis()])
   .then(() => {
-    const server = app.listen(process.env.PORT || 8000, () => {
+    const server = app.listen(process.env.PORT, () => {
       logger.info(
-        `Server is running at port: ${process.env.PORT || 8000}, in ${process.env.NODE_ENV} mode`
+        `Server is running at port: ${process.env.PORT}, in ${process.env.NODE_ENV} mode`
       );
     });
 

@@ -6,6 +6,7 @@ import { User } from '../models/userModel.js';
 
 export const protect = catchAsync(async (req, res, next) => {
   let token;
+  const currentIp = req.ip || req.connection.remoteAddress;
 
   // 1) Check if token is in cookies first
   if (req.cookies.jwt) {
@@ -31,6 +32,9 @@ export const protect = catchAsync(async (req, res, next) => {
     // 4) Verification token
     const decoded = await promisify(jwt.verify)(token, process.env.ACCESS_TOKEN_SECRET);
     // console.log('decoded', decoded)
+    if (decoded.userIp === currentIp) {
+      return httpError(next, new Error('Token is not valid for this IP address.'), req, 401);
+    }
     // 5) Check if user still exists
     const currentUser = await User.findById(decoded.userId);
 
