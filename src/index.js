@@ -2,8 +2,7 @@ import './config/dotenvConfig.js';
 import app from './app.js';
 import connectDB from './db/connectDB.js';
 import { logger } from './utils/logger.js';
-import { redisClient } from './helpers/redisClient.js';
-import { connectRedis } from './db/connectRedis.js';
+import { connectRedis, redisClient } from './db/connectRedis.js';
 
 // --- Connect to Databases ---
 // Use Promise.all to connect concurrently, or connect sequentially if preferred/needed
@@ -18,10 +17,10 @@ Promise.all([connectDB(), connectRedis()])
     process.on('unhandledRejection', (err) => {
       logger.error('UNHANDLED REJECTION! 💥 Shutting down...', { error: err });
       server.close(async () => {
-        if (redisClient.isOpen) {
+        // Check if Redis client is still connected
+        if (redisClient.status === 'ready' || redisClient.status === 'connect') {
           try {
             await redisClient.quit(); // Waits for pending replies then disconnects
-            // or use redisClient.disconnect(); // Disconnects immediately
             logger.info('Redis client disconnected gracefully.');
           } catch (redisErr) {
             logger.error('Error during Redis disconnection on unhandledRejection:', {
@@ -36,7 +35,8 @@ Promise.all([connectDB(), connectRedis()])
     process.on('SIGTERM', () => {
       logger.info('SIGTERM received. Shutting down gracefully...');
       server.close(async () => {
-        if (redisClient.isOpen) {
+        // Check if Redis client is still connected
+        if (redisClient.status === 'ready' || redisClient.status === 'connect') {
           try {
             await redisClient.quit();
             logger.info('Redis client disconnected gracefully.');
@@ -52,7 +52,8 @@ Promise.all([connectDB(), connectRedis()])
     process.on('SIGINT', () => {
       logger.info('SIGINT received. Shutting down gracefully...');
       server.close(async () => {
-        if (redisClient.isOpen) {
+        // Check if Redis client is still connected
+        if (redisClient.status === 'ready' || redisClient.status === 'connect') {
           try {
             await redisClient.quit();
             logger.info('Redis client disconnected gracefully.');

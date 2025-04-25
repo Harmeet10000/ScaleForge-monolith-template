@@ -1,0 +1,12 @@
+global:
+  scrape_interval: 15s # Default scrape interval
+
+scrape_configs:
+  - job_name: 'auth-service'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['localhost:8000'] # Adjust according to your server port
+
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']

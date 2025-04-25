@@ -60,3 +60,5 @@ export const getDomainFromUrl = (url) => {
 };
 
 export const generateResetPasswordExpiry = (minute) => dayjs().valueOf() + minute * 60 * 1000;
+
+export const getKeyName = (objectType, ...args) => `${objectType}:${args.join(':')}`;

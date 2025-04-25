@@ -5,7 +5,7 @@ export const registerUser = async (payload) => await User.create(payload);
 export const findUserById = async (id, select = '') => await User.findById(id).select(select);
 
 export const findByIdWithPassword = async (id) => await User.findById(id).select('+password');
-export const findUserByEmailAddress = async (emailAddress, select = '') =>
+export const findUserByEmailAddress = async (emailAddress, select = '+password') =>
   await User.findOne({
     emailAddress
   }).select(select);

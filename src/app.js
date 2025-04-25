@@ -16,10 +16,26 @@ import { httpError } from './utils/httpError.js';
 import { logger } from './utils/logger.js';
 import authRoutes from './routes/authRoutes.js';
 import healthRoutes from './routes/healthRoutes.js';
+import promBundle from 'express-prom-bundle';
+import { register } from 'prom-client';
+import { trackRequestMetrics, trackConnections } from './middlewares/metricsMiddleware.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Prometheus metrics setup
+const metricsMiddleware = promBundle({
+  includeMethod: true,
+  includePath: true,
+  includeStatusCode: true,
+  includeUp: true,
+  customLabels: { project: 'auth-service' },
+  promClient: {
+    collectDefaultMetrics: {
+      timestamps: true
+    }
+  }
+});
 // Read the swagger document - with proper error handling
 let swaggerDocument;
 try {
@@ -102,6 +118,13 @@ const corsOptions = {
 
 server.use(cors(corsOptions));
 
+// Apply Prometheus metrics middleware - must be before routes
+server.use(metricsMiddleware);
+
+// Apply custom metrics middleware
+server.use(trackRequestMetrics);
+server.use(trackConnections);
+
 // 3) ROUTES
 // Swagger setup
 server.use(
@@ -117,6 +140,12 @@ server.use(
     }
   })
 );
+
+// Prometheus metrics endpoint
+server.get('/metrics', async (req, res) => {
+  res.set('Content-Type', register.contentType);
+  res.end(await register.metrics());
+});
 
 // Endpoint to serve the swagger.json file
 server.get('/swagger.json', (req, res) => {
