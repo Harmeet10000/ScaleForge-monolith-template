@@ -13,10 +13,10 @@ export default [
       '.github/',
       'docker/',
       'logs/',
-      'scripts/',
+      'scripts/**',
       'nginx/',
-      'docs/',
-      'test/'
+      'docs/**',
+      'test/**'
     ]
   },
 

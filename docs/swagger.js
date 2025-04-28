@@ -41,7 +41,7 @@ const doc = {
   produces: ['application/json'],
   tags: [
     { name: 'Authentication', description: 'Authentication endpoints' },
-    { name: 'Users', description: 'User operations' }
+    { name: 'Health', description: 'Health check endpoints' }
   ],
   securityDefinitions: {
     bearerAuth: {
@@ -81,6 +81,116 @@ const doc = {
         updatedAt: { type: 'string', format: 'date-time' }
       },
       required: ['name', 'email', 'password']
+    },
+    RegisterRequest: {
+      type: 'object',
+      properties: {
+        name: { type: 'string', example: 'John Doe' },
+        email: { type: 'string', example: 'john@example.com' },
+        password: { type: 'string', example: 'Password123!' }
+      },
+      required: ['name', 'email', 'password']
+    },
+    RegisterResponse: {
+      type: 'object',
+      properties: {
+        message: { type: 'string', example: 'Registration successful. Please verify your email.' },
+        user: { $ref: '#/definitions/User' }
+      }
+    },
+    LoginRequest: {
+      type: 'object',
+      properties: {
+        email: { type: 'string', example: 'john@example.com' },
+        password: { type: 'string', example: 'Password123!' }
+      },
+      required: ['email', 'password']
+    },
+    LoginResponse: {
+      type: 'object',
+      properties: {
+        message: { type: 'string', example: 'Login successful.' },
+        accessToken: { type: 'string', example: 'jwt.token.here' },
+        refreshToken: { type: 'string', example: 'refresh.token.here' },
+        user: { $ref: '#/definitions/User' }
+      }
+    },
+    RefreshTokenRequest: {
+      type: 'object',
+      properties: {
+        refreshToken: { type: 'string', example: 'refresh.token.here' }
+      },
+      required: ['refreshToken']
+    },
+    RefreshTokenResponse: {
+      type: 'object',
+      properties: {
+        accessToken: { type: 'string', example: 'jwt.token.here' }
+      }
+    },
+    ForgotPasswordRequest: {
+      type: 'object',
+      properties: {
+        email: { type: 'string', example: 'john@example.com' }
+      },
+      required: ['email']
+    },
+    ForgotPasswordResponse: {
+      type: 'object',
+      properties: {
+        message: { type: 'string', example: 'Password reset email sent.' }
+      }
+    },
+    ResetPasswordRequest: {
+      type: 'object',
+      properties: {
+        password: { type: 'string', example: 'NewPassword123!' }
+      },
+      required: ['password']
+    },
+    ResetPasswordResponse: {
+      type: 'object',
+      properties: {
+        message: { type: 'string', example: 'Password reset successful.' }
+      }
+    },
+    ChangePasswordRequest: {
+      type: 'object',
+      properties: {
+        currentPassword: { type: 'string', example: 'OldPassword123!' },
+        newPassword: { type: 'string', example: 'NewPassword123!' }
+      },
+      required: ['currentPassword', 'newPassword']
+    },
+    ChangePasswordResponse: {
+      type: 'object',
+      properties: {
+        message: { type: 'string', example: 'Password changed successfully.' }
+      }
+    },
+    ConfirmationResponse: {
+      type: 'object',
+      properties: {
+        message: { type: 'string', example: 'Email confirmed successfully.' }
+      }
+    },
+    LogoutResponse: {
+      type: 'object',
+      properties: {
+        message: { type: 'string', example: 'Logout successful.' }
+      }
+    },
+    HealthResponse: {
+      type: 'object',
+      properties: {
+        status: { type: 'string', example: 'ok' }
+      }
+    },
+    SelfResponse: {
+      type: 'object',
+      properties: {
+        app: { type: 'string', example: 'API' }
+      }
     }
   }
 };

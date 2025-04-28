@@ -33,6 +33,7 @@ import {
 } from '../constant/responseMessage.js';
 import * as authRepository from '../repository/authRepository.js';
 import * as tokenRepository from '../repository/tokenRepository.js';
+import { deleteCache, getCache, setCache } from '../helpers/redisFunctions.js';
 
 dayjs.extend(utc);
 
@@ -54,8 +55,17 @@ export const registerUser = async (userData) => {
   }
 
   // * Check User Existence using Email Address
+  // First check cache for this email
+  const cachedUser = await getCache('user', ['email', emailAddress]);
+  if (cachedUser) {
+    throw new Error(ALREADY_EXIST('user', emailAddress));
+  }
+
+  // If not in cache, check database
   const user = await authRepository.findUserByEmailAddress(emailAddress);
   if (user) {
+    // Cache user for future checks
+    await setCache('user', ['email', emailAddress], user.toObject(), 3600);
     throw new Error(ALREADY_EXIST('user', emailAddress));
   }
 
@@ -129,6 +139,10 @@ export const confirmAccount = async (token, code, req, next) => {
 
   await user.save();
 
+  // Update user in cache to reflect confirmation
+  await setCache('user', ['id', user._id], user.toObject(), 1800);
+  await setCache('user', ['email', user.emailAddress], user.toObject(), 1800);
+
   // * Account Confirmation Email
   const to = [user.emailAddress];
   const subject = 'Account Confirmed';
@@ -147,8 +161,29 @@ export const loginUser = async (credentials, req, next) => {
   const { emailAddress, password } = credentials;
   const userIp = req.ip;
 
-  // * Find User
-  const user = await authRepository.findUserByEmailAddress(emailAddress, `+password`);
+  // Check cache for user first
+  let user = await getCache('user', ['email', emailAddress]);
+
+  // If not in cache, fetch from database
+  if (!user) {
+    user = await authRepository.findUserByEmailAddress(emailAddress, `+password`);
+
+    // If user exists, store in cache for future requests
+    if (user) {
+      // Don't store the user with password in cache for security
+      const userForCache = { ...user.toObject() };
+      delete userForCache.password;
+      await setCache('user', ['email', emailAddress], userForCache, 1800);
+      await setCache('user', ['id', user._id], userForCache, 1800);
+    }
+  } else {
+    // If found in cache, get the password from DB for validation
+    const userWithPassword = await authRepository.findUserByEmailAddress(emailAddress, `+password`);
+    if (userWithPassword) {
+      user.password = userWithPassword.password;
+    }
+  }
+
   if (!user) {
     return httpError(next, new Error(NOT_FOUND('user')), req, 404);
   }
@@ -157,6 +192,7 @@ export const loginUser = async (credentials, req, next) => {
   if (!user.accountConfirmation.status) {
     return httpError(next, new Error(ACCOUNT_CONFIRMATION_REQUIRED), req, 400);
   }
+
   // * Validate Password
   const isValidPassword = await comparePassword(password, user.password);
   if (!isValidPassword) {
@@ -166,7 +202,7 @@ export const loginUser = async (credentials, req, next) => {
   // * Access Token & Refresh Token
   const accessToken = generateToken(
     {
-      userId: user.id,
+      userId: user.id || user._id, // Handle both object and plain object
       userIp
     },
     process.env.ACCESS_TOKEN_SECRET,
@@ -174,15 +210,32 @@ export const loginUser = async (credentials, req, next) => {
   );
   const refreshToken = generateToken(
     {
-      userId: user.id,
+      userId: user.id || user._id,
       userIp
     },
     process.env.REFRESH_TOKEN_SECRET,
     3600
   );
+
   // * Last Login Information
-  user.lastLoginAt = dayjs().utc().toDate();
-  await user.save();
+  if (typeof user.save === 'function') {
+    user.lastLoginAt = dayjs().utc().toDate();
+    await user.save();
+
+    // Update user in cache with new lastLoginAt
+    const userForCache = { ...user.toObject() };
+    delete userForCache.password;
+    await setCache('user', ['email', emailAddress], userForCache, 1800);
+    await setCache('user', ['id', user._id], userForCache, 1800);
+  } else {
+    // If user is from cache and doesn't have save method
+    await authRepository.updateUserLastLogin(user._id);
+
+    // Update cache with new login time
+    user.lastLoginAt = dayjs().utc().toDate();
+    await setCache('user', ['email', emailAddress], user, 1800);
+    await setCache('user', ['id', user._id], user, 1800);
+  }
 
   // * Refresh Token Store
   const refreshTokenPayload = {
@@ -202,9 +255,22 @@ export const loginUser = async (credentials, req, next) => {
 };
 
 export const logoutUser = async (refreshToken) => {
+  logger.info('Logout called with refresh:', refreshToken);
   if (refreshToken) {
-    // db -> delete the refresh token
-    await tokenRepository.deleteRefreshToken(refreshToken);
+    try {
+      // Get user ID from refresh token
+      const decoded = verifyToken(refreshToken, process.env.REFRESH_TOKEN_SECRET);
+
+      if (decoded && decoded.userId) {
+        // Remove user from cache when logging out
+        await deleteCache('user', ['id', decoded.userId]);
+      }
+
+      // Delete the refresh token from database
+      await tokenRepository.deleteRefreshToken(refreshToken);
+    } catch (err) {
+      logger.error('Error in logout:', err);
+    }
   }
   return true;
 };
@@ -316,7 +382,6 @@ export const resetUserPassword = async (token, newPassword, req, next) => {
 
   // User update
   user.password = hashedPassword;
-
   user.passwordReset.token = null;
   user.passwordReset.expiry = null;
   user.passwordReset.lastResetAt = dayjs().utc().toDate();

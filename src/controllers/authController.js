@@ -73,7 +73,6 @@ export const logout = catchAsync(async (req, res) => {
     path: '/api/v1',
     domain: DOMAIN,
     sameSite: 'strict',
-    maxAge: 1000 * process.env.ACCESS_TOKEN_EXPIRY,
     httpOnly: true,
     secure: !(process.env.NODE_ENV === EApplicationEnvironment.DEVELOPMENT)
   });
@@ -82,7 +81,6 @@ export const logout = catchAsync(async (req, res) => {
     path: '/api/v1',
     domain: DOMAIN,
     sameSite: 'strict',
-    maxAge: 1000 * process.env.REFRESH_TOKEN_EXPIRY,
     httpOnly: true,
     secure: !(process.env.NODE_ENV === EApplicationEnvironment.DEVELOPMENT)
   });

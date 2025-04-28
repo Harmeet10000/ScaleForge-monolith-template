@@ -3,6 +3,8 @@ import { httpError } from '../utils/httpError.js';
 import jwt from 'jsonwebtoken';
 import { promisify } from 'util';
 import { User } from '../models/userModel.js';
+import { getCache, setCache } from '../helpers/redisFunctions.js';
+import { logger } from '../utils/logger.js';
 
 export const protect = catchAsync(async (req, res, next) => {
   let token;
@@ -31,12 +33,31 @@ export const protect = catchAsync(async (req, res, next) => {
   try {
     // 4) Verification token
     const decoded = await promisify(jwt.verify)(token, process.env.ACCESS_TOKEN_SECRET);
-    // console.log('decoded', decoded)
+    logger.debug(`Decoded token: ${JSON.stringify(decoded)}, Current IP: ${currentIp}`);
+
+    // Check if IP in token doesn't match the current request IP
     if (decoded.userIp === currentIp) {
+      logger.warn(`IP address mismatch: Token IP=${decoded.userIp}, Request IP=${currentIp}`);
       return httpError(next, new Error('Token is not valid for this IP address.'), req, 401);
     }
-    // 5) Check if user still exists
-    const currentUser = await User.findById(decoded.userId);
+
+    // 5) Check if user exists in cache first
+    const cachedUser = await getCache('user', ['id', decoded.userId]);
+    let currentUser;
+
+    if (cachedUser) {
+      logger.debug(`User found in cache: ${decoded.userId}`);
+      currentUser = cachedUser;
+    } else {
+      // If not in cache, fetch from database
+      currentUser = await User.findById(decoded.userId);
+
+      // If user exists, cache it for future requests (30 min expiry)
+      if (currentUser) {
+        await setCache('user', ['id', decoded.userId], currentUser.toObject(), 1800);
+        logger.debug(`User cached: ${decoded.userId}`);
+      }
+    }
 
     if (!currentUser) {
       return httpError(
@@ -68,7 +89,6 @@ export const protect = catchAsync(async (req, res, next) => {
 export const restrictTo =
   (...roles) =>
   (req, res, next) => {
-    // console.log("restrictTo", req.user);
     if (!roles.includes(req.user.role)) {
       return httpError(
         next,

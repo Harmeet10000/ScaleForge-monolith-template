@@ -2,7 +2,7 @@ import util from 'util';
 import 'winston-mongodb';
 import { createLogger, format, transports } from 'winston';
 import { EApplicationEnvironment } from '../constant/application.js';
-import { red, blue, yellow, green, magenta } from 'colorette';
+import { red, blue, yellow, green, magenta, cyan } from 'colorette';
 // import { ConsoleTransportInstance, FileTransportInstance } from 'winston/lib/winston/transports'
 // import { MongoDBTransportInstance } from 'winston-mongodb'
 import * as sourceMapSupport from 'source-map-support';
@@ -20,6 +20,8 @@ const colorizeLevel = (level) => {
       return blue(level);
     case 'WARN':
       return yellow(level);
+    case 'DEBUG':
+      return cyan(level);
     default:
       return level;
   }
@@ -50,7 +52,7 @@ const consoleTransport = () => {
   if (process.env.NODE_ENV === EApplicationEnvironment.DEVELOPMENT) {
     return [
       new transports.Console({
-        level: 'info',
+        level: 'info', // Changed from 'info' to 'debug' to allow debug level logs
         format: format.combine(format.timestamp(), consoleLogFormat)
       })
     ];
@@ -95,7 +97,7 @@ const __dirname = dirname(__filename);
 const FileTransport = () => [
   new transports.File({
     filename: path.join(__dirname, '../', '../', 'logs', `${process.env.NODE_ENV}.log`),
-    level: 'info',
+    level: 'debug', // Changed from 'info' to 'debug' to capture debug logs
     format: format.combine(format.timestamp(), fileLogFormat)
   })
 ];
@@ -121,9 +123,25 @@ const FileTransport = () => [
 //     ]
 // }
 
+// Adding custom levels configuration with debug level
+const levels = {
+  error: 0,
+  warn: 1,
+  info: 2,
+  debug: 3
+};
+
 export const logger = createLogger({
+  levels,
   defaultMeta: {
     meta: {}
   },
   transports: [...FileTransport(), ...consoleTransport()]
 });
+
+// Add explicit debug method to logger if not already present
+if (!logger.debug) {
+  logger.debug = (message, meta = {}) => {
+    logger.log('debug', message, { meta });
+  };
+}
