@@ -1,4 +1,5 @@
-import { ExchangeTypes, createProducer, createBoundConsumer } from '../helpers/rabbitMQ.js';
+import { ExchangeTypes, createProducer } from '../helpers/rabbitMQProducer.js';
+import { createBoundConsumer, setupPriorityQueue } from '../helpers/rabbitMQConsumer.js';
 import { logger } from '../utils/logger.js';
 import { catchAsync } from '../utils/catchAsync.js';
 import { closeConnection } from '../db/rabbitMQConnection.js';
@@ -12,6 +13,12 @@ import { closeConnection } from '../db/rabbitMQConnection.js';
 export const setupProducer = catchAsync(async () => {
   // Create a producer for a direct exchange
   const directProducer = await createProducer('notifications', ExchangeTypes.DIRECT);
+  logger.info('Direct producer created:', {
+    meta: {
+      exchange: 'notifications',
+      type: ExchangeTypes.DIRECT
+    }
+  });
 
   // Send a message with a specific routing key
   await directProducer.publish(
@@ -28,6 +35,12 @@ export const setupProducer = catchAsync(async () => {
 
   // Create a producer for a topic exchange (useful for hierarchical routing patterns)
   const topicProducer = await createProducer('logs', ExchangeTypes.TOPIC);
+  logger.info('Topic producer created:', {
+    meta: {
+      exchange: 'logs',
+      type: ExchangeTypes.TOPIC
+    }
+  });
 
   // Send a message with a topic routing pattern
   await topicProducer.publish(
@@ -54,6 +67,47 @@ export const setupProducer = catchAsync(async () => {
 
   logger.info('Message sent to fanout exchange');
 
+  // Demonstrate retry mechanism
+  logger.info('Demonstrating publish with retry...');
+  try {
+    await topicProducer.publishWithRetry(
+      {
+        level: 'warning',
+        service: 'api',
+        message: 'Rate limit approaching',
+        timestamp: new Date().toISOString()
+      },
+      'service.api.warning',
+      {}, // Standard options
+      {
+        maxRetries: 3,
+        initialDelay: 100,
+        backoffFactor: 2
+      }
+    );
+
+    logger.info('Message published with retry configuration');
+  } catch (error) {
+    logger.error('Failed to publish message with retry', {
+      meta: { error: error.message }
+    });
+  }
+
+  // Demonstrate scheduled message
+  logger.info('Demonstrating scheduled message...');
+  await directProducer.scheduleMessage(
+    {
+      type: 'reminder',
+      recipient: 'user@example.com',
+      subject: 'Follow-up',
+      body: "Don't forget to complete your profile!"
+    },
+    'email.reminder',
+    5000 // Delay in milliseconds
+  );
+
+  logger.info('Scheduled message for delivery in 5 seconds');
+
   // Clean up
   await directProducer.close();
   await topicProducer.close();
@@ -69,7 +123,7 @@ export const setupProducer = catchAsync(async () => {
  * bound to different exchange types with various routing patterns.
  */
 export const setupConsumers = catchAsync(async () => {
-  // Create a consumer for direct exchange messages
+  // Create a consumer for direct exchange messages with retry configuration
   const emailConsumer = await createBoundConsumer(
     'email_notifications', // Queue name
     'notifications', // Exchange name
@@ -96,7 +150,7 @@ export const setupConsumers = catchAsync(async () => {
       logger.debug('Message metadata', {
         meta: {
           routingKey: originalMessage.fields.routingKey,
-          headers: originalMessage.properties.headers
+          headers: originalMessage.properties.headers || {}
         }
       });
     },
@@ -151,30 +205,17 @@ export const setupConsumers = catchAsync(async () => {
   return { success: true };
 });
 
-/**
- * Example: Running a task queue pattern with RabbitMQ
- *
- * This demonstrates a common pattern of using RabbitMQ for task distribution
- * using a work queue model.
- */
 export const runTaskQueueExample = catchAsync(async () => {
   // Create a task producer that publishes to a direct exchange
   const taskProducer = await createProducer('tasks', ExchangeTypes.DIRECT);
 
-  // Create a consumer for the task queue
-  const taskConsumer = await createBoundConsumer(
-    'task_processor', // Queue name
-    'tasks', // Exchange name
-    'task.process', // Binding key
-    {
-      queueOptions: {
-        durable: true,
-        // Make sure only one message is processed at a time per consumer
-        // This ensures tasks are processed in order and not lost if a worker crashes
-        maxPriority: 10 // Support message priorities (0-10)
-      }
-    }
-  );
+  // Create a priority queue consumer
+  const taskConsumer = await setupPriorityQueue('task_processor', 10, {
+    durable: true
+  });
+
+  // Bind the queue to the exchange
+  await taskConsumer.bindQueue('tasks', 'task.process');
 
   // Start consuming tasks
   await taskConsumer.consume(
@@ -199,18 +240,21 @@ export const runTaskQueueExample = catchAsync(async () => {
 
   // Send some tasks with different priorities
   for (let i = 1; i <= 5; i++) {
+    const priority = Math.floor(Math.random() * 10);
     await taskProducer.publish(
       {
         id: `task-${i}`,
         type: 'data-processing',
         data: { value: Math.random() * 100 },
-        priority: Math.floor(Math.random() * 10)
+        priority
       },
       'task.process',
       {
-        priority: Math.floor(Math.random() * 10) // Random priority 0-9
+        priority // Random priority 0-9
       }
     );
+
+    logger.info(`Task ${i} sent with priority ${priority}`);
   }
 
   logger.info('All tasks sent to the queue');

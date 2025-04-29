@@ -16,6 +16,7 @@ import { httpError } from './utils/httpError.js';
 import { logger } from './utils/logger.js';
 import authRoutes from './routes/authRoutes.js';
 import healthRoutes from './routes/healthRoutes.js';
+import rabbitmqRoutes from './routes/rabbitmqRoutes.js';
 // import promBundle from 'express-prom-bundle';
 // import { register } from 'prom-client';
 // import { trackRequestMetrics, trackConnections } from './middlewares/metricsMiddleware.js';
@@ -154,6 +155,7 @@ server.get('/swagger.json', (req, res) => {
 });
 server.use('/api/v1/health', healthRoutes);
 server.use('/api/v1/auth', authRoutes);
+server.use('/api/v1/rabbitmq', rabbitmqRoutes);
 // server.use('/api/v1/users', userRoutes)
 
 // 4) CATCHES ALL ROUTES THAT ARE NOT DEFINED

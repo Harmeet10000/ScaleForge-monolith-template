@@ -36,7 +36,7 @@ export const protect = catchAsync(async (req, res, next) => {
     logger.debug(`Decoded token: ${JSON.stringify(decoded)}, Current IP: ${currentIp}`);
 
     // Check if IP in token doesn't match the current request IP
-    if (decoded.userIp === currentIp) {
+    if (decoded.userIp !== currentIp) {
       logger.warn(`IP address mismatch: Token IP=${decoded.userIp}, Request IP=${currentIp}`);
       return httpError(next, new Error('Token is not valid for this IP address.'), req, 401);
     }

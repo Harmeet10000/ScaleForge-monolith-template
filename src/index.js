@@ -3,10 +3,12 @@ import app from './app.js';
 import connectDB from './db/connectDB.js';
 import { logger } from './utils/logger.js';
 import { connectRedis, redisClient } from './db/connectRedis.js';
+import mongoose from 'mongoose';
+import { createConnection, closeConnection } from './db/rabbitMQConnection.js';
 
 // --- Connect to Databases ---
 // Use Promise.all to connect concurrently, or connect sequentially if preferred/needed
-Promise.all([connectDB(), connectRedis()])
+Promise.all([connectDB(), connectRedis(), createConnection()])
   .then(() => {
     const server = app.listen(process.env.PORT, () => {
       logger.info(
@@ -14,59 +16,69 @@ Promise.all([connectDB(), connectRedis()])
       );
     });
 
-    process.on('unhandledRejection', (err) => {
-      logger.error('UNHANDLED REJECTION! 💥 Shutting down...', { error: err });
+    // Graceful shutdown function
+    const gracefulShutdown = async (signal) => {
+      logger.info(`${signal} received. Shutting down gracefully...`);
       server.close(async () => {
-        // Check if Redis client is still connected
+        logger.info('HTTP server closed.');
+
+        // Disconnect Redis
         if (redisClient.status === 'ready' || redisClient.status === 'connect') {
           try {
-            await redisClient.quit(); // Waits for pending replies then disconnects
+            await redisClient.quit();
             logger.info('Redis client disconnected gracefully.');
           } catch (redisErr) {
-            logger.error('Error during Redis disconnection on unhandledRejection:', {
-              error: redisErr
-            });
+            logger.error(`Error during Redis disconnection on ${signal}:`, { error: redisErr });
           }
+        } else {
+          logger.warn('Redis client not connected or already disconnected.');
         }
-        process.exit(1);
+
+        // Disconnect MongoDB
+        try {
+          await mongoose.disconnect();
+          logger.info('MongoDB disconnected gracefully.');
+        } catch (dbErr) {
+          logger.error(`Error during MongoDB disconnection on ${signal}:`, { error: dbErr });
+        }
+
+        // Disconnect RabbitMQ
+        try {
+          await closeConnection();
+          logger.info('RabbitMQ disconnected gracefully.');
+        } catch (rabbitmqErr) {
+          logger.error(`Error during RabbitMQ disconnection on ${signal}:`, { error: rabbitmqErr });
+        }
+
+        logger.info('Process terminated!');
+        process.exit(signal === 'unhandledRejection' ? 1 : 0);
       });
+    };
+
+    process.on('unhandledRejection', (err) => {
+      logger.error('UNHANDLED REJECTION! 💥 Shutting down...', { error: err });
+      gracefulShutdown('unhandledRejection');
     });
 
     process.on('SIGTERM', () => {
-      logger.info('SIGTERM received. Shutting down gracefully...');
-      server.close(async () => {
-        // Check if Redis client is still connected
-        if (redisClient.status === 'ready' || redisClient.status === 'connect') {
-          try {
-            await redisClient.quit();
-            logger.info('Redis client disconnected gracefully.');
-          } catch (redisErr) {
-            logger.error('Error during Redis disconnection on SIGTERM:', { error: redisErr });
-          }
-        }
-        logger.info('HTTP server closed. Process terminated!');
-        process.exit(0);
-      });
+      gracefulShutdown('SIGTERM');
     });
+
     // Handle SIGINT (Ctrl+C)
     process.on('SIGINT', () => {
-      logger.info('SIGINT received. Shutting down gracefully...');
-      server.close(async () => {
-        // Check if Redis client is still connected
-        if (redisClient.status === 'ready' || redisClient.status === 'connect') {
-          try {
-            await redisClient.quit();
-            logger.info('Redis client disconnected gracefully.');
-          } catch (redisErr) {
-            logger.error('Error during Redis disconnection on SIGINT:', { error: redisErr });
-          }
-        }
-        logger.info('HTTP server closed. Process terminated!');
-        process.exit(0);
-      });
+      gracefulShutdown('SIGINT');
     });
   })
   .catch((err) => {
     logger.error('Application startup failed!', { error: err });
-    process.exit(1);
+    // Attempt to disconnect Redis, DB, and RabbitMQ even on startup failure
+    Promise.allSettled([
+      redisClient.status === 'ready' || redisClient.status === 'connect'
+        ? redisClient.quit()
+        : Promise.resolve(),
+      mongoose.connection.readyState === 1 ? mongoose.disconnect() : Promise.resolve(),
+      closeConnection().catch(() => Promise.resolve())
+    ]).finally(() => {
+      process.exit(1);
+    });
   });

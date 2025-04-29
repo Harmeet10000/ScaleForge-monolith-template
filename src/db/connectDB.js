@@ -15,7 +15,6 @@ const connectDB = async () => {
 
     // Track connection events
     mongoose.connection.on('disconnected', () => {
-      logger.error('MongoDB disconnected');
       metrics.setDbConnected(false);
     });
 
