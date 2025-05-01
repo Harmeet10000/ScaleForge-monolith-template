@@ -1,57 +1,125 @@
-# Production-Grade Authentication Template
+# 🔐 Production-Grade Authentication Template
 
-A robust, secure, and scalable authentication service template built with Node.js, Express, MongoDB, and Redis. This project follows industry best practices for security, performance, and code organization.
+<div align="center">
+  <img src="https://img.shields.io/badge/node.js-20.14.0-brightgreen" alt="Node.js Version" />
+  <img src="https://img.shields.io/badge/express-4.x-blue" alt="Express Version" />
+  <img src="https://img.shields.io/badge/mongodb-latest-green" alt="MongoDB" />
+  <img src="https://img.shields.io/badge/redis-latest-red" alt="Redis" />
+  <br/>
+  <img src="https://img.shields.io/badge/docker-ready-blue" alt="Docker Ready" />
+  <img src="https://img.shields.io/badge/license-ISC-lightgrey" alt="License" />
+</div>
 
-## 🌟 Features
+<p align="center">A robust, secure, and scalable authentication service template built with Node.js, Express, MongoDB, and Redis.</p>
 
-- **Complete Authentication System**
+<details open>
+<summary>📑 Table of Contents</summary>
 
-  - User registration with email verification
-  - Login with JWT (access and refresh tokens)
-  - Password reset flow
-  - Account confirmation
-  - Session management with Redis
-  - Secure password handling
+- [✨ Features](#-features)
+- [📋 Prerequisites](#-prerequisites)
+- [🚀 Getting Started](#-getting-started)
+- [📊 Project Structure](#-project-structure)
+- [⚙️ Configuration](#️-configuration)
+- [🛠️ Available Scripts](#️-available-scripts)
+- [🔒 Security Features](#-security-features)
+- [🧪 Testing](#-testing)
+- [🤝 Contributing](#-contributing)
+- [📄 License](#-license)
 
-- **Security First Approach**
+</details>
 
-  - CORS protection
-  - Helmet security headers
-  - Rate limiting
-  - MongoDB sanitization
-  - XSS protection
-  - Secure HTTP-only cookies
-  - Input validation
+## ✨ Features
 
-- **Production Ready**
+<details open>
+<summary><b>🔑 Complete Authentication System</b></summary>
+<br/>
 
-  - Dockerized deployment
-  - Webpack bundling
-  - Environment-specific configurations
-  - Comprehensive error handling
-  - API documentation with Swagger
-  - Logging system
-  - Health check endpoints
+- ✅ User registration with email verification
+- ✅ Login with JWT (access and refresh tokens)
+- ✅ Secure password reset flow
+- ✅ Account confirmation mechanism
+- ✅ Session management with Redis
+- ✅ Secure password handling with bcrypt
+- ✅ Refresh token rotation
 
-- **Developer Experience**
-  - Hot reloading in development
-  - Code linting and formatting
-  - Git hooks with Husky
-  - Comprehensive test suite
-  - Conventional commit messages
-  - ESLint and Prettier integration
+</details>
+
+<details open>
+<summary><b>🛡️ Security First Approach</b></summary>
+<br/>
+
+- ✅ CORS protection with configurable origins
+- ✅ Helmet security headers
+- ✅ Intelligent rate limiting
+- ✅ MongoDB sanitization against NoSQL injection
+- ✅ XSS protection with input sanitization
+- ✅ Secure HTTP-only cookies
+- ✅ Comprehensive input validation with Joi
+- ✅ Content security policies
+
+</details>
+
+<details open>
+<summary><b>🏭 Production Ready</b></summary>
+<br/>
+
+- ✅ Dockerized deployment with separate dev/prod configs
+- ✅ Webpack bundling for optimized builds
+- ✅ Environment-specific configurations
+- ✅ Comprehensive error handling
+- ✅ API documentation with Swagger
+- ✅ Structured logging system
+- ✅ Health check endpoints
+- ✅ Database backup to S3
+- ✅ Response compression
+- ✅ RabbitMQ integration for microservice communication
+
+</details>
+
+<details open>
+<summary><b>👨‍💻 Developer Experience</b></summary>
+<br/>
+
+- ✅ Hot reloading in development
+- ✅ Code linting and formatting with ESLint and Prettier
+- ✅ Git hooks with Husky
+- ✅ Comprehensive test suite
+- ✅ Conventional commit messages
+- ✅ Clear project structure
+- ✅ Utility scripts for common tasks
+
+</details>
 
 ## 📋 Prerequisites
 
-- Node.js >= 22.14.0
-- npm >= 10.7.0
-- MongoDB
-- Redis
-- Docker (optional for containerized deployment)
+<table>
+  <tr>
+    <td>Node.js</td>
+    <td>≥ 22.14.0</td>
+  </tr>
+  <tr>
+    <td>npm</td>
+    <td>≥ 10.7.0</td>
+  </tr>
+  <tr>
+    <td>MongoDB</td>
+    <td>Latest</td>
+  </tr>
+  <tr>
+    <td>Redis</td>
+    <td>Latest</td>
+  </tr>
+  <tr>
+    <td>Docker</td>
+    <td>Optional for containerized deployment</td>
+  </tr>
+</table>
 
 ## 🚀 Getting Started
 
-### Installation
+<details open>
+<summary><b>⬇️ Installation</b></summary>
+<br/>
 
 1. **Clone the repository**
 
@@ -103,7 +171,11 @@ AWS_REGION=us-east-1
 S3_PREFIX=mongodb-backups/
 ```
 
-### Running the Application
+</details>
+
+<details>
+<summary><b>▶️ Running the Application</b></summary>
+<br/>
 
 #### Development Mode
 
@@ -118,7 +190,11 @@ npm run build
 npm start
 ```
 
-### Docker Deployment
+</details>
+
+<details>
+<summary><b>🐳 Docker Deployment</b></summary>
+<br/>
 
 #### Development
 
@@ -134,7 +210,11 @@ docker build -t auth-service-prod -f docker/prod/Dockerfile .
 docker run -p 3000:3000 --env-file .env.production auth-service-prod
 ```
 
-### API Documentation
+</details>
+
+<details>
+<summary><b>📝 API Documentation</b></summary>
+<br/>
 
 Once the server is running, access the Swagger documentation at:
 
@@ -142,90 +222,98 @@ Once the server is running, access the Swagger documentation at:
 http://localhost:3000/api-docs
 ```
 
-## 📊 Database Migrations
+</details>
 
-```bash
-# Run migrations in development environment
-npm run migrate:dev
+## 📊 Project Structure
 
-# Run migrations in production environment
-npm run migrate:prod
-```
-
-## 🧪 Testing
-
-```bash
-# Run all tests
-npm test
-
-# Run tests in watch mode
-npm run test:watch
-
-# Run tests with coverage
-npm run test:coverage
-```
-
-## 📁 Project Structure
+<details open>
+<summary><b>🗂️ Folder Organization</b></summary>
 
 ```
 backend/
-├── docker/              # Docker configuration files
-│   ├── dev/             # Development Docker setup
-│   └── prod/            # Production Docker setup
-├── docs/                # API documentation
-├── logs/                # Application logs
-├── nginx/               # Nginx configuration for deployment
-├── scripts/             # Utility scripts
-├── src/                 # Source code
-│   ├── config/          # Configuration files
-│   ├── constant/        # Constants and enums
-│   ├── controllers/     # Request handlers
-│   ├── db/              # Database connection modules
-│   ├── helpers/         # Helper utilities
-│   ├── middlewares/     # Express middlewares
-│   ├── models/          # Mongoose models
-│   ├── repository/      # Data access layer
-│   ├── routes/          # API routes
-│   ├── services/        # Business logic layer
-│   ├── types/           # TypeScript type definitions
-│   ├── utils/           # Utility functions
-│   ├── validations/     # Input validation schemas
-│   ├── app.js           # Express application setup
-│   └── index.js         # Application entry point
-└── test/                # Test files
-    ├── mockData/        # Mock data for tests
-    ├── routes/          # API route tests
-    ├── utils/           # Test utilities
-    └── validations/     # Validation tests
+├── docker/                # Docker configuration files
+│   ├── dev/               # Development Docker setup
+│   └── prod/              # Production Docker setup
+├── docs/                  # API documentation
+│   ├── swagger-output.json
+│   └── swagger.js
+├── logs/                  # Application logs
+├── nginx/                 # Nginx configuration for deployment
+│   ├── http.conf
+│   └── https.conf
+├── scripts/               # Utility scripts
+│   ├── cron.sh
+│   ├── dbBackup.js
+│   └── docker.sh
+├── src/                   # Source code
+│   ├── config/            # Configuration files
+│   ├── constant/          # Constants and enums
+│   ├── controllers/       # Request handlers
+│   ├── db/                # Database connection modules
+│   ├── helpers/           # Helper utilities
+│   ├── middlewares/       # Express middlewares
+│   ├── models/            # Mongoose models
+│   ├── repository/        # Data access layer
+│   ├── routes/            # API routes
+│   ├── services/          # Business logic layer
+│   ├── types/             # TypeScript type definitions
+│   ├── utils/             # Utility functions
+│   ├── validations/       # Input validation schemas
+│   ├── app.js             # Express application setup
+│   └── index.js           # Application entry point
+└── test/                  # Test files
+    ├── mockData/          # Mock data for tests
+    ├── routes/            # API route tests
+    ├── utils/             # Test utilities
+    └── validations/       # Validation tests
 ```
 
-## ⚙️ Configuration Files
+</details>
+
+## ⚙️ Configuration
+
+<details>
+<summary><b>📄 Configuration Files</b></summary>
+<br/>
 
 - **webpack.config.js**: Configures bundling for production deployment
 - **eslint.config.js**: JavaScript linting rules
 - **commitlint.config.js**: Conventional commit message validation
 - **test-runner.js**: Test runner configuration
+- **prometheus.yml**: Prometheus monitoring configuration
 
-## 🛠️ NPM Scripts
+</details>
 
-| Command                 | Description                                  |
-| ----------------------- | -------------------------------------------- |
-| `npm run dev`           | Start the development server with hot reload |
-| `npm run build`         | Build the production bundle                  |
-| `npm run dev:prod`      | Run production build with nodemon            |
-| `npm start`             | Start the production server                  |
-| `npm run swagger`       | Generate Swagger documentation               |
-| `npm test`              | Run the test suite                           |
-| `npm run test:watch`    | Run tests in watch mode                      |
-| `npm run test:coverage` | Run tests with coverage report               |
-| `npm run lint`          | Check code for linting errors                |
-| `npm run lint:fix`      | Fix linting errors automatically             |
-| `npm run format`        | Check code formatting                        |
-| `npm run format:fix`    | Fix formatting issues automatically          |
-| `npm run migrate:dev`   | Run database migrations in development       |
-| `npm run migrate:prod`  | Run database migrations in production        |
+## 🛠️ Available Scripts
+
+<details open>
+<summary><b>📋 NPM Commands</b></summary>
+<br/>
+
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Start the development server with hot reload |
+| `npm run build` | Build the production bundle |
+| `npm run dev:prod` | Run production build with nodemon |
+| `npm start` | Start the production server |
+| `npm run swagger` | Generate Swagger documentation |
+| `npm test` | Run the test suite |
+| `npm run test:watch` | Run tests in watch mode |
+| `npm run test:coverage` | Run tests with coverage report |
+| `npm run lint` | Check code for linting errors |
+| `npm run lint:fix` | Fix linting errors automatically |
+| `npm run format` | Check code formatting |
+| `npm run format:fix` | Fix formatting issues automatically |
+| `npm run migrate:dev` | Run database migrations in development |
+| `npm run migrate:prod` | Run database migrations in production |
+
+</details>
 
 ## 🔒 Security Features
+
+<details open>
+<summary><b>🔐 Security Implementation</b></summary>
+<br/>
 
 - **JWT Authentication**: Secure token-based authentication with refresh token rotation
 - **Password Security**: Bcrypt hashing with appropriate salt rounds
@@ -236,7 +324,66 @@ backend/
 - **MongoDB Sanitization**: Protection against NoSQL injection
 - **XSS Protection**: Sanitization of user input
 
+</details>
+
+## 🧪 Testing
+
+<details>
+<summary><b>🧠 Test Commands</b></summary>
+<br/>
+
+Run all tests:
+
+```bash
+npm test
+```
+
+Run tests in watch mode:
+
+```bash
+npm run test:watch
+```
+
+Generate test coverage report:
+
+```bash
+npm run test:coverage
+```
+
+</details>
+
+## 🔄 API Endpoints
+
+<details>
+<summary><b>🔑 Authentication Routes</b></summary>
+<br/>
+
+- `POST /api/v1/auth/register` - Register new user
+- `PUT /api/v1/auth/confirmation/:token` - Confirm user account
+- `POST /api/v1/auth/login` - Login user
+- `PUT /api/v1/auth/logout` - Logout user
+- `POST /api/v1/auth/refresh-token` - Generate new access token
+- `PUT /api/v1/auth/forgot-password` - Request password reset
+- `PUT /api/v1/auth/reset-password/:token` - Reset password
+- `PUT /api/v1/auth/change-password` - Change password (authenticated)
+
+</details>
+
+<details>
+<summary><b>🩺 Health Routes</b></summary>
+<br/>
+
+- `GET /api/v1/health` - Check API health
+- `GET /api/v1/health/db` - Check database connection
+- `GET /api/v1/health/redis` - Check Redis connection
+
+</details>
+
 ## 🤝 Contributing
+
+<details>
+<summary><b>📜 Contribution Guidelines</b></summary>
+<br/>
 
 1. Fork the repository
 2. Create your feature branch (`git checkout -b feature/amazing-feature`)
@@ -244,10 +391,20 @@ backend/
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
+</details>
+
 ## 📄 License
 
 This project is licensed under the ISC License - see the LICENSE file for details.
 
-## 👤 Author
+---
 
-Harmeet Singh
+<div align="center">
+
+### ⭐ Star this repository if you find it useful! ⭐
+
+Created with ❤️ by [Harmeet Singh](https://github.com/yourusername)
+
+<a href="#top">⬆️ Back to top ⬆️</a>
+
+</div>
