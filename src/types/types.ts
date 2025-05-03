@@ -11,6 +11,7 @@ export type THttpResponse = {
 };
 
 export type THttpError = {
+  name: string;
   success: boolean;
   statusCode: number;
   request: {

@@ -14,17 +14,17 @@ This document provides guidelines and instructions for using GitHub Copilot effe
    - Use single quotes for strings and ensure proper indentation.
    - Avoid unused variables and ensure all code is clean and readable.
 
-<!-- 2. **TypeScript and JavaScript**:
+2. **TypeScript and JavaScript**:
 
    - Use TypeScript for type safety where applicable, as seen in `types/`.
-   - Ensure strict type-checking by adhering to the `tsconfig.json` settings. -->
+   - Ensure strict type-checking by adhering to the `tsconfig.json` settings.
 
-2. **Error Handling**:
+3. **Error Handling**:
 
    - Use the `httpError` utility for consistent error handling.
    - Wrap asynchronous functions with `catchAsync` to handle errors gracefully.
 
-3. **Logging**:
+4. **Logging**:
    - Use the `logger` utility for logging errors, warnings, and information.
    - Ensure logs are meaningful and provide context for debugging.
 

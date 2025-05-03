@@ -1,8 +1,17 @@
+import { Request, Response } from 'express';
 import { EApplicationEnvironment } from '../constant/application.js';
+import { THttpResponse } from '../types/types.js';
 import { logger } from './logger.js';
+import process from 'process';
 
-export const httpResponse = (req, res, responseStatusCode, responseMessage, data = null) => {
-  const response = {
+export const httpResponse = (
+  req: Request,
+  res: Response,
+  responseStatusCode: number,
+  responseMessage: string,
+  data: unknown = null
+): void => {
+  const response: THttpResponse = {
     success: true,
     statusCode: responseStatusCode,
     request: {

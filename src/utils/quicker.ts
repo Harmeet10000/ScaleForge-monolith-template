@@ -1,4 +1,5 @@
 import os from 'os';
+import process from 'process';
 
 export const getSystemHealth = () => ({
   cpuUsage: os.loadavg(),

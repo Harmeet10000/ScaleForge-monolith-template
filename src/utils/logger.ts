@@ -1,18 +1,19 @@
 import util from 'util';
 import 'winston-mongodb';
-import { createLogger, format, transports } from 'winston';
+import { createLogger, format, transports, Logger } from 'winston';
 import { EApplicationEnvironment } from '../constant/application.js';
 import { red, blue, yellow, green, magenta, cyan } from 'colorette';
-// import { ConsoleTransportInstance, FileTransportInstance } from 'winston/lib/winston/transports'
-// import { MongoDBTransportInstance } from 'winston-mongodb'
+import { ConsoleTransportInstance, FileTransportInstance } from 'winston/lib/winston/transports';
+import { MongoDBTransportInstance } from 'winston-mongodb';
 import * as sourceMapSupport from 'source-map-support';
 import path, { dirname } from 'path';
 import { fileURLToPath } from 'url';
+import process from 'process';
 
 // Linking Trace Support
 sourceMapSupport.install();
 
-const colorizeLevel = (level) => {
+const colorizeLevel = (level: string): string => {
   switch (level) {
     case 'ERROR':
       return red(level);
@@ -48,11 +49,11 @@ const consoleLogFormat = format.printf((info) => {
   return customLog;
 });
 
-const consoleTransport = () => {
+const consoleTransport = (): Array<ConsoleTransportInstance> => {
   if (process.env.NODE_ENV === EApplicationEnvironment.DEVELOPMENT) {
     return [
       new transports.Console({
-        level: 'info', // Changed from 'info' to 'debug' to allow debug level logs
+        level: 'info',
         format: format.combine(format.timestamp(), consoleLogFormat)
       })
     ];
@@ -63,10 +64,7 @@ const consoleTransport = () => {
 
 const fileLogFormat = format.printf((info) => {
   const { level, message, timestamp, meta = {} } = info;
-
-  const logMeta = {};
-
-  // Type guard to ensure meta is an object before using Object.entries
+  const logMeta: Record<string, unknown> = {};
   if (meta && typeof meta === 'object' && !Array.isArray(meta)) {
     for (const [key, value] of Object.entries(meta)) {
       if (value instanceof Error) {
@@ -80,50 +78,45 @@ const fileLogFormat = format.printf((info) => {
       }
     }
   }
-
   const logData = {
     level: level.toUpperCase(),
     message,
     timestamp,
     meta: logMeta
   };
-
   return JSON.stringify(logData, null, 4);
 });
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-const FileTransport = () => [
+const FileTransport = (): Array<FileTransportInstance> => [
   new transports.File({
-    filename: path.join(__dirname, '../', '../', 'logs', `${process.env.NODE_ENV}.log`),
-    level: 'debug', // Changed from 'info' to 'debug' to capture debug logs
+    filename: path.join(
+      __dirname,
+      '../',
+      '../',
+      'logs',
+      `${process.env.NODE_ENV || 'development'}.log`
+    ),
+    level: 'info',
     format: format.combine(format.timestamp(), fileLogFormat)
   })
 ];
 
-// const MongodbTransport = () => {
-//     // Ensure DATABASE exists and is a string before using it
-//     if (!config.DATABASE) {
-//         logger.error('Database URL is undefined or null')
-//         return []
-//     }
+const MongodbTransport = (): Array<MongoDBTransportInstance> => [
+  new transports.MongoDB({
+    level: 'info',
+    db: process.env.DATABASE as string,
+    metaKey: 'meta',
+    expireAfterSeconds: 3600 * 24 * 30,
+    options: {
+      useUnifiedTopology: true
+    },
+    collection: 'application-logs'
+  })
+];
 
-//     return [
-//         new transports.MongoDB({
-//             level: 'info',
-//             db: String(config.DATABASE),
-//             metaKey: 'meta',
-//             expireAfterSeconds: 3600 * 24 * 30,
-//             options: {
-//                 useUnifiedTopology: true
-//             },
-//             collection: 'application-logs'
-//         })
-//     ]
-// }
-
-// Adding custom levels configuration with debug level
 const levels = {
   error: 0,
   warn: 1,
@@ -131,17 +124,10 @@ const levels = {
   debug: 3
 };
 
-export const logger = createLogger({
+export const logger: Logger = createLogger({
   levels,
   defaultMeta: {
     meta: {}
   },
-  transports: [...FileTransport(), ...consoleTransport()]
+  transports: [...FileTransport(), ...consoleTransport(), ...MongodbTransport()]
 });
-
-// Add explicit debug method to logger if not already present
-if (!logger.debug) {
-  logger.debug = (message, meta = {}) => {
-    logger.log('debug', message, { meta });
-  };
-}
