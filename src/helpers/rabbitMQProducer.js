@@ -99,7 +99,7 @@ export const publishWithRetry = catchAsync(
 
     let attempt = 0;
     let delay = initialDelay;
-    let state = producerState;
+    const state = producerState;
 
     while (attempt <= maxRetries) {
       try {

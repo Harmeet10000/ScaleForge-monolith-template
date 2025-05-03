@@ -1,29 +1,47 @@
 // filepath: /home/harmeet/Desktop/Projects/Production-grade-Auth-template/backend/test/routes/authRoutes.test.js
-import { describe, it, assert, mock } from '../utils/testUtils.js';
+import { describe, it, assert, mock } from 'node:test';
+
+// Set a fake Resend API key for testing
+  const resend = new Resend("re_dPQCac4W_8N4GP3V3eGJE4trqEZsLnt3Q");
+
+
+// Import everything
 import express from 'express';
+import * as emailHelper from '../../src/helpers/email.js';
 import authRoutes from '../../src/routes/authRoutes.js';
 import * as authController from '../../src/controllers/authController.js';
 import * as authMiddleware from '../../src/middlewares/authMiddleware.js';
 
-// Mock the controller methods and middleware
-Object.keys(authController).forEach((key) => {
-  if (typeof authController[key] === 'function') {
-    mock.method(authController, key, (req, res, next) => {
-      res.status(200).json({ method: key });
-    });
-  }
-});
-
-mock.method(authMiddleware, 'protect', (req, res, next) => {
-  req.user = { _id: 'mock-user-id' };
-  next();
-});
+// Mock the sendEmail function after importing
+mock.fn(emailHelper.sendEmail, async () => true);
 
 describe('Auth Routes', () => {
+  // Create controller method mocks
+  const controllerMocks = {};
+  Object.keys(authController).forEach((key) => {
+    if (typeof authController[key] === 'function') {
+      controllerMocks[key] = mock.fn((req, res, next) => {
+        res.status(200).json({ method: key });
+      });
+    }
+  });
+
+  // Create middleware mock
+  const protectMock = mock.fn((req, res, next) => {
+    req.user = { _id: 'mock-user-id' };
+    next();
+  });
   let app;
   let request;
 
   it('should setup before each test', () => {
+    // Apply the mocks for this test
+    Object.keys(controllerMocks).forEach(key => {
+      mock.method(authController, key, controllerMocks[key]);
+    });
+    
+    mock.method(authMiddleware, 'protect', protectMock);
+    
     app = express();
     app.use(express.json());
     app.use('/api/v1/auth', authRoutes);
@@ -97,4 +115,6 @@ describe('Auth Routes', () => {
     // Check if the protect middleware is applied
     assert.ok(changePasswordRoute.route.stack.length > 1);
   });
+  
+  // Note: Node's test runner automatically resets mocks between tests
 });

@@ -29,7 +29,7 @@ export const initializeConsumer = catchAsync(async (consumerState) => {
 
   const connection = await getConnection();
   const channel = await connection.createChannel();
-  let queueExists = consumerState.queueExists;
+  let { queueExists } = consumerState;
 
   // Check if queue already exists to avoid modifying existing configuration
   try {

@@ -12,7 +12,7 @@ import {
   hashPassword,
   verifyToken
 } from '../helpers/generalHelper.js';
-import { sendEmail } from '../helpers/email.js';
+import { Resendmail } from '../helpers/email.js';
 import { logger } from '../utils/logger.js';
 import { httpError } from '../utils/httpError.js';
 import { EUserRole } from '../constant/application.js';
@@ -112,7 +112,7 @@ export const registerUser = async (userData) => {
   const subject = 'Confirm Your Account';
   const text = `Hey ${name}, Please confirm your account by clicking on the link below\n\n${confirmationUrl}`;
 
-  sendEmail(to, subject, text).catch((err) => {
+  Resendmail(to, subject, text).catch((err) => {
     logger.error(`EMAIL_SERVICE`, {
       meta: err
     });
@@ -148,7 +148,7 @@ export const confirmAccount = async (token, code, req, next) => {
   const subject = 'Account Confirmed';
   const text = `Your account has been confirmed`;
 
-  sendEmail(to, subject, text).catch((err) => {
+  Resendmail(to, subject, text).catch((err) => {
     logger.error(`EMAIL_SERVICE`, {
       meta: err
     });
@@ -344,7 +344,7 @@ export const requestPasswordReset = async (emailAddress, req, next) => {
   const subject = 'Account Password Reset Requested';
   const text = `Hey ${user.name}, Please reset your account password by clicking on the link below\n\nLink will expire within 15 Minutes\n\n${resetUrl}`;
 
-  sendEmail(to, subject, text).catch((err) => {
+  Resendmail(to, subject, text).catch((err) => {
     logger.error(`EMAIL_SERVICE`, {
       meta: err
     });
@@ -392,7 +392,7 @@ export const resetUserPassword = async (token, newPassword, req, next) => {
   const subject = 'Account Password Reset';
   const text = `Hey ${user.name}, You account password has been reset successfully.`;
 
-  sendEmail(to, subject, text).catch((err) => {
+  Resendmail(to, subject, text).catch((err) => {
     logger.error(`EMAIL_SERVICE`, {
       meta: err
     });
@@ -430,7 +430,7 @@ export const changeUserPassword = async (userId, oldPassword, newPassword, req, 
   const subject = 'Password Changed';
   const text = `Hey ${user.name}, You account password has been changed successfully.`;
 
-  sendEmail(to, subject, text).catch((err) => {
+  Resendmail(to, subject, text).catch((err) => {
     logger.error(`EMAIL_SERVICE`, {
       meta: err
     });
