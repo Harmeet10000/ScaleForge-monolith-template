@@ -290,22 +290,22 @@ backend/
 <summary><b>📋 NPM Commands</b></summary>
 <br/>
 
-| Command | Description |
-|---------|-------------|
-| `npm run dev` | Start the development server with hot reload |
-| `npm run build` | Build the production bundle |
-| `npm run dev:prod` | Run production build with nodemon |
-| `npm start` | Start the production server |
-| `npm run swagger` | Generate Swagger documentation |
-| `npm test` | Run the test suite |
-| `npm run test:watch` | Run tests in watch mode |
-| `npm run test:coverage` | Run tests with coverage report |
-| `npm run lint` | Check code for linting errors |
-| `npm run lint:fix` | Fix linting errors automatically |
-| `npm run format` | Check code formatting |
-| `npm run format:fix` | Fix formatting issues automatically |
-| `npm run migrate:dev` | Run database migrations in development |
-| `npm run migrate:prod` | Run database migrations in production |
+| Command                 | Description                                  |
+| ----------------------- | -------------------------------------------- |
+| `npm run dev`           | Start the development server with hot reload |
+| `npm run build`         | Build the production bundle                  |
+| `npm run dev:prod`      | Run production build with nodemon            |
+| `npm start`             | Start the production server                  |
+| `npm run swagger`       | Generate Swagger documentation               |
+| `npm test`              | Run the test suite                           |
+| `npm run test:watch`    | Run tests in watch mode                      |
+| `npm run test:coverage` | Run tests with coverage report               |
+| `npm run lint`          | Check code for linting errors                |
+| `npm run lint:fix`      | Fix linting errors automatically             |
+| `npm run format`        | Check code formatting                        |
+| `npm run format:fix`    | Fix formatting issues automatically          |
+| `npm run migrate:dev`   | Run database migrations in development       |
+| `npm run migrate:prod`  | Run database migrations in production        |
 
 </details>
 

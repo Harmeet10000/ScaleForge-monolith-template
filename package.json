@@ -38,7 +38,7 @@
   },
   "homepage": "https://github.com/Harmeet10000/ts-backend-production-template#readme",
   "lint-staged": {
-    "*.js": [
+    "*.ts": [
       "npm run lint:fix",
       "npm run format:fix"
     ]
@@ -96,6 +96,7 @@
     "express-prom-bundle": "8.0.0",
     "express-rate-limit": "^7.5.0",
     "helmet": "^8.0.0",
+    "hpp": "0.2.3",
     "ioredis": "5.6.1",
     "joi": "^17.13.3",
     "jsonwebtoken": "^9.0.2",

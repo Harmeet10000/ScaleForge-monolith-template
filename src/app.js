@@ -4,7 +4,7 @@ import helmet from 'helmet';
 import mongoSanitize from 'express-mongo-sanitize';
 import compression from 'compression';
 import xss from 'xss-clean';
-// import hpp from "hpp";
+import hpp from 'hpp';
 import cors from 'cors';
 import globalErrorHandler from './middlewares/globalErrorHandler.js';
 import cookieParser from 'cookie-parser';
@@ -19,7 +19,6 @@ import healthRoutes from './routes/healthRoutes.js';
 import rabbitmqRoutes from './routes/rabbitmqRoutes.js';
 // import promBundle from 'express-prom-bundle';
 // import { register } from 'prom-client';
-// import { trackRequestMetrics, trackConnections } from './middlewares/metricsMiddleware.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -37,6 +36,7 @@ const __dirname = path.dirname(__filename);
 //     }
 //   }
 // });
+
 // Read the swagger document - with proper error handling
 let swaggerDocument;
 try {
@@ -75,7 +75,7 @@ server.use(
       // Compress responses larger than 500 bytes
       return compression.filter(req, res);
     },
-    threshold: 50 * 1000 // Only compress responses above 50KB
+    threshold: 15 * 1000 // Only compress responses above 5KB
   })
 );
 
@@ -103,12 +103,11 @@ server.use(mongoSanitize());
 server.use(xss());
 
 // Prevent parameter pollution
-// server.use(
-//   hpp({
-//     whitelist: [
-//     ],
-//   })
-// );
+server.use(
+  hpp({
+    whitelist: []
+  })
+);
 
 const corsOptions = {
   origin: [process.env.FRONTEND_URL],
@@ -121,10 +120,6 @@ server.use(cors(corsOptions));
 
 // Apply Prometheus metrics middleware - must be before routes
 // server.use(metricsMiddleware);
-
-// // Apply custom metrics middleware
-// server.use(trackRequestMetrics);
-// server.use(trackConnections);
 
 // 3) ROUTES
 // Swagger setup

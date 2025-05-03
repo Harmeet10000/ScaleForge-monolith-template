@@ -42,7 +42,7 @@ export const login = catchAsync(async (req, res, next) => {
   res
     .cookie('accessToken', accessToken, {
       path: '/api/v1',
-      domain,
+      // domain,
       sameSite: 'strict',
       maxAge: 1000 * 3600,
       httpOnly: true,
@@ -50,7 +50,7 @@ export const login = catchAsync(async (req, res, next) => {
     })
     .cookie('refreshToken', refreshToken, {
       path: '/api/v1',
-      domain,
+      // domain,
       sameSite: 'strict',
       maxAge: 1000 * 3600,
       httpOnly: true,

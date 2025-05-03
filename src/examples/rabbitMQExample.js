@@ -1,5 +1,9 @@
 import { ExchangeTypes, createProducer } from '../helpers/rabbitMQProducer.js';
-import { createBoundConsumer, setupPriorityQueue } from '../helpers/rabbitMQConsumer.js';
+import {
+  createBoundConsumer,
+  setupPriorityQueue,
+  createConsumer
+} from '../helpers/rabbitMQConsumer.js';
 import { logger } from '../utils/logger.js';
 import { catchAsync } from '../utils/catchAsync.js';
 import { closeConnection } from '../db/rabbitMQConnection.js';
@@ -8,7 +12,7 @@ import { closeConnection } from '../db/rabbitMQConnection.js';
  * Example: Setting up a RabbitMQ producer
  *
  * This demonstrates creating and using a producer to send messages to different exchanges
- * with various routing patterns.
+ * with various routing patterns and handling backpressure.
  */
 export const setupProducer = catchAsync(async () => {
   // Create a producer for a direct exchange
@@ -28,7 +32,11 @@ export const setupProducer = catchAsync(async () => {
       subject: 'Welcome!',
       body: 'Welcome to our platform.'
     },
-    'email.welcome' // Routing key
+    'email.welcome', // Routing key
+    {
+      persistent: true,
+      priority: 5 // Medium priority
+    }
   );
 
   logger.info('Message sent to direct exchange');
@@ -50,7 +58,13 @@ export const setupProducer = catchAsync(async () => {
       message: 'Authentication failed',
       timestamp: new Date().toISOString()
     },
-    'service.auth.error' // Topic pattern: service.name.level
+    'service.auth.error', // Topic pattern: service.name.level
+    {
+      headers: {
+        'x-source': 'auth-service',
+        'x-correlation-id': '12345'
+      }
+    }
   );
 
   logger.info('Message sent to topic exchange');
@@ -67,7 +81,7 @@ export const setupProducer = catchAsync(async () => {
 
   logger.info('Message sent to fanout exchange');
 
-  // Demonstrate retry mechanism
+  // Demonstrate retry mechanism with exponential backoff
   logger.info('Demonstrating publish with retry...');
   try {
     await topicProducer.publishWithRetry(
@@ -78,7 +92,9 @@ export const setupProducer = catchAsync(async () => {
         timestamp: new Date().toISOString()
       },
       'service.api.warning',
-      {}, // Standard options
+      {
+        headers: { 'x-critical': 'true' }
+      },
       {
         maxRetries: 3,
         initialDelay: 100,
@@ -93,7 +109,7 @@ export const setupProducer = catchAsync(async () => {
     });
   }
 
-  // Demonstrate scheduled message
+  // Demonstrate scheduled message delivery
   logger.info('Demonstrating scheduled message...');
   await directProducer.scheduleMessage(
     {
@@ -103,7 +119,12 @@ export const setupProducer = catchAsync(async () => {
       body: "Don't forget to complete your profile!"
     },
     'email.reminder',
-    5000 // Delay in milliseconds
+    5000, // Delay in milliseconds
+    {
+      headers: {
+        'x-scheduled-by': 'example-service'
+      }
+    }
   );
 
   logger.info('Scheduled message for delivery in 5 seconds');
@@ -120,39 +141,46 @@ export const setupProducer = catchAsync(async () => {
  * Example: Setting up RabbitMQ consumers
  *
  * This demonstrates creating and using consumers to receive messages from queues
- * bound to different exchange types with various routing patterns.
+ * bound to different exchange types with various routing patterns and retry mechanisms.
  */
 export const setupConsumers = catchAsync(async () => {
-  // Create a consumer for direct exchange messages with retry configuration
-  const emailConsumer = await createBoundConsumer(
-    'email_notifications', // Queue name
-    'notifications', // Exchange name
-    'email.*', // Binding pattern (matches email.welcome, email.reminder, etc.)
-    {
-      queueOptions: {
-        durable: true,
-        deadLetterExchange: 'dead_letters' // Send failed messages to dead letter exchange
-      }
-    }
-  );
+  // Create a consumer with custom retry configuration
+  const emailConsumer = await createConsumer('email_notifications', {
+    durable: true,
+    maxPriority: 10
+  });
+
+  // Configure retry mechanism with custom delays
+  const initializedState = emailConsumer.getState();
+  initializedState.retryConfig = {
+    enabled: true,
+    maxRetries: 3,
+    delays: [1000, 3000, 10000] // 1s, 3s, 10s
+  };
+
+  // Bind to exchange
+  await emailConsumer.bindQueue('notifications', 'email.*');
+  await emailConsumer.setupRetryQueue();
 
   // Start consuming messages
   await emailConsumer.consume(
     async (message, originalMessage) => {
       logger.info(`Processing email notification: ${message.subject}`, {
-        meta: { recipient: message.recipient }
-      });
-
-      // Process the message (in a real application, this would send an email)
-      // If an error occurs, the message will be nacked and requeued by default
-
-      // Example of accessing message properties from the original amqplib message
-      logger.debug('Message metadata', {
         meta: {
-          routingKey: originalMessage.fields.routingKey,
-          headers: originalMessage.properties.headers || {}
+          recipient: message.recipient,
+          priority: originalMessage.properties.priority || 0
         }
       });
+
+      // Simulate processing the message
+      await new Promise((resolve) => setTimeout(resolve, 200));
+
+      // Simulate random failures for retry demonstration (30% failure rate)
+      if (Math.random() < 0.3) {
+        throw new Error('Simulated random failure in email processing');
+      }
+
+      logger.info(`Email processed successfully: ${message.subject}`);
     },
     {
       prefetch: 5 // Process 5 messages at a time
@@ -163,15 +191,25 @@ export const setupConsumers = catchAsync(async () => {
   const errorLogConsumer = await createBoundConsumer(
     'error_logs', // Queue name
     'logs', // Exchange name
-    'service.*.error' // Topic pattern: matches any service's error logs
+    'service.*.error', // Topic pattern: matches any service's error logs
+    {
+      queueOptions: {
+        durable: true
+      }
+    }
   );
 
-  await errorLogConsumer.consume(async (message) => {
+  await errorLogConsumer.consume(async (message, originalMessage) => {
     logger.info(`Processing error log from ${message.service}`, {
-      meta: { level: message.level, message: message.message }
+      meta: {
+        level: message.level,
+        message: message.message,
+        headers: originalMessage.properties.headers || {}
+      }
     });
 
     // Process the error log
+    await new Promise((resolve) => setTimeout(resolve, 100));
   });
 
   // Create a consumer for fanout exchange messages (broadcasts)
@@ -187,27 +225,35 @@ export const setupConsumers = catchAsync(async () => {
     });
 
     // Process the system alert
+    await new Promise((resolve) => setTimeout(resolve, 50));
   });
 
   logger.info('All consumers set up and ready to receive messages');
 
   // In a real application, you wouldn't close these right away
   // This is just for demonstration purposes
-  // After 10 seconds, stop all consumers
+  // After 15 seconds, stop all consumers
   setTimeout(async () => {
+    logger.info('Stopping consumers...');
     await emailConsumer.close();
     await errorLogConsumer.close();
     await systemAlertConsumer.close();
     await closeConnection();
     logger.info('All consumers closed');
-  }, 10000);
+  }, 15000);
 
   return { success: true };
 });
 
+/**
+ * Example: Priority Queue Implementation
+ *
+ * This demonstrates creating and using a priority queue for task processing
+ * where higher priority tasks are processed first.
+ */
 export const runTaskQueueExample = catchAsync(async () => {
   // Create a task producer that publishes to a direct exchange
-  const taskProducer = await createProducer('tasks', ExchangeTypes.DIRECT);
+  const taskProducer = await createProducer('tasks', ExchangeTypes.DIRECT, true);
 
   // Create a priority queue consumer
   const taskConsumer = await setupPriorityQueue('task_processor', 10, {
@@ -219,51 +265,200 @@ export const runTaskQueueExample = catchAsync(async () => {
 
   // Start consuming tasks
   await taskConsumer.consume(
-    async (task) => {
+    async (task, originalMessage) => {
+      const priority = originalMessage.properties.priority || 0;
+
       logger.info(`Processing task: ${task.id}`, {
         meta: {
           type: task.type,
-          priority: task.priority
+          priority,
+          processingTime: task.processingTime
         }
       });
 
-      // Simulate task processing time
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      // Simulate task processing time based on complexity
+      await new Promise((resolve) => setTimeout(resolve, task.processingTime));
 
-      // Simulate task result
-      logger.info(`Task ${task.id} completed`);
+      // Simulate occasional task failures based on complexity (harder tasks fail more often)
+      const failureChance = task.complexity / 10;
+      if (Math.random() < failureChance) {
+        throw new Error(`Task ${task.id} failed during processing`);
+      }
+
+      // Task completed successfully
+      logger.info(`Task ${task.id} completed successfully`, {
+        meta: { priority }
+      });
     },
     {
-      prefetch: 1 // Process only one task at a time
+      prefetch: 2 // Process up to 2 tasks at a time
     }
   );
 
-  // Send some tasks with different priorities
-  for (let i = 1; i <= 5; i++) {
-    const priority = Math.floor(Math.random() * 10);
-    await taskProducer.publish(
-      {
-        id: `task-${i}`,
-        type: 'data-processing',
-        data: { value: Math.random() * 100 },
-        priority
-      },
-      'task.process',
-      {
-        priority // Random priority 0-9
-      }
-    );
+  // Send tasks with different priorities
+  const tasks = [
+    {
+      id: 'task-1',
+      type: 'data-processing',
+      data: { value: 42 },
+      priority: 9, // High priority
+      complexity: 3,
+      processingTime: 300
+    },
+    {
+      id: 'task-2',
+      type: 'report-generation',
+      data: { reportId: 'daily-123' },
+      priority: 5, // Medium priority
+      complexity: 5,
+      processingTime: 500
+    },
+    {
+      id: 'task-3',
+      type: 'data-cleanup',
+      data: { table: 'logs' },
+      priority: 2, // Low priority
+      complexity: 2,
+      processingTime: 200
+    },
+    {
+      id: 'task-4',
+      type: 'heavy-computation',
+      data: { algorithm: 'matrix-multiply' },
+      priority: 7, // High-medium priority
+      complexity: 8,
+      processingTime: 800
+    },
+    {
+      id: 'task-5',
+      type: 'notification',
+      data: { userId: 'user-123' },
+      priority: 8, // High priority
+      complexity: 1,
+      processingTime: 100
+    }
+  ];
 
-    logger.info(`Task ${i} sent with priority ${priority}`);
+  // Publish tasks in reverse order to demonstrate priority queue behavior
+  for (const task of tasks) {
+    await taskProducer.publish(task, 'task.process', {
+      priority: task.priority,
+      headers: {
+        'x-task-type': task.type,
+        'x-task-complexity': task.complexity.toString()
+      }
+    });
+
+    logger.info(`Task ${task.id} sent with priority ${task.priority}`);
   }
 
-  logger.info('All tasks sent to the queue');
+  logger.info('All tasks sent to the queue - will be processed in priority order');
 
-  // Clean up after 5 seconds
+  // Allow time for tasks to be processed
+  const processingTime = 8000; // 8 seconds
+  logger.info(`Waiting ${processingTime / 1000} seconds for tasks to be processed...`);
+
+  // Clean up after processing time
   setTimeout(async () => {
     await taskProducer.close();
     await taskConsumer.close();
     logger.info('Task queue example completed');
+  }, processingTime);
+
+  return { success: true, message: 'Priority task queue demonstration in progress' };
+});
+
+/**
+ * Example: Dead Letter Exchange Implementation
+ *
+ * This demonstrates handling failed messages with a Dead Letter Exchange (DLX),
+ * where messages that fail processing are sent to a separate queue for analysis.
+ */
+export const deadLetterExchangeExample = catchAsync(async () => {
+  // Create an exchange for our main messages
+  const mainProducer = await createProducer('orders', ExchangeTypes.DIRECT);
+
+  // Create a consumer with explicit DLX configuration
+  const orderConsumer = await createConsumer('order_processing', {
+    durable: true,
+    // Specify our own dead letter exchange
+    deadLetterExchange: 'orders.dlx',
+    // Route failed messages with the original routing key
+    deadLetterRoutingKey: 'failed'
+  });
+
+  // Bind to the main exchange
+  await orderConsumer.bindQueue('orders', 'new.order');
+
+  // Create a consumer for the dead letter queue
+  const dlxConsumer = await createConsumer('failed_orders', {
+    durable: true
+  });
+
+  // Bind to the dead letter exchange
+  await dlxConsumer.bindQueue('orders.dlx', 'failed');
+
+  // Start consuming messages from the main queue
+  await orderConsumer.consume(
+    async (message, originalMessage) => {
+      logger.info(`Processing order: ${message.orderId}`, {
+        meta: { customer: message.customer }
+      });
+
+      // Simulate processing
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      // Deliberately fail orders over $1000 to demonstrate DLX
+      if (message.amount > 1000) {
+        throw new Error('Order requires manual review due to high amount');
+      }
+
+      logger.info(`Order ${message.orderId} processed successfully`);
+    },
+    {
+      // Important: we don't want to requeue directly, we want to use DLX
+      requeue: false
+    }
+  );
+
+  // Start consuming messages from the DLX queue
+  await dlxConsumer.consume(async (message, originalMessage) => {
+    logger.info(`Analyzing failed order: ${message.orderId}`, {
+      meta: {
+        amount: message.amount,
+        headers: originalMessage.properties.headers || {}
+      }
+    });
+
+    // In a real scenario, you might:
+    // - Log details for manual review
+    // - Send notifications to staff
+    // - Route to specialized processing
+    logger.info(`Order ${message.orderId} marked for manual review`);
+  });
+
+  // Send some test orders
+  const orders = [
+    { orderId: 'ORD-001', customer: 'customer1', items: ['item1', 'item2'], amount: 250 },
+    { orderId: 'ORD-002', customer: 'customer2', items: ['item3'], amount: 1200 },
+    { orderId: 'ORD-003', customer: 'customer3', items: ['item1', 'item4'], amount: 800 },
+    { orderId: 'ORD-004', customer: 'customer4', items: ['item2', 'item5', 'item6'], amount: 1500 }
+  ];
+
+  // Publish orders
+  for (const order of orders) {
+    await mainProducer.publish(order, 'new.order');
+    logger.info(`Order ${order.orderId} sent for processing, amount: $${order.amount}`);
+  }
+
+  logger.info('All orders published - some will be processed, some will go to DLX');
+
+  // Clean up after allowing time for processing
+  setTimeout(async () => {
+    await mainProducer.close();
+    await orderConsumer.close();
+    await dlxConsumer.close();
+    logger.info('Dead Letter Exchange example completed');
   }, 5000);
 
   return { success: true };

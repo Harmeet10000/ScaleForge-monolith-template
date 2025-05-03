@@ -1,171 +1,154 @@
 import { getConnection } from '../db/rabbitMQConnection.js';
 import { logger } from '../utils/logger.js';
 import { ExchangeTypes } from './rabbitMQProducer.js';
+import { catchAsync } from '../utils/catchAsync.js';
 
-export class RabbitMQConsumer {
-  constructor(queueName, queueOptions = {}) {
-    this.queueName = queueName;
-    this.queueOptions = {
-      durable: true,
-      maxPriority: 10,
-      ...queueOptions
-    };
-    this.channel = null;
-    this.consumerTag = null;
-    this.retryConfig = {
-      enabled: true,
-      maxRetries: 5,
-      delays: [1000, 5000, 10000, 30000, 60000] // Increasingly delayed retries in ms
-    };
-    this.queueExists = false;
+// Create a consumer state object
+export const createConsumerState = (queueName, queueOptions = {}) => ({
+  queueName,
+  queueOptions: {
+    durable: true,
+    maxPriority: 10,
+    ...queueOptions
+  },
+  channel: null,
+  consumerTag: null,
+  retryConfig: {
+    enabled: true,
+    maxRetries: 5,
+    delays: [1000, 5000, 10000, 30000, 60000] // Increasingly delayed retries in ms
+  },
+  queueExists: false
+});
+
+// Initialize the consumer's channel and queue
+export const initializeConsumer = catchAsync(async (consumerState) => {
+  if (consumerState.channel) {
+    return consumerState;
   }
 
-  async initialize() {
-    if (this.channel) {
-      return;
-    }
+  const connection = await getConnection();
+  const channel = await connection.createChannel();
+  let queueExists = consumerState.queueExists;
 
-    try {
-      const connection = await getConnection();
-      this.channel = await connection.createChannel();
-
-      // Check if queue already exists to avoid modifying existing configuration
-      try {
-        await this.channel.checkQueue(this.queueName);
-        this.queueExists = true;
-        logger.info('Queue already exists, using existing configuration', {
-          meta: {
-            queueName: this.queueName
-          }
-        });
-      } catch (checkError) {
-        // Queue doesn't exist, will be created with provided options
-
-        this.queueExists = false;
+  // Check if queue already exists to avoid modifying existing configuration
+  try {
+    await channel.checkQueue(consumerState.queueName);
+    queueExists = true;
+    logger.info('Queue already exists, using existing configuration', {
+      meta: {
+        queueName: consumerState.queueName
       }
-
-      // If queue exists, we assert it without changing its properties
-      // If it doesn't exist, create it with the specified options
-      await this.channel.assertQueue(this.queueName, this.queueExists ? {} : this.queueOptions);
-
-      logger.info('RabbitMQ consumer initialized', {
-        meta: {
-          queueName: this.queueName,
-          queueOptions: this.queueExists ? 'using existing configuration' : this.queueOptions
-        }
-      });
-    } catch (error) {
-      logger.error('Failed to initialize RabbitMQ consumer', {
-        meta: {
-          error: error.message,
-          queueName: this.queueName
-        }
-      });
-      throw error;
-    }
+    });
+  } catch (checkError) {
+    // Queue doesn't exist, will be created with provided options
+    queueExists = false;
   }
 
-  async bindQueue(exchangeName, bindingKey = '', bindingOptions = {}) {
-    if (!this.channel) {
-      await this.initialize();
+  // If queue exists, we assert it without changing its properties
+  // If it doesn't exist, create it with the specified options
+  await channel.assertQueue(consumerState.queueName, queueExists ? {} : consumerState.queueOptions);
+
+  logger.info('RabbitMQ consumer initialized', {
+    meta: {
+      queueName: consumerState.queueName,
+      queueOptions: queueExists ? 'using existing configuration' : consumerState.queueOptions
     }
+  });
 
-    try {
-      await this.channel.bindQueue(this.queueName, exchangeName, bindingKey, bindingOptions);
+  return { ...consumerState, channel, queueExists };
+});
 
-      logger.info('Queue bound to exchange', {
-        meta: {
-          queueName: this.queueName,
-          exchangeName,
-          bindingKey
-        }
-      });
-    } catch (error) {
-      logger.error('Failed to bind queue to exchange', {
-        meta: {
-          error: error.message,
-          queueName: this.queueName,
-          exchangeName,
-          bindingKey
-        }
-      });
-      throw error;
-    }
-  }
+// Bind the queue to an exchange
+export const bindQueue = catchAsync(
+  async (consumerState, exchangeName, bindingKey = '', bindingOptions = {}) => {
+    // Initialize if not already initialized
+    const state = consumerState.channel ? consumerState : await initializeConsumer(consumerState);
 
-  async setupRetryQueue() {
-    if (!this.retryConfig.enabled) {
-      return;
-    }
+    await state.channel.bindQueue(state.queueName, exchangeName, bindingKey, bindingOptions);
 
-    try {
-      // Don't modify queue configuration if it already exists
-      if (this.queueExists) {
-        logger.info('Queue already exists, skipping retry queue setup', {
-          meta: {
-            queueName: this.queueName
-          }
-        });
-        return;
+    logger.info('Queue bound to exchange', {
+      meta: {
+        queueName: state.queueName,
+        exchangeName,
+        bindingKey
       }
+    });
 
-      // Check if deadLetterExchange is already specified in queue options
-      const deadLetterExchange = this.queueOptions.deadLetterExchange || `${this.queueName}.dlx`;
-      const retryExchange = `${this.queueName}.retry`;
-      const retryQueue = `${this.queueName}.retry`;
+    return state;
+  }
+);
 
-      await this.channel.assertExchange(deadLetterExchange, ExchangeTypes.DIRECT, {
-        durable: true
-      });
-      await this.channel.assertExchange(retryExchange, ExchangeTypes.DIRECT, { durable: true });
+// Setup retry mechanism for the queue
+export const setupRetryQueue = catchAsync(async (consumerState) => {
+  // Initialize if not already initialized
+  const state = consumerState.channel ? consumerState : await initializeConsumer(consumerState);
 
-      // Set up the main queue with DLX configuration
-      await this.channel.assertQueue(this.queueName, {
-        ...this.queueOptions,
-        deadLetterExchange
-      });
-
-      // Set up the retry queue with TTL and DLX back to the main exchange
-      await this.channel.assertQueue(retryQueue, {
-        durable: true,
-        deadLetterExchange: '',
-        deadLetterRoutingKey: this.queueName
-      });
-
-      await this.channel.bindQueue(retryQueue, retryExchange, '');
-      await this.channel.bindQueue(this.queueName, deadLetterExchange, '');
-
-      logger.info('Retry mechanism configured for queue', {
-        meta: {
-          queueName: this.queueName,
-          retryQueue,
-          deadLetterExchange
-        }
-      });
-    } catch (error) {
-      logger.error('Failed to set up retry queue', {
-        meta: {
-          error: error.message,
-          queueName: this.queueName
-        }
-      });
-      throw error;
-    }
+  if (!state.retryConfig.enabled) {
+    return state;
   }
 
-  async consume(messageHandler, consumeOptions = {}) {
-    if (!this.channel) {
-      await this.initialize();
+  // Don't modify queue configuration if it already exists
+  if (state.queueExists) {
+    logger.info('Queue already exists, skipping retry queue setup', {
+      meta: {
+        queueName: state.queueName
+      }
+    });
+    return state;
+  }
+
+  // Check if deadLetterExchange is already specified in queue options
+  const deadLetterExchange = state.queueOptions.deadLetterExchange || `${state.queueName}.dlx`;
+  const retryExchange = `${state.queueName}.retry`;
+  const retryQueue = `${state.queueName}.retry`;
+
+  await state.channel.assertExchange(deadLetterExchange, ExchangeTypes.DIRECT, {
+    durable: true
+  });
+  await state.channel.assertExchange(retryExchange, ExchangeTypes.DIRECT, { durable: true });
+
+  // Set up the main queue with DLX configuration
+  await state.channel.assertQueue(state.queueName, {
+    ...state.queueOptions,
+    deadLetterExchange
+  });
+
+  // Set up the retry queue with TTL and DLX back to the main exchange
+  await state.channel.assertQueue(retryQueue, {
+    durable: true,
+    deadLetterExchange: '',
+    deadLetterRoutingKey: state.queueName
+  });
+
+  await state.channel.bindQueue(retryQueue, retryExchange, '');
+  await state.channel.bindQueue(state.queueName, deadLetterExchange, '');
+
+  logger.info('Retry mechanism configured for queue', {
+    meta: {
+      queueName: state.queueName,
+      retryQueue,
+      deadLetterExchange
     }
+  });
+
+  return state;
+});
+
+// Start consuming messages from the queue
+export const consumeQueue = catchAsync(
+  async (consumerState, messageHandler, consumeOptions = {}) => {
+    // Initialize if not already initialized
+    let state = consumerState.channel ? consumerState : await initializeConsumer(consumerState);
 
     // Set up retry mechanism if needed
-    if (this.retryConfig.enabled && consumeOptions.setupRetryQueue !== false) {
-      await this.setupRetryQueue();
+    if (state.retryConfig.enabled && consumeOptions.setupRetryQueue !== false) {
+      state = await setupRetryQueue(state);
     }
 
     // Set prefetch/QoS to prevent overwhelming the consumer
     const prefetch = consumeOptions.prefetch || 10;
-    await this.channel.prefetch(prefetch);
+    await state.channel.prefetch(prefetch);
 
     const options = {
       noAck: false,
@@ -176,216 +159,186 @@ export class RabbitMQConsumer {
     delete options.prefetch;
     delete options.setupRetryQueue;
 
-    try {
-      const { consumerTag } = await this.channel.consume(
-        this.queueName,
-        async (msg) => {
-          if (!msg) {
-            logger.warn('Consumer cancelled by server', {
-              meta: { queueName: this.queueName }
-            });
-            return;
-          }
+    const { consumerTag } = await state.channel.consume(
+      state.queueName,
+      async (msg) => {
+        if (!msg) {
+          logger.warn('Consumer cancelled by server', {
+            meta: { queueName: state.queueName }
+          });
+          return;
+        }
 
-          try {
-            // Parse message content
-            const content = JSON.parse(msg.content.toString());
+        try {
+          // Parse message content
+          const content = JSON.parse(msg.content.toString());
 
-            // Get retry count from headers
-            const headers = msg.properties.headers || {};
-            const retryCount = headers['x-retry-count'] || 0;
+          // Get retry count from headers
+          const headers = msg.properties.headers || {};
+          const retryCount = headers['x-retry-count'] || 0;
 
-            logger.debug('Received message', {
-              meta: {
-                queueName: this.queueName,
-                routingKey: msg.fields.routingKey,
-                exchange: msg.fields.exchange,
-                retryCount,
-                priority: msg.properties.priority || 0
-              }
-            });
+          logger.debug('Received message', {
+            meta: {
+              queueName: state.queueName,
+              routingKey: msg.fields.routingKey,
+              exchange: msg.fields.exchange,
+              retryCount,
+              priority: msg.properties.priority || 0
+            }
+          });
 
-            // Process message with handler
-            await messageHandler(content, msg);
+          // Process message with handler
+          await messageHandler(content, msg);
 
-            // Acknowledge message on success
-            this.channel.ack(msg);
-          } catch (error) {
-            logger.error('Error processing message', {
-              meta: {
-                error: error.message,
-                stack: error.stack,
-                queueName: this.queueName,
-                routingKey: msg.fields.routingKey
-              }
-            });
+          // Acknowledge message on success
+          state.channel.ack(msg);
+        } catch (error) {
+          logger.error('Error processing message', {
+            meta: {
+              error: error.message,
+              stack: error.stack,
+              queueName: state.queueName,
+              routingKey: msg.fields.routingKey
+            }
+          });
 
-            const headers = msg.properties.headers || {};
-            const retryCount = (headers['x-retry-count'] || 0) + 1;
+          const headers = msg.properties.headers || {};
+          const retryCount = (headers['x-retry-count'] || 0) + 1;
 
-            if (this.retryConfig.enabled && retryCount <= this.retryConfig.maxRetries) {
-              // Get delay for current retry attempt
-              const delayIndex = Math.min(retryCount - 1, this.retryConfig.delays.length - 1);
-              const delay = this.retryConfig.delays[delayIndex];
+          if (state.retryConfig.enabled && retryCount <= state.retryConfig.maxRetries) {
+            // Get delay for current retry attempt
+            const delayIndex = Math.min(retryCount - 1, state.retryConfig.delays.length - 1);
+            const delay = state.retryConfig.delays[delayIndex];
 
-              // Publish to retry exchange with TTL
-              const retryExchange = `${this.queueName}.retry`;
-              const retryOptions = {
-                persistent: true,
-                headers: {
-                  ...headers,
-                  'x-retry-count': retryCount,
-                  'x-original-exchange': msg.fields.exchange,
-                  'x-original-routing-key': msg.fields.routingKey
-                },
-                expiration: delay.toString()
-              };
+            // Publish to retry exchange with TTL
+            const retryExchange = `${state.queueName}.retry`;
+            const retryOptions = {
+              persistent: true,
+              headers: {
+                ...headers,
+                'x-retry-count': retryCount,
+                'x-original-exchange': msg.fields.exchange,
+                'x-original-routing-key': msg.fields.routingKey
+              },
+              expiration: delay.toString()
+            };
 
-              logger.info(
-                `Scheduling retry ${retryCount}/${this.retryConfig.maxRetries} in ${delay}ms`,
-                {
-                  meta: {
-                    queueName: this.queueName,
-                    retryCount
-                  }
-                }
-              );
-
-              this.channel.publish(retryExchange, '', msg.content, retryOptions);
-
-              // Acknowledge original message
-              this.channel.ack(msg);
-            } else if (options.requeue !== false && !this.retryConfig.enabled) {
-              // Simple requeue if retry mechanism is disabled
-              this.channel.nack(msg, false, true);
-            } else {
-              // Max retries reached or requeue disabled, ack to remove from queue
-              logger.warn('Discarding failed message after max retries', {
+            logger.info(
+              `Scheduling retry ${retryCount}/${state.retryConfig.maxRetries} in ${delay}ms`,
+              {
                 meta: {
-                  queueName: this.queueName,
+                  queueName: state.queueName,
                   retryCount
                 }
-              });
-              this.channel.ack(msg);
-            }
+              }
+            );
+
+            state.channel.publish(retryExchange, '', msg.content, retryOptions);
+
+            // Acknowledge original message
+            state.channel.ack(msg);
+          } else if (options.requeue !== false && !state.retryConfig.enabled) {
+            // Simple requeue if retry mechanism is disabled
+            state.channel.nack(msg, false, true);
+          } else {
+            // Max retries reached or requeue disabled, ack to remove from queue
+            logger.warn('Discarding failed message after max retries', {
+              meta: {
+                queueName: state.queueName,
+                retryCount
+              }
+            });
+            state.channel.ack(msg);
           }
-        },
-        options
-      );
-
-      this.consumerTag = consumerTag;
-
-      logger.info('Started consuming messages', {
-        meta: {
-          queueName: this.queueName,
-          consumerTag,
-          prefetch,
-          retryEnabled: this.retryConfig.enabled,
-          maxRetries: this.retryConfig.maxRetries
         }
-      });
+      },
+      options
+    );
 
-      return consumerTag;
-    } catch (error) {
-      logger.error('Failed to start consuming messages', {
-        meta: {
-          error: error.message,
-          queueName: this.queueName
-        }
-      });
-      throw error;
-    }
-  }
-
-  async stopConsuming() {
-    if (this.channel && this.consumerTag) {
-      try {
-        await this.channel.cancel(this.consumerTag);
-        this.consumerTag = null;
-        logger.info('Stopped consuming messages', {
-          meta: { queueName: this.queueName }
-        });
-      } catch (error) {
-        logger.error('Error stopping consumer', {
-          meta: {
-            error: error.message,
-            queueName: this.queueName
-          }
-        });
-        throw error;
-      }
-    }
-  }
-
-  async close() {
-    if (this.consumerTag) {
-      await this.stopConsuming();
-    }
-
-    if (this.channel) {
-      try {
-        await this.channel.close();
-        this.channel = null;
-        logger.info('RabbitMQ consumer channel closed', {
-          meta: { queueName: this.queueName }
-        });
-      } catch (error) {
-        logger.error('Error closing consumer channel', {
-          meta: {
-            error: error.message,
-            queueName: this.queueName
-          }
-        });
-        throw error;
-      }
-    }
-  }
-}
-
-export const createConsumer = async (queueName, queueOptions = {}) => {
-  try {
-    const consumer = new RabbitMQConsumer(queueName, queueOptions);
-    await consumer.initialize();
-    return consumer;
-  } catch (error) {
-    logger.error('Failed to create consumer', {
+    logger.info('Started consuming messages', {
       meta: {
-        error: error.message,
-        queueName
+        queueName: state.queueName,
+        consumerTag,
+        prefetch,
+        retryEnabled: state.retryConfig.enabled,
+        maxRetries: state.retryConfig.maxRetries
       }
     });
-    throw error;
-  }
-};
 
-export const createBoundConsumer = async (
-  queueName,
-  exchangeName,
-  bindingKey = '',
-  options = {}
-) => {
-  try {
+    return { ...state, consumerTag };
+  }
+);
+
+// Stop consuming messages
+export const stopConsuming = catchAsync(async (consumerState) => {
+  if (consumerState.channel && consumerState.consumerTag) {
+    await consumerState.channel.cancel(consumerState.consumerTag);
+
+    logger.info('Stopped consuming messages', {
+      meta: { queueName: consumerState.queueName }
+    });
+
+    return { ...consumerState, consumerTag: null };
+  }
+  return consumerState;
+});
+
+// Close the consumer's channel
+export const closeConsumer = catchAsync(async (consumerState) => {
+  let state = consumerState;
+
+  if (state.consumerTag) {
+    state = await stopConsuming(state);
+  }
+
+  if (state.channel) {
+    await state.channel.close();
+
+    logger.info('RabbitMQ consumer channel closed', {
+      meta: { queueName: state.queueName }
+    });
+
+    return { ...state, channel: null };
+  }
+  return state;
+});
+
+// Factory function to create and initialize a consumer
+export const createConsumer = catchAsync(async (queueName, queueOptions = {}) => {
+  const consumerState = createConsumerState(queueName, queueOptions);
+  const initializedState = await initializeConsumer(consumerState);
+
+  // Return an API object with methods that operate on the internal state
+  return {
+    bindQueue: (exchangeName, bindingKey = '', bindingOptions = {}) =>
+      bindQueue(initializedState, exchangeName, bindingKey, bindingOptions),
+    setupRetryQueue: () => setupRetryQueue(initializedState),
+    consume: (messageHandler, consumeOptions = {}) =>
+      consumeQueue(initializedState, messageHandler, consumeOptions),
+    stopConsuming: () => stopConsuming(initializedState),
+    close: () => closeConsumer(initializedState),
+    // Expose state for advanced usage (but encourage to use the API methods)
+    getState: () => ({ ...initializedState })
+  };
+});
+
+// Create a consumer bound to an exchange
+export const createBoundConsumer = catchAsync(
+  async (queueName, exchangeName, bindingKey = '', options = {}) => {
     const { queueOptions = {}, bindingOptions = {} } = options;
 
+    // Create and initialize the consumer
     const consumer = await createConsumer(queueName, queueOptions);
+    // Bind to the exchange
     await consumer.bindQueue(exchangeName, bindingKey, bindingOptions);
 
     return consumer;
-  } catch (error) {
-    logger.error('Failed to create bound consumer', {
-      meta: {
-        error: error.message,
-        queueName,
-        exchangeName,
-        bindingKey
-      }
-    });
-    throw error;
   }
-};
+);
 
-export const setupPriorityQueue = async (queueName, maxPriority = 10, queueOptions = {}) => {
-  try {
+// Set up a priority queue
+export const setupPriorityQueue = catchAsync(
+  async (queueName, maxPriority = 10, queueOptions = {}) => {
     const consumer = await createConsumer(queueName, {
       ...queueOptions,
       maxPriority
@@ -399,13 +352,5 @@ export const setupPriorityQueue = async (queueName, maxPriority = 10, queueOptio
     });
 
     return consumer;
-  } catch (error) {
-    logger.error('Failed to set up priority queue', {
-      meta: {
-        error: error.message,
-        queueName
-      }
-    });
-    throw error;
   }
-};
+);
