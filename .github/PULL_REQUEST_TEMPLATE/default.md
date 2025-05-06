@@ -38,7 +38,7 @@ Closes #
 
 <!--- Please describe how reviewers can test your changes -->
 
-## Checklist:
+## Checklist
 
 <!--- Go over all the following points, and put an `x` in all the boxes that apply. -->
 
@@ -52,8 +52,8 @@ Closes #
 - [ ] I have commented my code, particularly in hard-to-understand areas
 - [ ] My changes are safe to rollback (provide rollback instructions if necessary)
 
-## Screenshots (if appropriate):
+## Screenshots (if appropriate)
 
-## Additional Notes:
+## Additional Notes
 
 <!--- Add any additional notes or context about the pull request here. -->

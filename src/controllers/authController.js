@@ -2,7 +2,7 @@ import { httpResponse } from '../utils/httpResponse.js';
 import { httpError } from '../utils/httpError.js';
 import { catchAsync } from '../utils/catchAsync.js';
 import {
-  validateJoiSchema,
+  validateSchema,
   ValidateRegisterBody,
   ValidateLoginBody,
   ValidateForgotPasswordBody,
@@ -13,9 +13,10 @@ import * as authService from '../services/authService.js';
 import { SUCCESS } from '../constant/responseMessage.js';
 import { EApplicationEnvironment } from '../constant/application.js';
 import { getDomainFromUrl } from '../helpers/generalHelper.js';
+import config from '../config/dotenvConfig.js';
 
 export const register = catchAsync(async (req, res, next) => {
-  const { error, value } = validateJoiSchema(ValidateRegisterBody, req.body);
+  const { error, value } = validateSchema(ValidateRegisterBody, req.body);
   if (error) {
     return httpError(next, error, req, 422);
   }
@@ -32,7 +33,7 @@ export const confirmation = catchAsync(async (req, res, next) => {
 });
 
 export const login = catchAsync(async (req, res, next) => {
-  const { error, value } = validateJoiSchema(ValidateLoginBody, req.body);
+  const { error, value } = validateSchema(ValidateLoginBody, req.body);
   if (error) {
     return httpError(next, error, req, 422);
   }
@@ -46,7 +47,7 @@ export const login = catchAsync(async (req, res, next) => {
       sameSite: 'strict',
       maxAge: 1000 * 3600,
       httpOnly: true,
-      secure: !(process.env.NODE_ENV === EApplicationEnvironment.DEVELOPMENT)
+      secure: !(config.NODE_ENV === EApplicationEnvironment.DEVELOPMENT)
     })
     .cookie('refreshToken', refreshToken, {
       path: '/api/v1',
@@ -54,7 +55,7 @@ export const login = catchAsync(async (req, res, next) => {
       sameSite: 'strict',
       maxAge: 1000 * 3600,
       httpOnly: true,
-      secure: !(process.env.NODE_ENV === EApplicationEnvironment.DEVELOPMENT)
+      secure: !(config.NODE_ENV === EApplicationEnvironment.DEVELOPMENT)
     });
 
   httpResponse(req, res, 200, SUCCESS, {
@@ -66,7 +67,7 @@ export const login = catchAsync(async (req, res, next) => {
 export const logout = catchAsync(async (req, res) => {
   await authService.logoutUser(req.cookies.refreshToken);
 
-  const DOMAIN = getDomainFromUrl(process.env.SERVER_URL);
+  const DOMAIN = getDomainFromUrl(config.SERVER_URL);
 
   // Cookies clear
   res.clearCookie('accessToken', {
@@ -74,7 +75,7 @@ export const logout = catchAsync(async (req, res) => {
     domain: DOMAIN,
     sameSite: 'strict',
     httpOnly: true,
-    secure: !(process.env.NODE_ENV === EApplicationEnvironment.DEVELOPMENT)
+    secure: !(config.NODE_ENV === EApplicationEnvironment.DEVELOPMENT)
   });
 
   res.clearCookie('refreshToken', {
@@ -82,7 +83,7 @@ export const logout = catchAsync(async (req, res) => {
     domain: DOMAIN,
     sameSite: 'strict',
     httpOnly: true,
-    secure: !(process.env.NODE_ENV === EApplicationEnvironment.DEVELOPMENT)
+    secure: !(config.NODE_ENV === EApplicationEnvironment.DEVELOPMENT)
   });
 
   httpResponse(req, res, 200, SUCCESS);
@@ -103,9 +104,9 @@ export const genNewAccessToken = catchAsync(async (req, res, next) => {
       path: '/api/v1',
       domain,
       sameSite: 'strict',
-      maxAge: 1000 * process.env.ACCESS_TOKEN_EXPIRY,
+      maxAge: 1000 * config.ACCESS_TOKEN_EXPIRY,
       httpOnly: true,
-      secure: !(process.env.NODE_ENV === EApplicationEnvironment.DEVELOPMENT)
+      secure: !(config.NODE_ENV === EApplicationEnvironment.DEVELOPMENT)
     });
 
     return httpResponse(req, res, 200, SUCCESS, { accessToken: newAccessToken });
@@ -113,7 +114,7 @@ export const genNewAccessToken = catchAsync(async (req, res, next) => {
 });
 
 export const forgotPassword = catchAsync(async (req, res, next) => {
-  const { error, value } = validateJoiSchema(ValidateForgotPasswordBody, req.body);
+  const { error, value } = validateSchema(ValidateForgotPasswordBody, req.body);
   if (error) {
     return httpError(next, error, req, 422);
   }
@@ -124,7 +125,7 @@ export const forgotPassword = catchAsync(async (req, res, next) => {
 });
 
 export const resetPassword = catchAsync(async (req, res, next) => {
-  const { error, value } = validateJoiSchema(ValidateResetPasswordBody, req.body);
+  const { error, value } = validateSchema(ValidateResetPasswordBody, req.body);
   if (error) {
     return httpError(next, error, req, 422);
   }
@@ -135,7 +136,7 @@ export const resetPassword = catchAsync(async (req, res, next) => {
 });
 
 export const changePassword = catchAsync(async (req, res, next) => {
-  const { error, value } = validateJoiSchema(ValidateChangePasswordBody, req.body);
+  const { error, value } = validateSchema(ValidateChangePasswordBody, req.body);
   if (error) {
     return httpError(next, error, req, 422);
   }

@@ -1,9 +1,51 @@
-import { getConnection } from '../db/rabbitMQConnection.js';
-import { logger } from '../utils/logger.js';
-import { ExchangeTypes } from './rabbitMQProducer.js';
+import { getConnection } from '../db/rabbitMQConnection';
+import { logger } from '../utils/logger';
+import { ExchangeTypes } from './rabbitMQProducer';
+import { Channel, ConsumeMessage } from 'amqplib';
+
+interface AssertQueueOptions {
+  exclusive?: boolean;
+  durable?: boolean;
+  autoDelete?: boolean;
+  arguments?: any;
+  messageTtl?: number;
+  expires?: number;
+  deadLetterExchange?: string;
+  deadLetterRoutingKey?: string;
+  maxLength?: number;
+  maxPriority?: number;
+}
+
+interface ConsumeOptions {
+  consumerTag?: string;
+  noLocal?: boolean;
+  noAck?: boolean;
+  exclusive?: boolean;
+  priority?: number;
+  arguments?: any;
+  // Custom options
+  prefetch?: number;
+  setupRetryQueue?: boolean;
+  requeue?: boolean;
+}
+
+interface BindingOptions {
+  arguments?: any;
+}
 
 export class RabbitMQConsumer {
-  constructor(queueName, queueOptions = {}) {
+  private queueName: string;
+  private queueOptions: AssertQueueOptions;
+  private channel: Channel | null;
+  private consumerTag: string | null;
+  private retryConfig: {
+    enabled: boolean;
+    maxRetries: number;
+    delays: number[];
+  };
+  private queueExists: boolean;
+
+  constructor(queueName: string, queueOptions: AssertQueueOptions = {}) {
     this.queueName = queueName;
     this.queueOptions = {
       durable: true,
@@ -20,33 +62,41 @@ export class RabbitMQConsumer {
     this.queueExists = false;
   }
 
-  async initialize() {
+  async initialize(): Promise<void> {
     if (this.channel) {
       return;
     }
 
     try {
       const connection = await getConnection();
-      this.channel = await connection.createChannel();
+      // Cast connection to any to bypass TypeScript error with createChannel method
+      this.channel = await (connection as any).createChannel();
+
+      if (!this.channel) {
+        throw new Error('Failed to create channel');
+      }
 
       // Check if queue already exists to avoid modifying existing configuration
       try {
-        await this.channel.checkQueue(this.queueName);
-        this.queueExists = true;
-        logger.info('Queue already exists, using existing configuration', {
-          meta: {
-            queueName: this.queueName
-          }
-        });
+        if (this.channel) {
+          await this.channel.checkQueue(this.queueName);
+          this.queueExists = true;
+          logger.info('Queue already exists, using existing configuration', {
+            meta: {
+              queueName: this.queueName
+            }
+          });
+        }
       } catch (checkError) {
         // Queue doesn't exist, will be created with provided options
-
         this.queueExists = false;
       }
 
       // If queue exists, we assert it without changing its properties
       // If it doesn't exist, create it with the specified options
-      await this.channel.assertQueue(this.queueName, this.queueExists ? {} : this.queueOptions);
+      if (this.channel) {
+        await this.channel.assertQueue(this.queueName, this.queueExists ? {} : this.queueOptions);
+      }
 
       logger.info('RabbitMQ consumer initialized', {
         meta: {
@@ -54,23 +104,32 @@ export class RabbitMQConsumer {
           queueOptions: this.queueExists ? 'using existing configuration' : this.queueOptions
         }
       });
-    } catch (error) {
+    } catch (error: unknown) {
+      const err = error instanceof Error ? error : new Error(String(error));
       logger.error('Failed to initialize RabbitMQ consumer', {
         meta: {
-          error: error.message,
+          error: err.message,
           queueName: this.queueName
         }
       });
-      throw error;
+      throw err;
     }
   }
 
-  async bindQueue(exchangeName, bindingKey = '', bindingOptions = {}) {
+  async bindQueue(
+    exchangeName: string,
+    bindingKey = '',
+    bindingOptions: BindingOptions = {}
+  ): Promise<void> {
     if (!this.channel) {
       await this.initialize();
     }
 
     try {
+      if (!this.channel) {
+        throw new Error('Channel is not initialized');
+      }
+
       await this.channel.bindQueue(this.queueName, exchangeName, bindingKey, bindingOptions);
 
       logger.info('Queue bound to exchange', {
@@ -80,25 +139,30 @@ export class RabbitMQConsumer {
           bindingKey
         }
       });
-    } catch (error) {
+    } catch (error: unknown) {
+      const err = error instanceof Error ? error : new Error(String(error));
       logger.error('Failed to bind queue to exchange', {
         meta: {
-          error: error.message,
+          error: err.message,
           queueName: this.queueName,
           exchangeName,
           bindingKey
         }
       });
-      throw error;
+      throw err;
     }
   }
 
-  async setupRetryQueue() {
+  async setupRetryQueue(): Promise<void> {
     if (!this.retryConfig.enabled) {
       return;
     }
 
     try {
+      if (!this.channel) {
+        await this.initialize();
+      }
+
       // Don't modify queue configuration if it already exists
       if (this.queueExists) {
         logger.info('Queue already exists, skipping retry queue setup', {
@@ -113,6 +177,10 @@ export class RabbitMQConsumer {
       const deadLetterExchange = this.queueOptions.deadLetterExchange || `${this.queueName}.dlx`;
       const retryExchange = `${this.queueName}.retry`;
       const retryQueue = `${this.queueName}.retry`;
+
+      if (!this.channel) {
+        throw new Error('Channel is not initialized');
+      }
 
       await this.channel.assertExchange(deadLetterExchange, ExchangeTypes.DIRECT, {
         durable: true
@@ -142,18 +210,22 @@ export class RabbitMQConsumer {
           deadLetterExchange
         }
       });
-    } catch (error) {
+    } catch (error: unknown) {
+      const err = error instanceof Error ? error : new Error(String(error));
       logger.error('Failed to set up retry queue', {
         meta: {
-          error: error.message,
+          error: err.message,
           queueName: this.queueName
         }
       });
-      throw error;
+      throw err;
     }
   }
 
-  async consume(messageHandler, consumeOptions = {}) {
+  async consume(
+    messageHandler: (content: any, msg: ConsumeMessage) => Promise<void>,
+    consumeOptions: ConsumeOptions = {}
+  ): Promise<string> {
     if (!this.channel) {
       await this.initialize();
     }
@@ -165,16 +237,30 @@ export class RabbitMQConsumer {
 
     // Set prefetch/QoS to prevent overwhelming the consumer
     const prefetch = consumeOptions.prefetch || 10;
+
+    if (!this.channel) {
+      throw new Error('Channel is not initialized');
+    }
+
     await this.channel.prefetch(prefetch);
 
     const options = {
       noAck: false,
       ...consumeOptions
-    };
+    } as any; // Cast to any to allow custom properties
 
     // Remove non-amqplib options
-    delete options.prefetch;
-    delete options.setupRetryQueue;
+    if (options.prefetch !== undefined) {
+      delete options.prefetch;
+    }
+
+    if (options.setupRetryQueue !== undefined) {
+      delete options.setupRetryQueue;
+    }
+
+    if (options.requeue !== undefined) {
+      delete options.requeue;
+    }
 
     try {
       const { consumerTag } = await this.channel.consume(
@@ -209,16 +295,24 @@ export class RabbitMQConsumer {
             await messageHandler(content, msg);
 
             // Acknowledge message on success
-            this.channel.ack(msg);
-          } catch (error) {
+            if (this.channel) {
+              this.channel.ack(msg);
+            }
+          } catch (error: unknown) {
+            const err = error instanceof Error ? error : new Error(String(error));
             logger.error('Error processing message', {
               meta: {
-                error: error.message,
-                stack: error.stack,
+                error: err.message,
+                stack: err.stack,
                 queueName: this.queueName,
                 routingKey: msg.fields.routingKey
               }
             });
+
+            if (!this.channel) {
+              logger.error('Cannot handle message error: Channel is closed');
+              return;
+            }
 
             const headers = msg.properties.headers || {};
             const retryCount = (headers['x-retry-count'] || 0) + 1;
@@ -255,7 +349,7 @@ export class RabbitMQConsumer {
 
               // Acknowledge original message
               this.channel.ack(msg);
-            } else if (options.requeue !== false && !this.retryConfig.enabled) {
+            } else if ((consumeOptions as any).requeue !== false && !this.retryConfig.enabled) {
               // Simple requeue if retry mechanism is disabled
               this.channel.nack(msg, false, true);
             } else {
@@ -286,18 +380,19 @@ export class RabbitMQConsumer {
       });
 
       return consumerTag;
-    } catch (error) {
+    } catch (error: unknown) {
+      const err = error instanceof Error ? error : new Error(String(error));
       logger.error('Failed to start consuming messages', {
         meta: {
-          error: error.message,
+          error: err.message,
           queueName: this.queueName
         }
       });
-      throw error;
+      throw err;
     }
   }
 
-  async stopConsuming() {
+  async stopConsuming(): Promise<void> {
     if (this.channel && this.consumerTag) {
       try {
         await this.channel.cancel(this.consumerTag);
@@ -305,19 +400,20 @@ export class RabbitMQConsumer {
         logger.info('Stopped consuming messages', {
           meta: { queueName: this.queueName }
         });
-      } catch (error) {
+      } catch (error: unknown) {
+        const err = error instanceof Error ? error : new Error(String(error));
         logger.error('Error stopping consumer', {
           meta: {
-            error: error.message,
+            error: err.message,
             queueName: this.queueName
           }
         });
-        throw error;
+        throw err;
       }
     }
   }
 
-  async close() {
+  async close(): Promise<void> {
     if (this.consumerTag) {
       await this.stopConsuming();
     }
@@ -329,41 +425,46 @@ export class RabbitMQConsumer {
         logger.info('RabbitMQ consumer channel closed', {
           meta: { queueName: this.queueName }
         });
-      } catch (error) {
+      } catch (error: unknown) {
+        const err = error instanceof Error ? error : new Error(String(error));
         logger.error('Error closing consumer channel', {
           meta: {
-            error: error.message,
+            error: err.message,
             queueName: this.queueName
           }
         });
-        throw error;
+        throw err;
       }
     }
   }
 }
 
-export const createConsumer = async (queueName, queueOptions = {}) => {
+export const createConsumer = async (
+  queueName: string,
+  queueOptions: AssertQueueOptions = {}
+): Promise<RabbitMQConsumer> => {
   try {
     const consumer = new RabbitMQConsumer(queueName, queueOptions);
     await consumer.initialize();
     return consumer;
-  } catch (error) {
+  } catch (error: unknown) {
+    const err = error instanceof Error ? error : new Error(String(error));
     logger.error('Failed to create consumer', {
       meta: {
-        error: error.message,
+        error: err.message,
         queueName
       }
     });
-    throw error;
+    throw err;
   }
 };
 
 export const createBoundConsumer = async (
-  queueName,
-  exchangeName,
+  queueName: string,
+  exchangeName: string,
   bindingKey = '',
-  options = {}
-) => {
+  options: { queueOptions?: AssertQueueOptions; bindingOptions?: BindingOptions } = {}
+): Promise<RabbitMQConsumer> => {
   try {
     const { queueOptions = {}, bindingOptions = {} } = options;
 
@@ -371,20 +472,25 @@ export const createBoundConsumer = async (
     await consumer.bindQueue(exchangeName, bindingKey, bindingOptions);
 
     return consumer;
-  } catch (error) {
+  } catch (error: unknown) {
+    const err = error instanceof Error ? error : new Error(String(error));
     logger.error('Failed to create bound consumer', {
       meta: {
-        error: error.message,
+        error: err.message,
         queueName,
         exchangeName,
         bindingKey
       }
     });
-    throw error;
+    throw err;
   }
 };
 
-export const setupPriorityQueue = async (queueName, maxPriority = 10, queueOptions = {}) => {
+export const setupPriorityQueue = async (
+  queueName: string,
+  maxPriority = 10,
+  queueOptions: AssertQueueOptions = {}
+): Promise<RabbitMQConsumer> => {
   try {
     const consumer = await createConsumer(queueName, {
       ...queueOptions,
@@ -399,13 +505,14 @@ export const setupPriorityQueue = async (queueName, maxPriority = 10, queueOptio
     });
 
     return consumer;
-  } catch (error) {
+  } catch (error: unknown) {
+    const err = error instanceof Error ? error : new Error(String(error));
     logger.error('Failed to set up priority queue', {
       meta: {
-        error: error.message,
+        error: err.message,
         queueName
       }
     });
-    throw error;
+    throw err;
   }
 };

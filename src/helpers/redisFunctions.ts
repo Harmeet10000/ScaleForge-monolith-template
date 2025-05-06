@@ -1,6 +1,5 @@
-import { logger } from '../utils/logger.js';
-import { catchAsync } from '../utils/catchAsync.js';
-import { redisClient } from '../db/connectRedis.js';
+import { logger } from '../utils/logger';
+import { redisClient } from '../db/connectRedis';
 
 // Use Case | Recommended Redis Type
 // Caching a JWT token or simple API response | String
@@ -15,16 +14,23 @@ import { redisClient } from '../db/connectRedis.js';
 // Set (SADD, SMEMBERS) | - Cache unique unordered items (no duplicates).  - Example: Online users, tags, permissions.
 // Sorted Set (ZADD, ZRANGE) | - Cache items with a score (ranking).  - Example: Leaderboards, ranking posts by popularity, trending topics.
 
-export const getKeyName = (objectType, ...args) => `${objectType}:${args.join(':')}`;
-export const getCacheKey = (objectType, key) =>
+export const getKeyName = (objectType: string, ...args: Array<string | number>): string =>
+  `${objectType}:${args.join(':')}`;
+export const getCacheKey = (objectType: string, key: string | Array<string | number>): string =>
   Array.isArray(key) ? getKeyName(objectType, ...key) : key;
 // User key helper functions
-export const UserKeyById = (id) => getKeyName('user', 'id', id);
-export const UserKeyByEmail = (email) => getKeyName('user', 'email', email);
-export const UserKeyByUsername = (username) => getKeyName('user', 'username', username);
-export const UserKeyByToken = (token) => getKeyName('user', 'token', token);
+export const UserKeyById = (id: string): string => getKeyName('user', 'id', id);
+export const UserKeyByEmail = (email: string): string => getKeyName('user', 'email', email);
+export const UserKeyByUsername = (username: string): string =>
+  getKeyName('user', 'username', username);
+export const UserKeyByToken = (token: string): string => getKeyName('user', 'token', token);
 
-export const setCache = catchAsync(async (objectType, key, value, expireSeconds = null) => {
+export const setCache = async (
+  objectType: string,
+  key: string | Array<string | number>,
+  value: any,
+  expireSeconds: number | null = null
+): Promise<boolean> => {
   const cacheKey = getCacheKey(objectType, key);
 
   const stringValue = typeof value === 'object' ? JSON.stringify(value) : value;
@@ -37,9 +43,13 @@ export const setCache = catchAsync(async (objectType, key, value, expireSeconds 
 
   logger.debug(`Cache set: ${cacheKey}`);
   return true;
-});
+};
 
-export const getCache = catchAsync(async (objectType, key, parseJson = true) => {
+export const getCache = async (
+  objectType: string,
+  key: string | Array<string | number>,
+  parseJson = true
+): Promise<any | null> => {
   const cacheKey = getCacheKey(objectType, key);
 
   const result = await redisClient.get(cacheKey);
@@ -57,20 +67,28 @@ export const getCache = catchAsync(async (objectType, key, parseJson = true) => 
   }
 
   return result;
-});
+};
 
-export const deleteCache = catchAsync(async (objectType, key) => {
+export const deleteCache = async (
+  objectType: string,
+  key: string | Array<string | number>
+): Promise<boolean> => {
   const cacheKey = getCacheKey(objectType, key);
 
   const result = await redisClient.del(cacheKey);
 
   logger.debug(`Cache deleted: ${cacheKey}, Result: ${result}`);
   return result > 0;
-});
+};
 
 // Redis Hash CRUD Operations
 
-export const setHash = catchAsync(async (objectType, key, data, expireSeconds = null) => {
+export const setHash = async (
+  objectType: string,
+  key: string | Array<string | number>,
+  data: Record<string, any>,
+  expireSeconds: number | null = null
+): Promise<boolean> => {
   const cacheKey = getCacheKey(objectType, key);
   await redisClient.hset(cacheKey, data);
   if (expireSeconds) {
@@ -78,95 +96,125 @@ export const setHash = catchAsync(async (objectType, key, data, expireSeconds = 
   }
   logger.debug(`Hash set: ${cacheKey}`);
   return true;
-});
+};
 
-export const getHash = catchAsync(async (objectType, key) => {
+export const getHash = async (
+  objectType: string,
+  key: string | Array<string | number>
+): Promise<Record<string, any> | null> => {
   const cacheKey = getCacheKey(objectType, key);
   const result = await redisClient.hgetall(cacheKey);
   if (!result || Object.keys(result).length === 0) {
     return null;
   }
   return result;
-});
+};
 
-export const updateHash = catchAsync(async (objectType, key, data) => {
+export const updateHash = async (
+  objectType: string,
+  key: string | Array<string | number>,
+  data: Record<string, any>
+): Promise<boolean> => {
   const cacheKey = getCacheKey(objectType, key);
   await redisClient.hset(cacheKey, data);
   logger.debug(`Hash updated: ${cacheKey}`);
   return true;
-});
+};
 
-export const deleteHashField = catchAsync(async (objectType, key, field) => {
+export const deleteHashField = async (
+  objectType: string,
+  key: string | Array<string | number>,
+  field: string
+): Promise<boolean> => {
   const cacheKey = getCacheKey(objectType, key);
   const result = await redisClient.hdel(cacheKey, field);
   logger.debug(`Hash field deleted: ${cacheKey}, field: ${field}, Result: ${result}`);
   return result > 0;
-});
+};
 
-export const deleteHash = catchAsync(async (objectType, key) => {
+export const deleteHash = async (
+  objectType: string,
+  key: string | Array<string | number>
+): Promise<boolean> => {
   const cacheKey = getCacheKey(objectType, key);
   const result = await redisClient.del(cacheKey);
   logger.debug(`Hash deleted: ${cacheKey}, Result: ${result}`);
   return result > 0;
-});
+};
 
 // Redis List CRUD Operations
 
-export const pushToList = catchAsync(
-  async (objectType, key, value, prepend = false, expireSeconds = null) => {
-    const cacheKey = getCacheKey(objectType, key);
+export const pushToList = async (
+  objectType: string,
+  key: string | Array<string | number>,
+  value: any | any[],
+  prepend = false,
+  expireSeconds: number | null = null
+): Promise<number> => {
+  const cacheKey = getCacheKey(objectType, key);
 
-    // Handle multiple values
-    const values = Array.isArray(value) ? value : [value];
+  // Handle multiple values
+  const values = Array.isArray(value) ? value : [value];
 
-    // Stringify objects/arrays, keep primitives as is
-    const stringValues = values.map((v) => (typeof v === 'object' ? JSON.stringify(v) : v));
+  // Stringify objects/arrays, keep primitives as is
+  const stringValues = values.map((v) => (typeof v === 'object' ? JSON.stringify(v) : v));
 
-    // Use LPUSH for prepending (add to start), RPUSH for appending (add to end)
-    const result = prepend
-      ? await redisClient.lpush(cacheKey, ...stringValues)
-      : await redisClient.rpush(cacheKey, ...stringValues);
+  // Use LPUSH for prepending (add to start), RPUSH for appending (add to end)
+  const result = prepend
+    ? await redisClient.lpush(cacheKey, ...stringValues)
+    : await redisClient.rpush(cacheKey, ...stringValues);
 
-    if (expireSeconds) {
-      await redisClient.expire(cacheKey, expireSeconds);
-    }
-
-    logger.debug(`${prepend ? 'Prepended' : 'Appended'} to list: ${cacheKey}, Count: ${result}`);
-    return result;
+  if (expireSeconds) {
+    await redisClient.expire(cacheKey, expireSeconds);
   }
-);
 
-export const getListItems = catchAsync(
-  async (objectType, key, start = 0, end = -1, parseJson = true) => {
-    const cacheKey = getCacheKey(objectType, key);
-    const items = await redisClient.lrange(cacheKey, start, end);
+  logger.debug(`${prepend ? 'Prepended' : 'Appended'} to list: ${cacheKey}, Count: ${result}`);
+  return result;
+};
 
-    if (!items || items.length === 0) {
-      return [];
-    }
+export const getListItems = async (
+  objectType: string,
+  key: string | Array<string | number>,
+  start = 0,
+  end = -1,
+  parseJson = true
+): Promise<any[]> => {
+  const cacheKey = getCacheKey(objectType, key);
+  const items = await redisClient.lrange(cacheKey, start, end);
 
-    // Parse JSON strings if requested and possible
-    if (parseJson) {
-      return items.map((item) => {
-        try {
-          return JSON.parse(item);
-        } catch (e) {
-          return item;
-        }
-      });
-    }
-
-    return items;
+  if (!items || items.length === 0) {
+    return [];
   }
-);
 
-export const getListLength = catchAsync(async (objectType, key) => {
+  // Parse JSON strings if requested and possible
+  if (parseJson) {
+    return items.map((item) => {
+      try {
+        return JSON.parse(item);
+      } catch (e) {
+        return item;
+      }
+    });
+  }
+
+  return items;
+};
+
+export const getListLength = async (
+  objectType: string,
+  key: string | Array<string | number>
+): Promise<number> => {
   const cacheKey = getCacheKey(objectType, key);
   const length = await redisClient.llen(cacheKey);
   return length;
-});
+};
 
-export const removeFromList = catchAsync(async (objectType, key, value, count = 0) => {
+export const removeFromList = async (
+  objectType: string,
+  key: string | Array<string | number>,
+  value: any,
+  count = 0
+): Promise<number> => {
   const cacheKey = getCacheKey(objectType, key);
 
   const stringValue = typeof value === 'object' ? JSON.stringify(value) : value;
@@ -178,9 +226,14 @@ export const removeFromList = catchAsync(async (objectType, key, value, count = 
 
   logger.debug(`Removed from list: ${cacheKey}, Count: ${result}`);
   return result;
-});
+};
 
-export const updateListItem = catchAsync(async (objectType, key, index, newValue) => {
+export const updateListItem = async (
+  objectType: string,
+  key: string | Array<string | number>,
+  index: number,
+  newValue: any
+): Promise<boolean> => {
   const cacheKey = getCacheKey(objectType, key);
 
   // Stringify objects/arrays if needed
@@ -189,25 +242,38 @@ export const updateListItem = catchAsync(async (objectType, key, index, newValue
   await redisClient.lset(cacheKey, index, stringValue);
   logger.debug(`Updated list item: ${cacheKey}, Index: ${index}`);
   return true;
-});
+};
 
-export const trimList = catchAsync(async (objectType, key, start, end) => {
+export const trimList = async (
+  objectType: string,
+  key: string | Array<string | number>,
+  start: number,
+  end: number
+): Promise<boolean> => {
   const cacheKey = getCacheKey(objectType, key);
   await redisClient.ltrim(cacheKey, start, end);
   logger.debug(`Trimmed list: ${cacheKey}, Range: ${start} to ${end}`);
   return true;
-});
+};
 
-export const deleteList = catchAsync(async (objectType, key) => {
+export const deleteList = async (
+  objectType: string,
+  key: string | Array<string | number>
+): Promise<boolean> => {
   const cacheKey = getCacheKey(objectType, key);
   const result = await redisClient.del(cacheKey);
   logger.debug(`List deleted: ${cacheKey}, Result: ${result}`);
   return result > 0;
-});
+};
 
 // Redis Search Functions
 
-export const createSearchIndex = catchAsync(async (indexName, prefix, schema, options = {}) => {
+export const createSearchIndex = async (
+  indexName: string,
+  prefix: string,
+  schema: Record<string, any>,
+  options: Record<string, any> = {}
+): Promise<{ created: boolean; indexName: string }> => {
   // Check if index already exists
   let indexExists = false;
 
@@ -216,9 +282,10 @@ export const createSearchIndex = catchAsync(async (indexName, prefix, schema, op
     // If no error is thrown, index exists
     logger.debug(`Search index already exists: ${indexName}`);
     indexExists = true;
-  } catch (err) {
+  } catch (err: unknown) {
     // Index doesn't exist, continue with creation
-    if (!err.message.includes('Unknown index name')) {
+    const error = err as Error;
+    if (!error.message || !error.message.includes('Unknown index name')) {
       throw err; // Re-throw if it's not a "doesn't exist" error
     }
   }
@@ -266,12 +333,16 @@ export const createSearchIndex = catchAsync(async (indexName, prefix, schema, op
   });
 
   // Execute create command
-  await redisClient.call(...args);
+  await redisClient.call(...(args as [string, ...string[]]));
   logger.debug(`Search index created: ${indexName}`);
   return { created: true, indexName };
-});
+};
 
-export const searchIndex = catchAsync(async (indexName, query, options = {}) => {
+export const searchIndex = async (
+  indexName: string,
+  query: string,
+  options: Record<string, any> = {}
+): Promise<{ totalResults: number; documents: any[] }> => {
   // Prepare base arguments
   const args = ['FT.SEARCH', indexName, query];
 
@@ -334,18 +405,18 @@ export const searchIndex = catchAsync(async (indexName, query, options = {}) => 
   }
 
   // Execute search command
-  const result = await redisClient.call(...args);
+  const result = (await redisClient.call(...(args as [string, ...string[]]))) as Array<any>;
 
   // Process search results
-  const totalResults = result[0];
+  const totalResults = result[0] as number;
   const formattedResults = [];
 
   // Redis returns [totalCount, docId1, [field1, value1, field2, value2...], docId2, ...]
   for (let i = 1; i < result.length; i += 2) {
     const docId = result[i];
-    const fields = result[i + 1];
+    const fields = result[i + 1] as Array<any>;
 
-    const doc = { id: docId };
+    const doc: Record<string, any> = { id: docId };
     for (let j = 0; j < fields.length; j += 2) {
       doc[fields[j]] = fields[j + 1];
     }
@@ -354,17 +425,23 @@ export const searchIndex = catchAsync(async (indexName, query, options = {}) => 
   }
 
   return { totalResults, documents: formattedResults };
-});
+};
 
-export const deleteSearchIndex = catchAsync(async (indexName) => {
+export const deleteSearchIndex = async (
+  indexName: string
+): Promise<{ deleted: boolean; indexName: string }> => {
   await redisClient.call('FT.DROPINDEX', indexName);
   logger.debug(`Search index deleted: ${indexName}`);
   return { deleted: true, indexName };
-});
+};
 
 // Redis Bloom Filter Functions
 
-export const createBloomFilter = catchAsync(async (filterName, errorRate, capacity) => {
+export const createBloomFilter = async (
+  filterName: string,
+  errorRate: number,
+  capacity: number
+): Promise<{ created: boolean; filterName: string }> => {
   // Check if filter already exists
   let filterExists = false;
 
@@ -372,9 +449,10 @@ export const createBloomFilter = catchAsync(async (filterName, errorRate, capaci
     await redisClient.call('BF.INFO', filterName);
     logger.debug(`Bloom filter already exists: ${filterName}`);
     filterExists = true;
-  } catch (err) {
+  } catch (err: unknown) {
     // Filter doesn't exist, continue with creation
-    if (!err.message.includes('not found')) {
+    const error = err as Error;
+    if (!error.message || !error.message.includes('not found')) {
       throw err; // Re-throw if it's not a "doesn't exist" error
     }
   }
@@ -388,56 +466,64 @@ export const createBloomFilter = catchAsync(async (filterName, errorRate, capaci
     `Bloom filter created: ${filterName}, error rate: ${errorRate}, capacity: ${capacity}`
   );
   return { created: true, filterName };
-});
+};
 
-export const addToBloomFilter = catchAsync(async (filterName, value) => {
+export const addToBloomFilter = async (
+  filterName: string,
+  value: string | string[]
+): Promise<boolean | boolean[]> => {
   if (Array.isArray(value)) {
     // Multi-add for arrays
     const args = ['BF.MADD', filterName, ...value];
-    const results = await redisClient.call(...args);
+    const results = (await redisClient.call(...(args as [string, ...string[]]))) as Array<number>;
     logger.debug(`Added multiple items to bloom filter: ${filterName}`);
-    return results.map((r) => r === 1);
+    return results.map((r: number) => r === 1);
   }
 
   // Single value add
-  const result = await redisClient.call('BF.ADD', filterName, value);
+  const result = (await redisClient.call('BF.ADD', filterName, value)) as number;
   return result === 1; // Returns true if item was added, false if it already existed
-});
+};
 
-export const checkBloomFilter = catchAsync(async (filterName, value) => {
+export const checkBloomFilter = async (
+  filterName: string,
+  value: string | string[]
+): Promise<boolean | boolean[]> => {
   try {
     if (Array.isArray(value)) {
       // Multi-check for arrays
       const args = ['BF.MEXISTS', filterName, ...value];
-      const results = await redisClient.call(...args);
+      const results = (await redisClient.call(...(args as [string, ...string[]]))) as Array<number>;
       logger.debug(`Checked multiple items in bloom filter: ${filterName}`);
-      return results.map((result) => result === 1);
+      return results.map((result: number) => result === 1);
     } else {
       // Single value check
-      const result = await redisClient.call('BF.EXISTS', filterName, value);
+      const result = (await redisClient.call('BF.EXISTS', filterName, value)) as number;
       logger.debug(`Checked bloom filter: ${filterName}, value: ${value}, exists: ${result === 1}`);
       return result === 1; // Returns true if item might exist, false if definitely does not exist
     }
-  } catch (err) {
-    logger.error(`Failed to check bloom filter: ${filterName}`, { meta: err });
-    throw err;
+  } catch (err: unknown) {
+    const error = err as Error;
+    logger.error(`Failed to check bloom filter: ${filterName}`, { meta: error });
+    throw error;
   }
-});
+};
 
-export const getBloomFilterInfo = catchAsync(async (filterName) => {
+export const getBloomFilterInfo = async (filterName: string): Promise<Record<string, any>> => {
   try {
-    const info = await redisClient.call('BF.INFO', filterName);
+    const info = (await redisClient.call('BF.INFO', filterName)) as Array<string>;
 
     // Process the info response into a more usable format
-    const infoObject = {};
+    const infoObject: Record<string, string> = {};
     for (let i = 0; i < info.length; i += 2) {
       infoObject[info[i]] = info[i + 1];
     }
 
     logger.debug(`Retrieved bloom filter info: ${filterName}`);
     return infoObject;
-  } catch (err) {
-    logger.error(`Failed to get bloom filter info: ${filterName}`, { meta: err });
-    throw err;
+  } catch (err: unknown) {
+    const error = err as Error;
+    logger.error(`Failed to get bloom filter info: ${filterName}`, { meta: error });
+    throw error;
   }
-});
+};

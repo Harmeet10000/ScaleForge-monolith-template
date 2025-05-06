@@ -1,11 +1,12 @@
-import express from 'express';
+import express, { Request, Response, NextFunction, Express } from 'express';
 import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
 import mongoSanitize from 'express-mongo-sanitize';
 import compression from 'compression';
-import xss from 'xss-clean';
-// import hpp from "hpp";
-import cors from 'cors';
+import type { CompressionOptions } from 'compression';
+import xss from 'xss';
+import cors, { CorsOptions } from 'cors';
+import hpp from 'hpp';
 import globalErrorHandler from './middlewares/globalErrorHandler.js';
 import cookieParser from 'cookie-parser';
 import swaggerUi from 'swagger-ui-express';
@@ -14,6 +15,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { httpError } from './utils/httpError.js';
 import { logger } from './utils/logger.js';
+import config from './config/dotenvConfig.js';
 import authRoutes from './routes/authRoutes.js';
 import healthRoutes from './routes/healthRoutes.js';
 import rabbitmqRoutes from './routes/rabbitmqRoutes.js';
@@ -38,14 +40,14 @@ const __dirname = path.dirname(__filename);
 //   }
 // });
 // Read the swagger document - with proper error handling
-let swaggerDocument;
+let swaggerDocument: Record<string, unknown>;
 try {
   swaggerDocument = JSON.parse(
     fs.readFileSync(path.join(__dirname, '../docs/swagger-output.json'), 'utf8')
   );
 } catch (error) {
   logger.warn('Swagger documentation not found or invalid. API docs will not be available.', {
-    error: error.message
+    error: (error as Error).message
   });
   swaggerDocument = {
     info: {
@@ -55,7 +57,7 @@ try {
   };
 }
 
-const server = express();
+const server: Express = express();
 
 // 1) GLOBAL MIDDLEWARES
 // Set security HTTP headers
@@ -64,19 +66,16 @@ server.use(helmet());
 // Add compression middleware - compress all responses
 server.use(
   compression({
-    // Compression level (0-9), 6 is the default compression level
     level: 6,
-    // Filter function to decide which responses to compress - skips small responses
     filter: (req, res) => {
       if (req.headers['x-no-compression']) {
-        // Don't compress responses with this header
         return false;
       }
       // Compress responses larger than 500 bytes
       return compression.filter(req, res);
     },
     threshold: 50 * 1000 // Only compress responses above 50KB
-  })
+  } as CompressionOptions)
 );
 
 // Limit requests from same API
@@ -103,15 +102,14 @@ server.use(mongoSanitize());
 server.use(xss());
 
 // Prevent parameter pollution
-// server.use(
-//   hpp({
-//     whitelist: [
-//     ],
-//   })
-// );
+server.use(
+  hpp({
+    whitelist: []
+  })
+);
 
-const corsOptions = {
-  origin: [process.env.FRONTEND_URL],
+const corsOptions: CorsOptions = {
+  origin: [config.FRONTEND_URL as string],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Authorization', 'Content-Type'],
   credentials: true
@@ -149,7 +147,7 @@ server.use(
 // });
 
 // Endpoint to serve the swagger.json file
-server.get('/swagger.json', (req, res) => {
+server.get('/swagger.json', (req: Request, res: Response) => {
   res.setHeader('Content-Type', 'application/json');
   res.send(swaggerDocument);
 });
@@ -159,7 +157,7 @@ server.use('/api/v1/rabbitmq', rabbitmqRoutes);
 // server.use('/api/v1/users', userRoutes)
 
 // 4) CATCHES ALL ROUTES THAT ARE NOT DEFINED
-server.all('*', (req, res, next) => {
+server.all('*', (req: Request, res: Response, next: NextFunction) => {
   httpError(next, new Error(`Can't find ${req.originalUrl} on this server!`), req, 404);
 });
 

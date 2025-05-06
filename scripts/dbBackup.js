@@ -20,7 +20,7 @@ import { pipeline } from 'stream/promises';
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 
 // Configure environment variables based on NODE_ENV
-const NODE_ENV = process.env.NODE_ENV || 'development';
+const NODE_ENV = config.NODE_ENV || 'development';
 dotenv.config({ path: `.env.${NODE_ENV}` });
 
 // Get directory name using ES modules approach
@@ -30,7 +30,7 @@ const __dirname = path.dirname(__filename);
 // Configuration
 const config = {
   // Database connection string from environment variables
-  dbUrl: process.env.DATABASE_URL || 'mongodb://localhost:27017/auth-service',
+  dbUrl: config.DATABASE_URL || 'mongodb://localhost:27017/auth-service',
 
   // Backup directory - created relative to this script
   backupDir: path.join(__dirname, '../backups'),
@@ -44,10 +44,10 @@ const config = {
 
   // S3 configuration
   s3: {
-    enabled: process.env.S3_BACKUP_ENABLED === 'true',
-    bucket: process.env.S3_BUCKET_NAME || 'db-backups',
-    region: process.env.AWS_REGION || 'us-east-1',
-    prefix: process.env.S3_PREFIX || 'mongodb-backups/'
+    enabled: config.S3_BACKUP_ENABLED === 'true',
+    bucket: config.S3_BUCKET_NAME || 'db-backups',
+    region: config.AWS_REGION || 'us-east-1',
+    prefix: config.S3_PREFIX || 'mongodb-backups/'
   }
 };
 
@@ -188,7 +188,7 @@ async function performBackup() {
     await cleanupOldBackups();
 
     // If it's a one-time backup, exit after completion
-    if (process.env.RUN_BACKUP_ONCE === 'true') {
+    if (config.RUN_BACKUP_ONCE === 'true') {
       console.log('One-time backup completed. Exiting...');
       process.exit(0);
     }
@@ -196,7 +196,7 @@ async function performBackup() {
     console.error(`Backup process failed: ${error.message}`);
 
     // If it's a one-time backup, exit with error code
-    if (process.env.RUN_BACKUP_ONCE === 'true') {
+    if (config.RUN_BACKUP_ONCE === 'true') {
       process.exit(1);
     }
   }
@@ -252,7 +252,7 @@ function cleanupOldBackups() {
 }
 
 // If RUN_BACKUP_ONCE is set to true, run a single backup and exit
-if (process.env.RUN_BACKUP_ONCE === 'true') {
+if (config.RUN_BACKUP_ONCE === 'true') {
   console.log('Starting one-time backup...');
   performBackup();
 } else {

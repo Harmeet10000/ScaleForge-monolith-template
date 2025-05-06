@@ -1,7 +1,8 @@
 import { JwtPayload } from 'jsonwebtoken';
-import { EUserRole } from '../constant/application.js';
+import { Document, Types, Model } from 'mongoose';
+import { EUserRole } from '../constant/application';
 
-export interface IUser {
+export interface IUserBase {
   name: string;
   emailAddress: string;
   phoneNumber: {
@@ -10,8 +11,7 @@ export interface IUser {
     internationalNumber: string;
   };
   timezone: string;
-  password: string;
-  role: EUserRole;
+  role: (typeof EUserRole)[keyof typeof EUserRole];
   accountConfirmation: {
     status: boolean;
     token: string;
@@ -27,8 +27,26 @@ export interface IUser {
   consent: boolean;
 }
 
-export interface IUserWithId extends IUser {
-  _id: string;
+export interface IUser extends IUserBase {
+  password: string;
+}
+
+export interface IUserWithId extends IUserBase {
+  _id: Types.ObjectId;
+  id?: string;
+  password?: string;
+  __v?: number;
+}
+
+export interface IUserDocument
+  extends Omit<Document<Types.ObjectId, {}, IUser>, 'toObject'>,
+    IUser {
+  id?: string;
+  toObject(): IUserWithId;
+}
+
+export interface IUserModel extends Model<IUserDocument> {
+  findByEmailAddress(email: string): Promise<IUserDocument | null>;
 }
 
 export interface IRefreshToken {

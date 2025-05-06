@@ -1,102 +1,134 @@
 import { Resend } from 'resend';
+import { Request, Response, NextFunction } from 'express';
 import { httpError } from '../utils/httpError.js';
 import { catchAsync } from '../utils/catchAsync.js';
+import { httpResponse } from '../utils/httpResponse.js'; // Import httpResponse
 import { logger } from '../utils/logger.js';
+import config from '../config/dotenvConfig.js';
+import { EmailRequestBody } from '../types/interfaces.js';
 
-export const Resendmail = catchAsync(async (req, res, next) => {
+// New function for sending emails without requiring Express Request
+export const sendEmail = async (
+  to: string | string[],
+  subject: string,
+  text: string
+): Promise<string> => {
+  logger.info('Sending email', { meta: { to, subject } });
+
+  const resendApiKey = config.RESEND_KEY;
+
+  if (!resendApiKey) {
+    const error = new Error('Email service configuration error.');
+    logger.error(error.message);
+    throw error;
+  }
+
+  const resend = new Resend(resendApiKey);
+
   try {
-    const {
-      name = '',
-      to = '',
-      verificationURL = '',
-      role = '',
-      password = '',
-      use = '',
-      schedule = {},
-      meetingLink = '',
-      razorpay_order_id = '',
-      razorpay_payment_id = '',
-      razorpay_signature = ''
-    } = req.body || {};
-
-    logger.info('Sending email', { meta: { to, role, use } });
-
-    // Get API key from environment variable
-    const resendApiKey = process.env.RESEND_KEY;
-    if (!resendApiKey) {
-      logger.error('Missing Resend API key');
-      return httpError(next, new Error('Email service configuration error'), req, 500);
-    }
-
-    const resend = new Resend(resendApiKey);
-
-    let htmlContent = '';
-    let subject = '';
-
-    if (role === 'mentor' && use === 'signup') {
-      // Mentor signup email
-      htmlContent = getMentorSignupTemplate(name, to, password);
-      subject = 'Welcome to the ShikshaDost Platform!';
-    } else if (role === 'mentor' && use === 'meeting') {
-      // Mentor meeting details email template
-      htmlContent = getMentorMeetingTemplate(name, schedule, meetingLink);
-      subject = 'Meeting Details from ShikshaDost';
-    } else if (role === 'student' && use === 'meeting') {
-      // Student meeting details email template
-      htmlContent = getStudentMeetingTemplate(
-        name,
-        schedule,
-        meetingLink,
-        razorpay_order_id,
-        razorpay_payment_id,
-        razorpay_signature
-      );
-      subject = 'Meeting Details from ShikshaDost';
-    } else if (role === 'student' && use === 'signup') {
-      // Student signup email
-      htmlContent = getStudentSignupTemplate(name, verificationURL);
-      subject = 'Verify Your Email Address';
-    } else if (use === 'otp') {
-      // OTP email template
-      htmlContent = getOTPTemplate(name, req.body.otp);
-      subject = 'Your Verification Code';
-    } else if (use === 'confirmation') {
-      // General confirmation email
-      htmlContent = getConfirmationTemplate(
-        name,
-        req.body.message || 'Your request has been confirmed'
-      );
-      subject = 'Confirmation from ShikshaDost';
-    } else {
-      logger.warn('Unknown email template requested', { meta: { role, use } });
-      return httpError(next, new Error('Invalid email template requested'), req, 400);
-    }
-
     const emailResponse = await resend.emails.send({
       from: 'contact@shikshadost.com',
-      to,
+      to: Array.isArray(to) ? to : [to],
       subject,
-      html: htmlContent
+      html: text
     });
 
-    logger.info('Email sent successfully', { meta: { to, emailId: emailResponse.id } });
-
-    return res.status(200).json({
-      success: true,
-      message: 'Email sent successfully',
-      data: { emailId: emailResponse.id }
-    });
+    logger.info('Email sent successfully', { meta: { to, emailId: emailResponse.data?.id } });
+    return emailResponse.data?.id || ''; // Return the ID or an empty string if not found
   } catch (error) {
-    logger.error('Failed to send email', { meta: { error: error.message, stack: error.stack } });
-    return httpError(next, error, req, 500);
+    logger.error('Failed to send email', { meta: { error, to } });
+    throw error;
   }
+};
+
+// Original Resendmail function for route handlers
+export const Resendmail = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+  const {
+    name = '',
+    to = '',
+    verificationURL = '',
+    role = '',
+    password = '',
+    use = '',
+    schedule = {},
+    meetingLink = '',
+    razorpay_order_id = '',
+    razorpay_payment_id = '',
+    razorpay_signature = ''
+  } = (req.body as EmailRequestBody) || {};
+
+  logger.info('Sending email', { meta: { to, role, use } });
+
+  const resendApiKey = config.RESEND_KEY;
+
+  if (!resendApiKey) {
+    logger.error('Resend API key is missing.');
+    return httpError(next, new Error('Email service configuration error.'), req, 500);
+  }
+
+  const resend = new Resend(resendApiKey);
+
+  let htmlContent = '';
+  let subject = '';
+
+  if (role === 'mentor' && use === 'signup') {
+    // Mentor signup email
+    htmlContent = getMentorSignupTemplate(name, to, password);
+    subject = 'Welcome to the ShikshaDost Platform!';
+  } else if (role === 'mentor' && use === 'meeting') {
+    // Mentor meeting details email template
+    htmlContent = getMentorMeetingTemplate(name, schedule, meetingLink);
+    subject = 'Meeting Details from ShikshaDost';
+  } else if (role === 'student' && use === 'meeting') {
+    // Student meeting details email template
+    htmlContent = getStudentMeetingTemplate(
+      name,
+      schedule,
+      meetingLink,
+      razorpay_order_id,
+      razorpay_payment_id,
+      razorpay_signature
+    );
+    subject = 'Meeting Details from ShikshaDost';
+  } else if (role === 'student' && use === 'signup') {
+    // Student signup email
+    htmlContent = getStudentSignupTemplate(name, verificationURL);
+    subject = 'Verify Your Email Address';
+  } else if (use === 'otp') {
+    // OTP email template
+    htmlContent = getOTPTemplate(name, (req.body as EmailRequestBody).otp || '');
+    subject = 'Your Verification Code';
+  } else if (use === 'confirmation') {
+    // General confirmation email
+    htmlContent = getConfirmationTemplate(
+      name,
+      (req.body as EmailRequestBody).message || 'Your request has been confirmed'
+    );
+    subject = 'Confirmation from ShikshaDost';
+  } else {
+    logger.warn('Unknown email template requested', { meta: { role, use } });
+    // Use httpError to pass a structured error with a specific status code
+    return httpError(next, new Error('Invalid email template requested'), req, 400);
+  }
+
+  const emailResponse = await resend.emails.send({
+    from: 'contact@shikshadost.com',
+    to,
+    subject,
+    html: htmlContent
+  });
+
+  logger.info('Email sent successfully', { meta: { to, emailId: emailResponse.data?.id } });
+
+  // Use httpResponse for successful response
+  httpResponse(req, res, 200, 'Email sent successfully', { emailId: emailResponse.data?.id });
 });
 
 /**
  * Template for mentor signup emails
  */
-const getMentorSignupTemplate = (name, email, password) => {
-  `<!DOCTYPE html>
+const getMentorSignupTemplate = (name: string, email: string, password: string): string => {
+  return `<!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
@@ -203,8 +235,8 @@ const getMentorSignupTemplate = (name, email, password) => {
 /**
  * Template for student signup emails
  */
-const getStudentSignupTemplate = (name, verificationURL) => {
-  `<!DOCTYPE html>
+const getStudentSignupTemplate = (name: string, verificationURL: string): string => {
+  return `<!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
@@ -311,8 +343,12 @@ const getStudentSignupTemplate = (name, verificationURL) => {
 /**
  * Template for mentor meeting emails
  */
-const getMentorMeetingTemplate = (name, schedule, meetingLink) => {
-  `<!DOCTYPE html>
+const getMentorMeetingTemplate = (
+  name: string,
+  schedule: { on?: string | Date; start?: string; end?: string },
+  meetingLink: string
+): string => {
+  return `<!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
@@ -394,7 +430,7 @@ const getMentorMeetingTemplate = (name, schedule, meetingLink) => {
             <p>Your upcoming meeting with your student has been scheduled. Please find the details below:</p>
             
             <div class="meeting-details">
-                <p><strong>Date:</strong> ${new Date(schedule.on).toLocaleDateString()}</p>
+                <p><strong>Date:</strong> ${new Date(schedule.on || '').toLocaleDateString()}</p>
                 <p><strong>Time:</strong> ${schedule.start} to ${schedule.end}</p>
                 <p><strong>Meeting Link:</strong> <a href="${meetingLink}" class="link">${meetingLink}</a></p>
             </div>
@@ -419,8 +455,15 @@ const getMentorMeetingTemplate = (name, schedule, meetingLink) => {
 /**
  * Template for student meeting emails
  */
-const getStudentMeetingTemplate = (name, schedule, meetingLink, orderId, paymentId, signature) => {
-  `<!DOCTYPE html>
+const getStudentMeetingTemplate = (
+  name: string,
+  schedule: { on?: string | Date; start?: string; end?: string },
+  meetingLink: string,
+  orderId: string,
+  paymentId: string,
+  signature: string
+): string => {
+  return `<!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
@@ -519,7 +562,7 @@ const getStudentMeetingTemplate = (name, schedule, meetingLink, orderId, payment
             <div class="section">
                 <h2 class="section-title">Meeting Details</h2>
                 <div class="meeting-details">
-                    <p><strong>Date:</strong> ${new Date(schedule.on).toLocaleDateString()}</p>
+                    <p><strong>Date:</strong> ${new Date(schedule.on || '').toLocaleDateString()}</p>
                     <p><strong>Time:</strong> ${schedule.start} to ${schedule.end}</p>
                     <p><strong>Meeting Link:</strong> <a href="${meetingLink}" class="link">${meetingLink}</a></p>
                 </div>
@@ -529,9 +572,9 @@ const getStudentMeetingTemplate = (name, schedule, meetingLink, orderId, payment
                 </center>
             </div>
             
-            <div class="section">
-                <h2 class="section-title">Payment Details</h2>
-                <div class="payment-details">
+        }
+        .container {
+            max-width: 600px;
                     <p><strong>Order ID:</strong> <span class="payment-id">${orderId}</span></p>
                     <p><strong>Payment ID:</strong> <span class="payment-id">${paymentId}</span></p>
                     <p><strong>Transaction Status:</strong> Completed</p>
@@ -553,8 +596,8 @@ const getStudentMeetingTemplate = (name, schedule, meetingLink, orderId, payment
 /**
  * Template for OTP verification emails
  */
-const getOTPTemplate = (name, otp) => {
-  `<!DOCTYPE html>
+const getOTPTemplate = (name: string, otp: string): string => {
+  return `<!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
@@ -656,8 +699,8 @@ const getOTPTemplate = (name, otp) => {
 /**
  * Template for general confirmation emails
  */
-const getConfirmationTemplate = (name, message) => {
-  `<!DOCTYPE html>
+const getConfirmationTemplate = (name: string, message: string): string => {
+  return `<!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">

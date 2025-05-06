@@ -1,24 +1,25 @@
-import './config/dotenvConfig.js';
-import app from './app.js';
-import connectDB from './db/connectDB.js';
-import { logger } from './utils/logger.js';
-import { connectRedis, redisClient } from './db/connectRedis.js';
+import config from './config/dotenvConfig';
 import mongoose from 'mongoose';
-import { createConnection, closeConnection } from './db/rabbitMQConnection.js';
+import app from './app';
+import connectDB from './db/connectDB';
+import { connectRedis, redisClient } from './db/connectRedis';
+import { createConnection, closeConnection } from './db/rabbitMQConnection';
+import { logger } from './utils/logger';
+import process from 'process';
+import type { Server } from 'http';
 
 // --- Connect to Databases ---
 // Use Promise.all to connect concurrently, or connect sequentially if preferred/needed
 Promise.all([connectDB(), connectRedis(), createConnection()])
   .then(() => {
-    const server = app.listen(process.env.PORT, () => {
-      logger.info(
-        `Server is running at port: ${process.env.PORT}, in ${process.env.NODE_ENV} mode`
-      );
+    const server: Server = app.listen(config.PORT, () => {
+      logger.info(`Server is running at port: ${config.PORT}, in ${config.NODE_ENV} mode`);
     });
 
     // Graceful shutdown function
-    const gracefulShutdown = async (signal) => {
+    const gracefulShutdown = async (signal: string): Promise<void> => {
       logger.info(`${signal} received. Shutting down gracefully...`);
+
       server.close(async () => {
         logger.info('HTTP server closed.');
 
@@ -55,24 +56,26 @@ Promise.all([connectDB(), connectRedis(), createConnection()])
       });
     };
 
+    // Handle unexpected errors
     process.on('unhandledRejection', (err) => {
       logger.error('UNHANDLED REJECTION! 💥 Shutting down...', { error: err });
-      gracefulShutdown('unhandledRejection');
+      void gracefulShutdown('unhandledRejection');
     });
 
+    // Handle SIGTERM signal
     process.on('SIGTERM', () => {
-      gracefulShutdown('SIGTERM');
+      void gracefulShutdown('SIGTERM');
     });
 
     // Handle SIGINT (Ctrl+C)
     process.on('SIGINT', () => {
-      gracefulShutdown('SIGINT');
+      void gracefulShutdown('SIGINT');
     });
   })
   .catch((err) => {
     logger.error('Application startup failed!', { error: err });
     // Attempt to disconnect Redis, DB, and RabbitMQ even on startup failure
-    Promise.allSettled([
+    void Promise.allSettled([
       redisClient.status === 'ready' || redisClient.status === 'connect'
         ? redisClient.quit()
         : Promise.resolve(),

@@ -3,13 +3,15 @@ import webpackNodeExternals from 'webpack-node-externals';
 import Dotenv from 'dotenv-webpack';
 
 export default {
-  entry: './src/index.js', // Entry point updated to src/index.js
+  entry: './src/index.ts', // Entry point updated to src/index.ts
   target: 'node',
   mode: 'production', // Use production mode for optimizations
   externals: [webpackNodeExternals()], // Exclude node_modules from the bundle
+  resolve: {
+    extensions: ['.ts', '.js'] // Resolve TypeScript and JavaScript files
+  },
   output: {
     filename: 'index.cjs',
-
     path: path.resolve(process.cwd(), 'dist')
   },
   module: {
@@ -23,6 +25,11 @@ export default {
             presets: ['@babel/preset-env'] // Transpile modern JavaScript
           }
         }
+      },
+      {
+        test: /\.ts$/,
+        exclude: /node_modules/,
+        use: 'ts-loader' // Use ts-loader for TypeScript files
       }
     ]
   },

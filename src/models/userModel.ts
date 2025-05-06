@@ -1,7 +1,8 @@
 import mongoose, { Schema } from 'mongoose';
+import { IUser } from '../types/userTypes.js';
 import { EUserRole } from '../constant/application.js';
 
-const userSchema = new Schema(
+const userSchema = new Schema<IUser>(
   {
     name: {
       type: String,
@@ -92,4 +93,4 @@ const userSchema = new Schema(
   { timestamps: true }
 );
 
-export const User = mongoose.model('User', userSchema);
+export const User = mongoose.model<IUser>('User', userSchema);

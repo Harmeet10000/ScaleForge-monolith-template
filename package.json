@@ -1,18 +1,17 @@
 {
   "name": "auth_service_backend",
   "version": "1.0.0",
-  "main": "index.js",
-  "type": "module",
+  "main": "dist/index.cjs",
   "engines": {
     "node": ">=22.14.0",
     "npm": ">=10.7.0"
   },
   "scripts": {
-    "dev": "nodemon  src/index.ts",
+    "dev": "ts-node-dev src/index.ts",
     "build": "rm -rf dist && npx webpack --config webpack.config.js",
-    "dist": "npx tsc",
+    "dist": "npx tsc -p .",
     "dev:prod": "node dist/index.cjs",
-    "start": "node dist/index.cjs",
+    "start": "cross-env NODE_ENV=production node dist/index.cjs",
     "swagger": "node ./docs/swagger.js",
     "test": "node test-runner.js",
     "test:watch": "node --watch test-runner.js",
@@ -22,8 +21,8 @@
     "lint:fix": "eslint . --fix",
     "format": "prettier . --check",
     "format:fix": "prettier . --write",
-    "migrate:dev": "cross-env MIGRATE_MODE=development node script/migration.js",
-    "migrate:prod": "cross-env MIGRATE_MODE=production node script/migration.js",
+    "migrate:dev": "cross-env MIGRATE_MODE=development node scripts/migrations.js",
+    "migrate:prod": "cross-env MIGRATE_MODE=production node scripts/migrations.js",
     "backup:start": "node scripts/dbBackup.js",
     "backup:once": "cross-env RUN_BACKUP_ONCE=true node scripts/dbBackup.js"
   },
@@ -39,7 +38,7 @@
   },
   "homepage": "https://github.com/Harmeet10000/ts-backend-production-template#readme",
   "lint-staged": {
-    "*.js": [
+    "": [
       "npm run lint:fix",
       "npm run format:fix"
     ]
@@ -57,6 +56,7 @@
     "@commitlint/cli": "^19.7.1",
     "@commitlint/config-conventional": "^19.7.1",
     "@eslint/js": "9.26.0",
+    "@types/compression": "1.7.5",
     "@types/cookie-parser": "^1.4.8",
     "@types/cors": "^2.8.17",
     "@types/dotenv-flow": "^3.3.3",
@@ -64,9 +64,13 @@
     "@types/express": "^5.0.0",
     "@types/express-rate-limit": "^5.1.3",
     "@types/helmet": "^0.0.48",
+    "@types/hpp": "0.2.6",
+    "@types/jsonwebtoken": "9.0.9",
     "@types/node": "22.15.3",
     "@types/source-map-support": "^0.5.10",
+    "@types/swagger-ui-express": "4.1.8",
     "babel-loader": "^10.0.0",
+    "cross-env": "7.0.3",
     "dotenv-webpack": "^8.1.0",
     "eslint": "9.26.0",
     "eslint-config-prettier": "^10.1.2",
@@ -76,6 +80,7 @@
     "prettier": "3.5.2",
     "supabase": "2.22.6",
     "supertest": "^7.1.0",
+    "ts-loader": "9.5.2",
     "ts-node": "10.9.2",
     "typescript": "5.8.3",
     "typescript-eslint": "8.31.1",
@@ -92,9 +97,8 @@
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "countries-and-timezones": "^3.7.2",
-    "cross-env": "^7.0.3",
     "dayjs": "^1.11.13",
-    "dotenv-flow": "^4.1.0",
+    "dotenv-flow": "4.1.0",
     "express": "^4.21.2",
     "express-mongo-sanitize": "^2.2.0",
     "express-prom-bundle": "8.0.0",
@@ -112,11 +116,11 @@
     "source-map-support": "^0.5.21",
     "swagger-autogen": "^2.23.7",
     "swagger-ui-express": "^5.0.1",
-    "ts-migrate-mongoose": "^4.0.1",
+    "ts-migrate-mongoose": "4.0.8",
+    "ts-node-dev": "2.0.0",
     "uuid": "^11.1.0",
     "winston": "^3.17.0",
     "winston-mongodb": "6.0.0",
-    "xss": "^1.0.15",
-    "xss-clean": "^0.1.4"
+    "xss": "^1.0.15"
   }
 }

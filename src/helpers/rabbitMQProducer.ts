@@ -1,5 +1,6 @@
-import { getConnection } from '../db/rabbitMQConnection.js';
-import { logger } from '../utils/logger.js';
+import { getConnection } from '../db/rabbitMQConnection';
+import { logger } from '../utils/logger';
+import { Channel, Options } from 'amqplib';
 
 export const ExchangeTypes = {
   DIRECT: 'direct',
@@ -9,21 +10,35 @@ export const ExchangeTypes = {
 };
 
 export class RabbitMQProducer {
-  constructor(exchangeName, exchangeType = ExchangeTypes.DIRECT, durable = true) {
+  private exchangeName: string;
+  private exchangeType: string;
+  private durable: boolean;
+  private channel: Channel | null;
+
+  constructor(
+    exchangeName: string,
+    exchangeType: string = ExchangeTypes.DIRECT,
+    durable: boolean = true
+  ) {
     this.exchangeName = exchangeName;
     this.exchangeType = exchangeType;
     this.durable = durable;
     this.channel = null;
   }
 
-  async initialize() {
+  async initialize(): Promise<void> {
     if (this.channel) {
       return;
     }
 
     try {
       const connection = await getConnection();
-      this.channel = await connection.createChannel();
+      // Cast the connection to any to bypass the TypeScript error
+      this.channel = await (connection as any).createChannel();
+
+      if (!this.channel) {
+        throw new Error('Failed to create channel');
+      }
 
       await this.channel.assertExchange(this.exchangeName, this.exchangeType, {
         durable: this.durable
@@ -36,23 +51,32 @@ export class RabbitMQProducer {
           durable: this.durable
         }
       });
-    } catch (error) {
+    } catch (error: unknown) {
+      const err = error instanceof Error ? error : new Error(String(error));
       logger.error('Failed to initialize RabbitMQ producer', {
         meta: {
-          error: error.message,
+          error: err.message,
           exchangeName: this.exchangeName
         }
       });
-      throw error;
+      throw err;
     }
   }
 
-  async publish(message, routingKey = '', options = {}) {
+  async publish(
+    message: any,
+    routingKey: string = '',
+    options: Options.Publish = {}
+  ): Promise<boolean> {
     if (!this.channel) {
       await this.initialize();
     }
 
     try {
+      if (!this.channel) {
+        throw new Error('Channel is not initialized');
+      }
+
       const messageBuffer = Buffer.from(JSON.stringify(message));
 
       const publishOptions = {
@@ -84,24 +108,33 @@ export class RabbitMQProducer {
             routingKey
           }
         });
-        await new Promise((resolve) => this.channel.once('drain', resolve));
+
+        if (this.channel) {
+          await new Promise<void>((resolve) => this.channel!.once('drain', resolve));
+        }
       }
 
       return result;
-    } catch (error) {
+    } catch (error: unknown) {
+      const err = error instanceof Error ? error : new Error(String(error));
       logger.error('Failed to publish message', {
         meta: {
-          error: error.message,
+          error: err.message,
           exchangeName: this.exchangeName,
           routingKey
         }
       });
-      throw error;
+      throw err;
     }
   }
 
-  async publishWithRetry(message, routingKey = '', options = {}, retryOptions = {}) {
-    const delayExecution = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+  async publishWithRetry(
+    message: any,
+    routingKey: string = '',
+    options: Options.Publish = {},
+    retryOptions: { maxRetries?: number; initialDelay?: number; backoffFactor?: number } = {}
+  ): Promise<boolean> {
+    const delayExecution = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
     const maxRetries = retryOptions.maxRetries || 3;
     const initialDelay = retryOptions.initialDelay || 500;
     const factor = retryOptions.backoffFactor || 2;
@@ -112,19 +145,20 @@ export class RabbitMQProducer {
     while (attempt <= maxRetries) {
       try {
         return await this.publish(message, routingKey, options);
-      } catch (error) {
+      } catch (error: unknown) {
         attempt++;
 
         if (attempt > maxRetries) {
+          const err = error instanceof Error ? error : new Error(String(error));
           logger.error('Max retries reached when publishing message', {
             meta: {
-              error: error.message,
+              error: err.message,
               exchangeName: this.exchangeName,
               routingKey,
               attempts: attempt
             }
           });
-          throw error;
+          throw err;
         }
 
         logger.warn(`Retrying publish (${attempt}/${maxRetries}) after ${delay}ms`, {
@@ -134,18 +168,20 @@ export class RabbitMQProducer {
           }
         });
         await delayExecution(delay);
-        await new Promise(
-          (
-            (currentDelay) => (resolve) =>
-              setTimeout(resolve, currentDelay)
-          )(delay)
-        );
         delay *= factor;
       }
     }
+
+    // This should never be reached but is needed to satisfy TypeScript's return type checking
+    return false;
   }
 
-  async scheduleMessage(message, routingKey = '', delayMs = 0, options = {}) {
+  async scheduleMessage(
+    message: any,
+    routingKey: string = '',
+    delayMs: number = 0,
+    options: Options.Publish = {}
+  ): Promise<boolean> {
     if (delayMs <= 0) {
       return this.publish(message, routingKey, options);
     }
@@ -164,7 +200,7 @@ export class RabbitMQProducer {
     });
   }
 
-  async close() {
+  async close(): Promise<void> {
     if (this.channel) {
       try {
         await this.channel.close();
@@ -172,35 +208,37 @@ export class RabbitMQProducer {
         logger.info('RabbitMQ producer channel closed', {
           meta: { exchangeName: this.exchangeName }
         });
-      } catch (error) {
+      } catch (error: unknown) {
+        const err = error instanceof Error ? error : new Error(String(error));
         logger.error('Error closing producer channel', {
           meta: {
-            error: error.message,
+            error: err.message,
             exchangeName: this.exchangeName
           }
         });
-        throw error;
+        throw err;
       }
     }
   }
 }
 
 export const createProducer = async (
-  exchangeName,
-  exchangeType = ExchangeTypes.DIRECT,
-  durable = true
-) => {
+  exchangeName: string,
+  exchangeType: string = ExchangeTypes.DIRECT,
+  durable: boolean = true
+): Promise<RabbitMQProducer> => {
   try {
     const producer = new RabbitMQProducer(exchangeName, exchangeType, durable);
     await producer.initialize();
     return producer;
-  } catch (error) {
+  } catch (error: unknown) {
+    const err = error instanceof Error ? error : new Error(String(error));
     logger.error('Failed to create producer', {
       meta: {
-        error: error.message,
+        error: err.message,
         exchangeName
       }
     });
-    throw error;
+    throw err;
   }
 };

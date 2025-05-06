@@ -1,13 +1,23 @@
-import amqplib from 'amqplib';
-import { logger } from '../utils/logger.js';
+import amqplib, { Connection as AmqpConnection } from 'amqplib';
+import config from '../config/dotenvConfig';
+import { logger } from '../utils/logger';
 
-let connection = null;
+// Define a custom type that extends the amqplib Connection interface
+type Connection = AmqpConnection & {
+  close(): Promise<void>;
+};
+
+let connection: Connection | null = null;
 let connectionAttempts = 0;
 const MAX_RETRY_ATTEMPTS = 5;
 const RETRY_INTERVAL = 5000;
 let isClosing = false;
 
-const retryWithBackoff = async (fn, maxRetries = 5, initialDelay = 5000) => {
+const retryWithBackoff = async <T>(
+  fn: () => Promise<T>,
+  maxRetries = MAX_RETRY_ATTEMPTS,
+  initialDelay = RETRY_INTERVAL
+): Promise<T> => {
   let attempt = 0;
 
   const execute = async () => {
@@ -28,14 +38,14 @@ const retryWithBackoff = async (fn, maxRetries = 5, initialDelay = 5000) => {
   return execute();
 };
 
-export const createConnection = async () => {
+export const createConnection = async (): Promise<Connection> => {
   if (connection) {
     return connection;
   }
 
-  const rabbitmqUrl = process.env.RABBITMQ_URL || 'amqp://localhost';
+  const rabbitmqUrl = config.RABBITMQ_URL || 'amqp://localhost';
 
-  const connect = async () => {
+  const connect = async (): Promise<Connection> => {
     connectionAttempts++;
     logger.info('Connecting to RabbitMQ server...', {
       meta: {
@@ -44,10 +54,11 @@ export const createConnection = async () => {
       }
     });
 
-    connection = await amqplib.connect(rabbitmqUrl);
+    // Cast the connection to our extended type
+    const newConnection = (await amqplib.connect(rabbitmqUrl)) as unknown as Connection;
     connectionAttempts = 0;
 
-    connection.on('close', (err) => {
+    newConnection.on('close', (err) => {
       // logger.warn('RabbitMQ connection closed', { meta: err });
       connection = null;
       setTimeout(
@@ -59,26 +70,27 @@ export const createConnection = async () => {
       );
     });
 
-    connection.on('error', (err) => {
+    newConnection.on('error', (err) => {
       logger.error('RabbitMQ connection error', { meta: err });
       connection = null;
     });
 
     logger.info('Successfully connected to RabbitMQ server');
-    return connection;
+    return newConnection;
   };
 
-  return retryWithBackoff(connect, MAX_RETRY_ATTEMPTS, RETRY_INTERVAL);
+  connection = await retryWithBackoff(connect, MAX_RETRY_ATTEMPTS, RETRY_INTERVAL);
+  return connection;
 };
 
-export const getConnection = async () => {
+export const getConnection = async (): Promise<Connection> => {
   if (!connection) {
     return createConnection();
   }
   return connection;
 };
 
-export const closeConnection = async () => {
+export const closeConnection = async (): Promise<void> => {
   if (!connection) {
     logger.info('No active RabbitMQ connection to close');
     return;
@@ -94,12 +106,13 @@ export const closeConnection = async () => {
     await connection.close();
     connection = null;
     // logger.info('RabbitMQ connection closed successfully');
-  } catch (err) {
-    if (err.message && err.message.includes('Connection closing')) {
+  } catch (err: unknown) {
+    const error = err as Error;
+    if (error.message && error.message.includes('Connection closing')) {
       logger.warn('RabbitMQ connection already closing', {
         meta: {
-          message: err.message,
-          name: err.name
+          message: error.message,
+          name: error.name || 'Unknown'
         }
       });
       // Still mark the connection as null since it's going to be closed
@@ -107,9 +120,9 @@ export const closeConnection = async () => {
     } else {
       logger.error('Error closing RabbitMQ connection', {
         meta: {
-          error: err.message,
-          stack: err.stack,
-          name: err.name
+          error: error.message || String(err),
+          stack: error.stack || 'No stack trace',
+          name: error.name || 'Unknown'
         }
       });
       // In case of unexpected errors, we should still set the connection to null

@@ -8,7 +8,7 @@ import { MongoDBTransportInstance } from 'winston-mongodb';
 import * as sourceMapSupport from 'source-map-support';
 import path, { dirname } from 'path';
 import { fileURLToPath } from 'url';
-import process from 'process';
+import config from '../config/dotenvConfig.js';
 
 // Linking Trace Support
 sourceMapSupport.install();
@@ -50,7 +50,7 @@ const consoleLogFormat = format.printf((info) => {
 });
 
 const consoleTransport = (): Array<ConsoleTransportInstance> => {
-  if (process.env.NODE_ENV === EApplicationEnvironment.DEVELOPMENT) {
+  if (config.NODE_ENV === EApplicationEnvironment.DEVELOPMENT) {
     return [
       new transports.Console({
         level: 'info',
@@ -92,13 +92,7 @@ const __dirname = dirname(__filename);
 
 const FileTransport = (): Array<FileTransportInstance> => [
   new transports.File({
-    filename: path.join(
-      __dirname,
-      '../',
-      '../',
-      'logs',
-      `${process.env.NODE_ENV || 'development'}.log`
-    ),
+    filename: path.join(__dirname, '../', '../', 'logs', `${config.NODE_ENV || 'development'}.log`),
     level: 'info',
     format: format.combine(format.timestamp(), fileLogFormat)
   })
@@ -107,7 +101,7 @@ const FileTransport = (): Array<FileTransportInstance> => [
 const MongodbTransport = (): Array<MongoDBTransportInstance> => [
   new transports.MongoDB({
     level: 'info',
-    db: process.env.DATABASE as string,
+    db: config.DATABASE as string,
     metaKey: 'meta',
     expireAfterSeconds: 3600 * 24 * 30,
     options: {

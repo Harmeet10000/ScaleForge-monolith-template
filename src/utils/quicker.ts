@@ -1,5 +1,6 @@
 import os from 'os';
 import process from 'process';
+import config from '../config/dotenvConfig.js';
 
 export const getSystemHealth = () => ({
   cpuUsage: os.loadavg(),
@@ -11,7 +12,7 @@ export const getSystemHealth = () => ({
 });
 
 export const getApplicationHealth = () => ({
-  environment: process.env.NODE_ENV,
+  environment: config.NODE_ENV,
   uptime: `${process.uptime().toFixed(2)} Seconds`,
   memoryUsage: {
     heapTotal: `${(process.memoryUsage().heapTotal / 1024 / 1024).toFixed(2)} MB`,

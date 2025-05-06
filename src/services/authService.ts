@@ -1,5 +1,5 @@
 import dayjs from 'dayjs';
-import utc from 'dayjs/plugin/utc.js';
+import utc from 'dayjs/plugin/utc';
 import {
   comparePassword,
   countryTimezone,
@@ -11,11 +11,11 @@ import {
   getDomainFromUrl,
   hashPassword,
   verifyToken
-} from '../helpers/generalHelper.js';
-import { sendEmail } from '../helpers/email.js';
-import { logger } from '../utils/logger.js';
-import { httpError } from '../utils/httpError.js';
-import { EUserRole } from '../constant/application.js';
+} from '../helpers/generalHelper';
+import { sendEmail } from '../helpers/email';
+import { logger } from '../utils/logger';
+import { httpError } from '../utils/httpError';
+import { EUserRole } from '../constant/application';
 import {
   ACCOUNT_ALREADY_CONFIRMED,
   ACCOUNT_CONFIRMATION_REQUIRED,
@@ -30,14 +30,24 @@ import {
   NOT_FOUND,
   PASSWORD_MATCHING_WITH_OLD_PASSWORD,
   UNAUTHORIZED
-} from '../constant/responseMessage.js';
-import * as authRepository from '../repository/authRepository.js';
-import * as tokenRepository from '../repository/tokenRepository.js';
-import { deleteCache, getCache, setCache } from '../helpers/redisFunctions.js';
+} from '../constant/responseMessage';
+import * as authRepository from '../repository/authRepository';
+import * as tokenRepository from '../repository/tokenRepository';
+import { deleteCache, getCache, setCache } from '../helpers/redisFunctions';
+import {
+  IDecryptedJwt,
+  ILoginUserRequestBody,
+  IRegisterUserRequestBody,
+  IUser,
+  IUserWithId,
+  IUserDocument
+} from '../types/userTypes';
+import { Request, NextFunction } from 'express';
+import config from '../config/dotenvConfig';
 
 dayjs.extend(utc);
 
-export const registerUser = async (userData) => {
+export const registerUser = async (userData: IRegisterUserRequestBody): Promise<IUserWithId> => {
   const { name, emailAddress, password, phoneNumber, consent } = userData;
 
   // * Phone Number Validation & Parsing
@@ -77,7 +87,7 @@ export const registerUser = async (userData) => {
   const code = generateOtp(6);
 
   // * Preparing Object
-  const payload = {
+  const payload: IUser = {
     name,
     emailAddress,
     phoneNumber: {
@@ -106,22 +116,18 @@ export const registerUser = async (userData) => {
   // Create New User
   const newUser = await authRepository.registerUser(payload);
 
-  // * Send Email
-  const confirmationUrl = `${config.FRONTEND_URL}/confirmation/${token}?code=${code}`;
-  const to = [emailAddress];
-  const subject = 'Confirm Your Account';
-  const text = `Hey ${name}, Please confirm your account by clicking on the link below\n\n${confirmationUrl}`;
-
-  sendEmail(to, subject, text).catch((err) => {
-    logger.error(`EMAIL_SERVICE`, {
-      meta: err
-    });
-  });
-
-  return newUser;
+  // Return without converting _id to string since IUserWithId now expects ObjectId
+  return {
+    ...newUser.toObject()
+  };
 };
 
-export const confirmAccount = async (token, code, req, next) => {
+export const confirmAccount = async (
+  token: string,
+  code: string,
+  req: Request,
+  next: NextFunction
+): Promise<boolean | void> => {
   // * Fetch User By Token & Code
   const user = await authRepository.findUserByConfirmationTokenAndCode(token, code);
   if (!user) {
@@ -140,51 +146,62 @@ export const confirmAccount = async (token, code, req, next) => {
   await user.save();
 
   // Update user in cache to reflect confirmation
-  await setCache('user', ['id', user._id], user.toObject(), 1800);
+  await setCache('user', ['id', user._id.toString()], user.toObject(), 1800);
   await setCache('user', ['email', user.emailAddress], user.toObject(), 1800);
 
   // * Account Confirmation Email
-  const to = [user.emailAddress];
   const subject = 'Account Confirmed';
   const text = `Your account has been confirmed`;
 
-  sendEmail(to, subject, text).catch((err) => {
+  try {
+    await sendEmail([user.emailAddress], subject, text);
+  } catch (err: unknown) {
+    const error = err instanceof Error ? err : new Error(String(err));
     logger.error(`EMAIL_SERVICE`, {
-      meta: err
+      meta: error
     });
-  });
+  }
 
   return true;
 };
 
-export const loginUser = async (credentials, req, next) => {
+export const loginUser = async (
+  credentials: ILoginUserRequestBody,
+  req: Request,
+  next: NextFunction
+): Promise<{ accessToken: string; refreshToken: string; domain: string } | void> => {
   const { emailAddress, password } = credentials;
-  const userIp = req.ip;
+  const userIp = req.ip as string;
 
   // Check cache for user first
-  let user = await getCache('user', ['email', emailAddress]);
+  let user = (await getCache('user', ['email', emailAddress])) as IUserWithId | null;
+  let userDocument: IUserDocument | null = null;
 
   // If not in cache, fetch from database
   if (!user) {
-    user = await authRepository.findUserByEmailAddress(emailAddress, `+password`);
+    userDocument = await authRepository.findUserByEmailAddress(emailAddress, `+password`);
 
     // If user exists, store in cache for future requests
-    if (user) {
+    if (userDocument) {
       // Don't store the user with password in cache for security
-      const userForCache = { ...user.toObject() };
+      const userForCache = userDocument.toObject();
       delete userForCache.password;
       await setCache('user', ['email', emailAddress], userForCache, 1800);
-      await setCache('user', ['id', user._id], userForCache, 1800);
+      await setCache('user', ['id', userDocument._id.toString()], userForCache, 1800);
+      user = userForCache;
     }
   } else {
     // If found in cache, get the password from DB for validation
-    const userWithPassword = await authRepository.findUserByEmailAddress(emailAddress, `+password`);
-    if (userWithPassword) {
-      user.password = userWithPassword.password;
+    userDocument = await authRepository.findUserByEmailAddress(emailAddress, `+password`);
+    if (userDocument) {
+      user = {
+        ...user,
+        password: userDocument.password
+      };
     }
   }
 
-  if (!user) {
+  if (!user || !userDocument || !user.password) {
     return httpError(next, new Error(NOT_FOUND('user')), req, 404);
   }
 
@@ -202,40 +219,30 @@ export const loginUser = async (credentials, req, next) => {
   // * Access Token & Refresh Token
   const accessToken = generateToken(
     {
-      userId: user.id || user._id, // Handle both object and plain object
+      userId: userDocument._id.toString(),
       userIp
     },
-    config.ACCESS_TOKEN_SECRET,
+    config.ACCESS_TOKEN_SECRET || 'access-token-secret',
     3600
   );
   const refreshToken = generateToken(
     {
-      userId: user.id || user._id,
+      userId: userDocument._id.toString(),
       userIp
     },
-    config.REFRESH_TOKEN_SECRET,
+    config.REFRESH_TOKEN_SECRET || 'refresh-token-secret',
     3600
   );
 
   // * Last Login Information
-  if (typeof user.save === 'function') {
-    user.lastLoginAt = dayjs().utc().toDate();
-    await user.save();
+  userDocument.lastLoginAt = dayjs().utc().toDate();
+  await userDocument.save();
 
-    // Update user in cache with new lastLoginAt
-    const userForCache = { ...user.toObject() };
-    delete userForCache.password;
-    await setCache('user', ['email', emailAddress], userForCache, 1800);
-    await setCache('user', ['id', user._id], userForCache, 1800);
-  } else {
-    // If user is from cache and doesn't have save method
-    await authRepository.updateUserLastLogin(user._id);
-
-    // Update cache with new login time
-    user.lastLoginAt = dayjs().utc().toDate();
-    await setCache('user', ['email', emailAddress], user, 1800);
-    await setCache('user', ['id', user._id], user, 1800);
-  }
+  // Update user in cache with new lastLoginAt
+  const userForCache = userDocument.toObject();
+  delete userForCache.password;
+  await setCache('user', ['email', emailAddress], userForCache, 1800);
+  await setCache('user', ['id', userDocument._id.toString()], userForCache, 1800);
 
   // * Refresh Token Store
   const refreshTokenPayload = {
@@ -245,7 +252,7 @@ export const loginUser = async (credentials, req, next) => {
   await tokenRepository.createRefreshToken(refreshTokenPayload);
 
   // * Get domain for cookies
-  const domain = getDomainFromUrl(config.SERVER_URL);
+  const domain = getDomainFromUrl(config.SERVER_URL || 'http://localhost:3000');
 
   return {
     accessToken,
@@ -254,12 +261,15 @@ export const loginUser = async (credentials, req, next) => {
   };
 };
 
-export const logoutUser = async (refreshToken) => {
+export const logoutUser = async (refreshToken: string): Promise<boolean> => {
   logger.info('Logout called with refresh:', refreshToken);
   if (refreshToken) {
     try {
       // Get user ID from refresh token
-      const decoded = verifyToken(refreshToken, config.REFRESH_TOKEN_SECRET);
+      const decoded = verifyToken(
+        refreshToken,
+        config.REFRESH_TOKEN_SECRET || 'refresh-token-secret'
+      ) as IDecryptedJwt;
 
       if (decoded && decoded.userId) {
         // Remove user from cache when logging out
@@ -275,7 +285,11 @@ export const logoutUser = async (refreshToken) => {
   return true;
 };
 
-export const refreshUserToken = async (refreshToken, req, next) => {
+export const refreshUserToken = async (
+  refreshToken: string,
+  req: Request,
+  next: NextFunction
+): Promise<{ newAccessToken: string; domain: string } | void> => {
   if (!refreshToken) {
     return httpError(next, new Error(UNAUTHORIZED), req, 401);
   }
@@ -286,11 +300,14 @@ export const refreshUserToken = async (refreshToken, req, next) => {
     return httpError(next, new Error(UNAUTHORIZED), req, 401);
   }
 
-  const domain = getDomainFromUrl(config.SERVER_URL);
-  let userId = null;
+  const domain = getDomainFromUrl(config.SERVER_URL || 'http://localhost:3000');
+  let userId: string | null = null;
 
   try {
-    const decryptedJwt = verifyToken(refreshToken, config.REFRESH_TOKEN_SECRET);
+    const decryptedJwt = verifyToken(
+      refreshToken,
+      config.REFRESH_TOKEN_SECRET || 'refresh-token-secret'
+    ) as IDecryptedJwt;
     userId = decryptedJwt.userId;
   } catch (err) {
     return httpError(next, new Error(UNAUTHORIZED), req, 401);
@@ -306,8 +323,8 @@ export const refreshUserToken = async (refreshToken, req, next) => {
       userId,
       userIp: req.ip
     },
-    config.ACCESS_TOKEN_SECRET,
-    config.ACCESS_TOKEN_EXPIRY
+    config.ACCESS_TOKEN_SECRET || 'access-token-secret',
+    config.ACCESS_TOKEN_EXPIRY || 3600
   );
 
   return {
@@ -316,7 +333,11 @@ export const refreshUserToken = async (refreshToken, req, next) => {
   };
 };
 
-export const requestPasswordReset = async (emailAddress, req, next) => {
+export const requestPasswordReset = async (
+  emailAddress: string,
+  req: Request,
+  next: NextFunction
+): Promise<boolean | void> => {
   // Find User by Email Address
   const user = await authRepository.findUserByEmailAddress(emailAddress);
   if (!user) {
@@ -340,20 +361,27 @@ export const requestPasswordReset = async (emailAddress, req, next) => {
 
   // Send Email
   const resetUrl = `${config.FRONTEND_URL}/reset-password/${token}`;
-  const to = [emailAddress];
   const subject = 'Account Password Reset Requested';
   const text = `Hey ${user.name}, Please reset your account password by clicking on the link below\n\nLink will expire within 15 Minutes\n\n${resetUrl}`;
 
-  sendEmail(to, subject, text).catch((err) => {
+  try {
+    await sendEmail([emailAddress], subject, text);
+  } catch (err: unknown) {
+    const error = err instanceof Error ? err : new Error(String(err));
     logger.error(`EMAIL_SERVICE`, {
-      meta: err
+      meta: error
     });
-  });
+  }
 
   return true;
 };
 
-export const resetUserPassword = async (token, newPassword, req, next) => {
+export const resetUserPassword = async (
+  token: string,
+  newPassword: string,
+  req: Request,
+  next: NextFunction
+): Promise<boolean | void> => {
   // Fetch user by token
   const user = await authRepository.findByResetToken(token);
   if (!user) {
@@ -388,20 +416,28 @@ export const resetUserPassword = async (token, newPassword, req, next) => {
   await user.save();
 
   // Email send
-  const to = [user.emailAddress];
   const subject = 'Account Password Reset';
   const text = `Hey ${user.name}, You account password has been reset successfully.`;
 
-  sendEmail(to, subject, text).catch((err) => {
+  try {
+    await sendEmail([user.emailAddress], subject, text);
+  } catch (err: unknown) {
+    const error = err instanceof Error ? err : new Error(String(err));
     logger.error(`EMAIL_SERVICE`, {
-      meta: err
+      meta: error
     });
-  });
+  }
 
   return true;
 };
 
-export const changeUserPassword = async (userId, oldPassword, newPassword, req, next) => {
+export const changeUserPassword = async (
+  userId: string,
+  oldPassword: string,
+  newPassword: string,
+  req: Request,
+  next: NextFunction
+): Promise<boolean | void> => {
   // Find User by id
   const user = await authRepository.findUserById(userId, '+password');
   if (!user) {
@@ -426,15 +462,17 @@ export const changeUserPassword = async (userId, oldPassword, newPassword, req, 
   await user.save();
 
   // Email Send
-  const to = [user.emailAddress];
   const subject = 'Password Changed';
   const text = `Hey ${user.name}, You account password has been changed successfully.`;
 
-  sendEmail(to, subject, text).catch((err) => {
+  try {
+    await sendEmail([user.emailAddress], subject, text);
+  } catch (err: unknown) {
+    const error = err instanceof Error ? err : new Error(String(err));
     logger.error(`EMAIL_SERVICE`, {
-      meta: err
+      meta: error
     });
-  });
+  }
 
   return true;
 };

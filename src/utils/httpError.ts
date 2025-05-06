@@ -3,7 +3,7 @@ import { EApplicationEnvironment } from '../constant/application.js';
 import { SOMETHING_WENT_WRONG } from '../constant/responseMessage.js';
 import { THttpError } from '../types/types.js';
 import { logger } from './logger.js';
-import process from 'process';
+import config from '../config/dotenvConfig.js';
 
 export const httpError = (
   nextFunc: NextFunction,
@@ -25,7 +25,7 @@ const errorObject = (err: Error, req: Request, errorStatusCode = 500): THttpErro
       method: req.method,
       url: req.originalUrl
     },
-    message: err instanceof Error ? err.message || SOMETHING_WENT_WRONG : SOMETHING_WENT_WRONG,
+    message: err instanceof Error ? err.message : SOMETHING_WENT_WRONG,
     data: null,
     trace: err instanceof Error ? { error: err.stack } : null
   };
@@ -36,7 +36,7 @@ const errorObject = (err: Error, req: Request, errorStatusCode = 500): THttpErro
   });
 
   // Production Env check
-  if (process.env.NODE_ENV === EApplicationEnvironment.PRODUCTION) {
+  if (config.NODE_ENV === EApplicationEnvironment.PRODUCTION) {
     delete errorObj.request.ip;
     delete errorObj.trace;
   }

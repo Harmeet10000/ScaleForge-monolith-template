@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { EApplicationEnvironment } from '../constant/application.js';
 import { THttpResponse } from '../types/types.js';
 import { logger } from './logger.js';
-import process from 'process';
+import config from '../config/dotenvConfig.js';
 
 export const httpResponse = (
   req: Request,
@@ -29,7 +29,7 @@ export const httpResponse = (
   });
 
   // Production Env check
-  if (process.env.NODE_ENV === EApplicationEnvironment.PRODUCTION) {
+  if (config.NODE_ENV === EApplicationEnvironment.PRODUCTION) {
     delete response.request.ip;
   }
 

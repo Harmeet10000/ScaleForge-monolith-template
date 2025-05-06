@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { Router } from 'express';
 import {
   changePassword,
   confirmation,
@@ -11,7 +11,7 @@ import {
 } from '../controllers/authController.js';
 import { protect } from '../middlewares/authMiddleware.js';
 
-const router = express.Router();
+const router: Router = express.Router();
 
 router.post('/register', register);
 router.put('/confirmation/:token', confirmation);

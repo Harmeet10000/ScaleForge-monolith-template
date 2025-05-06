@@ -60,7 +60,7 @@ COPY --chown=appuser:appgroup ./.env.production ./.env.production
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
-    CMD node -e "const http = require('http'); const options = { hostname: 'localhost', port: process.env.PORT || 8000, path: '/api/health', timeout: 2000 }; const req = http.request(options, (res) => { process.exit(res.statusCode === 200 ? 0 : 1); }); req.on('error', () => { process.exit(1); }); req.end();"
+    CMD node -e "const http = require('http'); const options = { hostname: 'localhost', port: config.PORT || 8000, path: '/api/health', timeout: 2000 }; const req = http.request(options, (res) => { process.exit(res.statusCode === 200 ? 0 : 1); }); req.on('error', () => { process.exit(1); }); req.end();"
 
 # Expose port
 EXPOSE 8000
