@@ -2,6 +2,7 @@
   "name": "auth_service_backend",
   "version": "1.0.0",
   "main": "dist/index.cjs",
+  "type": "module",
   "engines": {
     "node": ">=22.14.0",
     "npm": ">=10.7.0"
