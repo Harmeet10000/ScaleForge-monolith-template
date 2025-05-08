@@ -4,7 +4,7 @@ import helmet from 'helmet';
 import mongoSanitize from 'express-mongo-sanitize';
 import compression from 'compression';
 import type { CompressionOptions } from 'compression';
-import xss from 'xss';
+// import xss from 'xss';
 import cors, { CorsOptions } from 'cors';
 import hpp from 'hpp';
 import globalErrorHandler from './middlewares/globalErrorHandler.js';
@@ -99,7 +99,7 @@ server.use(cookieParser());
 server.use(mongoSanitize());
 
 // Data sanitization against XSS
-server.use(xss());
+// server.use(xss());
 
 // Prevent parameter pollution
 server.use(

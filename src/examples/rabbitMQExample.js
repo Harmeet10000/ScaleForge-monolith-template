@@ -1,65 +1,67 @@
-import { ExchangeTypes, createProducer } from '../helpers/rabbitMQProducer.js';
-import { createBoundConsumer, setupPriorityQueue } from '../helpers/rabbitMQConsumer.js';
+import {
+  ExchangeTypes,
+  publish,
+  createProducerConfig,
+  scheduleMessage
+} from '../helpers/rabbitMQProducer.js';
+import {
+  createConsumer,
+  consume,
+  createBoundConsumer,
+  setupPriorityQueue
+} from '../helpers/rabbitMQConsumer.js';
 import { logger } from '../utils/logger.js';
 import { catchAsync } from '../utils/catchAsync.js';
 import { closeConnection } from '../db/rabbitMQConnection.js';
 
 /**
- * Example: Setting up a RabbitMQ producer
+ * Example: Using RabbitMQ producers
  *
- * This demonstrates creating and using a producer to send messages to different exchanges
- * with various routing patterns.
+ * This demonstrates sending messages to different exchanges with various routing patterns
+ * using our functional approach.
  */
 export const setupProducer = catchAsync(async () => {
-  // Create a producer for a direct exchange
-  const directProducer = await createProducer('notifications', ExchangeTypes.DIRECT);
-  logger.info('Direct producer created:', {
+  // Configure producers for different exchange types
+  const notificationConfig = createProducerConfig('notifications', ExchangeTypes.DIRECT);
+  const logsConfig = createProducerConfig('logs', ExchangeTypes.TOPIC);
+  const broadcastConfig = createProducerConfig('broadcasts', ExchangeTypes.FANOUT);
+
+  logger.info('Producer configs created', {
     meta: {
-      exchange: 'notifications',
-      type: ExchangeTypes.DIRECT
+      exchanges: ['notifications', 'logs', 'broadcasts']
     }
   });
 
   // Send a message with a specific routing key
-  await directProducer.publish(
+  await publish(
+    notificationConfig,
     {
       type: 'email',
       recipient: 'user@example.com',
       subject: 'Welcome!',
       body: 'Welcome to our platform.'
     },
-    'email.welcome' // Routing key
+    'email.welcome'
   );
 
   logger.info('Message sent to direct exchange');
 
-  // Create a producer for a topic exchange (useful for hierarchical routing patterns)
-  const topicProducer = await createProducer('logs', ExchangeTypes.TOPIC);
-  logger.info('Topic producer created:', {
-    meta: {
-      exchange: 'logs',
-      type: ExchangeTypes.TOPIC
-    }
-  });
-
   // Send a message with a topic routing pattern
-  await topicProducer.publish(
+  await publish(
+    logsConfig,
     {
       level: 'error',
       service: 'auth',
       message: 'Authentication failed',
       timestamp: new Date().toISOString()
     },
-    'service.auth.error' // Topic pattern: service.name.level
+    'service.auth.error'
   );
 
   logger.info('Message sent to topic exchange');
 
-  // Create a producer for a fanout exchange (broadcasts to all bound queues)
-  const fanoutProducer = await createProducer('broadcasts', ExchangeTypes.FANOUT);
-
   // Send a broadcast message (routing key is ignored in fanout exchanges)
-  await fanoutProducer.publish({
+  await publish(broadcastConfig, {
     type: 'system',
     message: 'System maintenance in 5 minutes',
     timestamp: new Date().toISOString()
@@ -67,35 +69,9 @@ export const setupProducer = catchAsync(async () => {
 
   logger.info('Message sent to fanout exchange');
 
-  // Demonstrate retry mechanism
-  logger.info('Demonstrating publish with retry...');
-  try {
-    await topicProducer.publishWithRetry(
-      {
-        level: 'warning',
-        service: 'api',
-        message: 'Rate limit approaching',
-        timestamp: new Date().toISOString()
-      },
-      'service.api.warning',
-      {}, // Standard options
-      {
-        maxRetries: 3,
-        initialDelay: 100,
-        backoffFactor: 2
-      }
-    );
-
-    logger.info('Message published with retry configuration');
-  } catch (error) {
-    logger.error('Failed to publish message with retry', {
-      meta: { error: error.message }
-    });
-  }
-
   // Demonstrate scheduled message
-  logger.info('Demonstrating scheduled message...');
-  await directProducer.scheduleMessage(
+  await scheduleMessage(
+    notificationConfig,
     {
       type: 'reminder',
       recipient: 'user@example.com',
@@ -103,15 +79,10 @@ export const setupProducer = catchAsync(async () => {
       body: "Don't forget to complete your profile!"
     },
     'email.reminder',
-    5000 // Delay in milliseconds
+    5000
   );
 
   logger.info('Scheduled message for delivery in 5 seconds');
-
-  // Clean up
-  await directProducer.close();
-  await topicProducer.close();
-  await fanoutProducer.close();
 
   return { success: true };
 });
@@ -119,34 +90,38 @@ export const setupProducer = catchAsync(async () => {
 /**
  * Example: Setting up RabbitMQ consumers
  *
- * This demonstrates creating and using consumers to receive messages from queues
- * bound to different exchange types with various routing patterns.
+ * This demonstrates receiving messages from queues bound to different exchange types
+ * using our functional approach.
  */
 export const setupConsumers = catchAsync(async () => {
-  // Create a consumer for direct exchange messages with retry configuration
-  const emailConsumer = await createBoundConsumer(
-    'email_notifications', // Queue name
-    'notifications', // Exchange name
-    'email.*', // Binding pattern (matches email.welcome, email.reminder, etc.)
-    {
-      queueOptions: {
-        durable: true,
-        deadLetterExchange: 'dead_letters' // Send failed messages to dead letter exchange
-      }
+  // Initialize consumers
+  await createConsumer('email_notifications', {
+    durable: true,
+    deadLetterExchange: 'dead_letters'
+  });
+
+  await createConsumer('error_logs');
+  await createConsumer('system_alerts');
+
+  // Bind queues to their exchanges
+  await createBoundConsumer('email_notifications', 'notifications', 'email.*', {
+    queueOptions: {
+      durable: true,
+      deadLetterExchange: 'dead_letters'
     }
-  );
+  });
+
+  await createBoundConsumer('error_logs', 'logs', 'service.*.error');
+  await createBoundConsumer('system_alerts', 'broadcasts', '');
 
   // Start consuming messages
-  await emailConsumer.consume(
+  await consume(
+    'email_notifications',
     async (message, originalMessage) => {
       logger.info(`Processing email notification: ${message.subject}`, {
         meta: { recipient: message.recipient }
       });
 
-      // Process the message (in a real application, this would send an email)
-      // If an error occurs, the message will be nacked and requeued by default
-
-      // Example of accessing message properties from the original amqplib message
       logger.debug('Message metadata', {
         meta: {
           routingKey: originalMessage.fields.routingKey,
@@ -154,50 +129,25 @@ export const setupConsumers = catchAsync(async () => {
         }
       });
     },
-    {
-      prefetch: 5 // Process 5 messages at a time
-    }
+    { prefetch: 5 }
   );
 
-  // Create a consumer for topic exchange messages
-  const errorLogConsumer = await createBoundConsumer(
-    'error_logs', // Queue name
-    'logs', // Exchange name
-    'service.*.error' // Topic pattern: matches any service's error logs
-  );
-
-  await errorLogConsumer.consume(async (message) => {
+  await consume('error_logs', async (message) => {
     logger.info(`Processing error log from ${message.service}`, {
       meta: { level: message.level, message: message.message }
     });
-
-    // Process the error log
   });
 
-  // Create a consumer for fanout exchange messages (broadcasts)
-  const systemAlertConsumer = await createBoundConsumer(
-    'system_alerts', // Queue name
-    'broadcasts', // Exchange name
-    '' // Binding key is ignored for fanout exchanges
-  );
-
-  await systemAlertConsumer.consume(async (message) => {
+  await consume('system_alerts', async (message) => {
     logger.info(`Received system broadcast: ${message.message}`, {
       meta: { type: message.type }
     });
-
-    // Process the system alert
   });
 
   logger.info('All consumers set up and ready to receive messages');
 
-  // In a real application, you wouldn't close these right away
-  // This is just for demonstration purposes
-  // After 10 seconds, stop all consumers
+  // Clean up after 10 seconds
   setTimeout(async () => {
-    await emailConsumer.close();
-    await errorLogConsumer.close();
-    await systemAlertConsumer.close();
     await closeConnection();
     logger.info('All consumers closed');
   }, 10000);
@@ -206,19 +156,20 @@ export const setupConsumers = catchAsync(async () => {
 });
 
 export const runTaskQueueExample = catchAsync(async () => {
-  // Create a task producer that publishes to a direct exchange
-  const taskProducer = await createProducer('tasks', ExchangeTypes.DIRECT);
+  // Create task queue configuration
+  const taskConfig = createProducerConfig('tasks', ExchangeTypes.DIRECT);
 
-  // Create a priority queue consumer
-  const taskConsumer = await setupPriorityQueue('task_processor', 10, {
+  // Setup priority queue
+  await setupPriorityQueue('task_processor', 10, {
     durable: true
   });
 
-  // Bind the queue to the exchange
-  await taskConsumer.bindQueue('tasks', 'task.process');
+  // Bind queue to exchange
+  await createBoundConsumer('task_processor', 'tasks', 'task.process');
 
   // Start consuming tasks
-  await taskConsumer.consume(
+  await consume(
+    'task_processor',
     async (task) => {
       logger.info(`Processing task: ${task.id}`, {
         meta: {
@@ -227,21 +178,17 @@ export const runTaskQueueExample = catchAsync(async () => {
         }
       });
 
-      // Simulate task processing time
       await new Promise((resolve) => setTimeout(resolve, 500));
-
-      // Simulate task result
       logger.info(`Task ${task.id} completed`);
     },
-    {
-      prefetch: 1 // Process only one task at a time
-    }
+    { prefetch: 1 }
   );
 
-  // Send some tasks with different priorities
+  // Send tasks with different priorities
   for (let i = 1; i <= 5; i++) {
     const priority = Math.floor(Math.random() * 10);
-    await taskProducer.publish(
+    await publish(
+      taskConfig,
       {
         id: `task-${i}`,
         type: 'data-processing',
@@ -249,9 +196,7 @@ export const runTaskQueueExample = catchAsync(async () => {
         priority
       },
       'task.process',
-      {
-        priority // Random priority 0-9
-      }
+      { priority }
     );
 
     logger.info(`Task ${i} sent with priority ${priority}`);
@@ -261,8 +206,7 @@ export const runTaskQueueExample = catchAsync(async () => {
 
   // Clean up after 5 seconds
   setTimeout(async () => {
-    await taskProducer.close();
-    await taskConsumer.close();
+    await closeConnection();
     logger.info('Task queue example completed');
   }, 5000);
 
