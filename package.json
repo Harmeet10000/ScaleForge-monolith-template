@@ -7,6 +7,7 @@
     "node": ">=22.14.0",
     "npm": ">=10.7.0"
   },
+
   "scripts": {
     "dev": "nodemon  src/index.js",
     "build": "rm -rf dist && npx webpack --config webpack.config.js",

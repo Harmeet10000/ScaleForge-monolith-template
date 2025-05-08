@@ -1,13 +1,43 @@
 # 🔐 Production-Grade Authentication Template
 
 <div align="center">
-  <img src="https://img.shields.io/badge/node.js-20.14.0-brightgreen" alt="Node.js Version" />
-  <img src="https://img.shields.io/badge/express-4.x-blue" alt="Express Version" />
-  <img src="https://img.shields.io/badge/mongodb-latest-green" alt="MongoDB" />
-  <img src="https://img.shields.io/badge/redis-latest-red" alt="Redis" />
+  <!-- Core Technologies -->
+  <img src="https://img.shields.io/badge/node.js-22.14.0-brightgreen" alt="Node.js Version" />
+  <img src="https://img.shields.io/badge/express-4.21.2-blue" alt="Express Version" />
+  <img src="https://img.shields.io/badge/mongoose-8.10.1-green" alt="MongoDB" />
+  <img src="https://img.shields.io/badge/ioredis-5.6.1-red" alt="Redis" />
   <br/>
   <img src="https://img.shields.io/badge/docker-ready-blue" alt="Docker Ready" />
   <img src="https://img.shields.io/badge/license-ISC-lightgrey" alt="License" />
+</div>
+
+<div align="center">
+  <h3>Key Dependencies</h3>
+  <img src="https://img.shields.io/badge/typescript-types-blue" alt="TypeScript" />
+  <img src="https://img.shields.io/badge/winston-3.17.0-orange" alt="Winston" />
+  <img src="https://img.shields.io/badge/joi-17.13.3-yellow" alt="Joi" />
+  <br/>
+  <img src="https://img.shields.io/badge/swagger--ui--express-5.0.1-green" alt="Swagger UI" />
+  <img src="https://img.shields.io-badge/helmet-8.0.0-lightgrey" alt="Helmet" />
+  <img src="https://img.shields.io/badge/cors-2.8.5-orange" alt="CORS" />
+  <br/>
+  <img src="https://img.shields.io/badge/amqplib-0.10.7-purple" alt="RabbitMQ" />
+  <img src="https://img.shields.io/badge/aws--sdk-3.797.0-yellow" alt="AWS SDK" />
+  <img src="https://img.shields.io/badge/jsonwebtoken-9.0.2-blue" alt="JWT" />
+  <br/>
+  <img src="https://img.shields.io/badge/compression-1.8.0-lightgrey" alt="Compression" />
+  <img src="https://img.shields.io/badge/prom--client-15.1.3-orange" alt="Prometheus" />
+</div>
+
+<div align="center">
+  <h3>Development Tools</h3>
+  <img src="https://img.shields.io/badge/eslint-9.24.0-purple" alt="ESLint" />
+  <img src="https://img.shields.io/badge/prettier-3.5.2-pink" alt="Prettier" />
+  <img src="https://img.shields.io/badge/husky-9.1.7-brown" alt="Husky" />
+  <br/>
+  <img src="https://img.shields.io/badge/nodemon-3.1.9-green" alt="Nodemon" />
+  <img src="https://img.shields.io/badge/webpack--cli-6.0.1-blue" alt="Webpack" />
+  <img src="https://img.shields.io/badge/commitlint-19.7.1-orange" alt="Commitlint" />
 </div>
 
 <p align="center">A robust, secure, and scalable authentication service template built with Node.js, Express, MongoDB, and Redis.</p>
