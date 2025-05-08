@@ -1,6 +1,6 @@
 import { getConnection } from '../db/rabbitMQConnection';
 import { logger } from '../utils/logger';
-import { Channel, Connection, Options } from 'amqplib';
+import { Channel, Options } from 'amqplib';
 
 export const ExchangeTypes = {
   DIRECT: 'direct',

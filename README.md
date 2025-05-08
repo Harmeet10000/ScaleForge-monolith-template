@@ -10,6 +10,29 @@
   <img src="https://img.shields.io/badge/license-ISC-lightgrey" alt="License" />
 </div>
 
+<div align="center">
+  <h3>Key Dependencies</h3>
+  <img src="https://img.shields.io/badge/typescript-5.8.3-blue" alt="TypeScript" />
+  <img src="https://img.shields.io/badge/mongoose-8.x-green" alt="Mongoose" />
+  <img src="https://img.shields.io/badge/ioredis-5.6.1-red" alt="IORedis" />
+  <img src="https://img.shields.io/badge/winston-3.17.0-orange" alt="Winston" />
+  <br/>
+  <img src="https://img.shields.io/badge/joi-17.x-yellow" alt="Joi" />
+  <img src="https://img.shields.io/badge/swagger--ui--express-5.0.1-green" alt="Swagger UI" />
+  <img src="https://img.shields.io/badge/helmet-8.0.0-lightgrey" alt="Helmet" />
+  <img src="https://img.shields.io/badge/cors-2.8.5-orange" alt="CORS" />
+  <br/>
+  <img src="https://img.shields.io/badge/amqplib-0.10.7-purple" alt="RabbitMQ" />
+  <img src="https://img.shields.io/badge/aws--sdk-3.797.0-yellow" alt="AWS SDK" />
+  <img src="https://img.shields.io/badge/jsonwebtoken-9.0.2-blue" alt="JWT" />
+  <img src="https://img.shields.io/badge/compression-1.8.0-lightgrey" alt="Compression" />
+  <br/>
+  <img src="https://img.shields.io/badge/prometheus-client-orange" alt="Prometheus" />
+  <img src="https://img.shields.io/badge/prettier-3.5.2-pink" alt="Prettier" />
+  <img src="https://img.shields.io/badge/eslint-9.26.0-purple" alt="ESLint" />
+  <img src="https://img.shields.io/badge/husky-9.x-brown" alt="Husky" />
+</div>
+
 <p align="center">A robust, secure, and scalable authentication service template built with Node.js, Express, MongoDB, and Redis.</p>
 
 <details open>
