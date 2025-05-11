@@ -177,13 +177,10 @@ export const loginUser = async (
   let user = (await getCache('user', ['email', emailAddress])) as IUserWithId | null;
   let userDocument: IUserDocument | null = null;
 
-  // If not in cache, fetch from database
   if (!user) {
     userDocument = await authRepository.findUserByEmailAddress(emailAddress, `+password`);
 
-    // If user exists, store in cache for future requests
     if (userDocument) {
-      // Don't store the user with password in cache for security
       const userForCache = userDocument.toObject();
       delete userForCache.password;
       await setCache('user', ['email', emailAddress], userForCache, 1800);
@@ -223,7 +220,7 @@ export const loginUser = async (
       userIp
     },
     config.ACCESS_TOKEN_SECRET || 'access-token-secret',
-    3600
+    config.ACCESS_TOKEN_EXPIRY || 3600
   );
   const refreshToken = generateToken(
     {
@@ -231,7 +228,7 @@ export const loginUser = async (
       userIp
     },
     config.REFRESH_TOKEN_SECRET || 'refresh-token-secret',
-    3600
+    config.REFRESH_TOKEN_EXPIRY || 604800
   );
 
   // * Last Login Information
@@ -252,7 +249,7 @@ export const loginUser = async (
   await tokenRepository.createRefreshToken(refreshTokenPayload);
 
   // * Get domain for cookies
-  const domain = getDomainFromUrl(config.SERVER_URL || 'http://localhost:3000');
+  const domain = getDomainFromUrl(config.SERVER_URL);
 
   return {
     accessToken,
@@ -300,7 +297,7 @@ export const refreshUserToken = async (
     return httpError(next, new Error(UNAUTHORIZED), req, 401);
   }
 
-  const domain = getDomainFromUrl(config.SERVER_URL || 'http://localhost:3000');
+  const domain = getDomainFromUrl(config.SERVER_URL);
   let userId: string | null = null;
 
   try {

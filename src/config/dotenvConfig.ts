@@ -7,7 +7,7 @@ dotenvFlow.config();
 interface AppConfig {
   NODE_ENV: string | undefined;
   PORT: string | undefined;
-  SERVER_URL: string | undefined;
+  SERVER_URL: string;
   FRONTEND_URL: string | undefined;
   DATABASE: string | undefined;
   DB_POOL_SIZE: number;
@@ -21,7 +21,7 @@ interface AppConfig {
   ACCESS_TOKEN_SECRET: string | undefined;
   REFRESH_TOKEN_SECRET: string | undefined;
   ACCESS_TOKEN_EXPIRY: number;
-  REFRESH_TOKEN_EXPIRY: string | undefined;
+  REFRESH_TOKEN_EXPIRY: number | undefined;
   RESEND_KEY: string | undefined;
   S3_BACKUP_ENABLED: boolean;
   S3_BUCKET_NAME: string | undefined;
@@ -38,7 +38,7 @@ const _config: AppConfig = {
   // General
   NODE_ENV: process.env.NODE_ENV,
   PORT: process.env.PORT,
-  SERVER_URL: process.env.SERVER_URL,
+  SERVER_URL: String(process.env.SERVER_URL),
   FRONTEND_URL: process.env.FRONTEND_URL,
 
   // Database
@@ -62,7 +62,7 @@ const _config: AppConfig = {
   ACCESS_TOKEN_SECRET: process.env.ACCESS_TOKEN_SECRET,
   REFRESH_TOKEN_SECRET: process.env.REFRESH_TOKEN_SECRET,
   ACCESS_TOKEN_EXPIRY: Number(process.env.ACCESS_TOKEN_EXPIRY) || 3600,
-  REFRESH_TOKEN_EXPIRY: process.env.REFRESH_TOKEN_EXPIRY,
+  REFRESH_TOKEN_EXPIRY: Number(process.env.REFRESH_TOKEN_EXPIRY) || 604800,
 
   // Email
   RESEND_KEY: process.env.RESEND_KEY,

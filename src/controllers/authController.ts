@@ -53,12 +53,18 @@ export const login = catchAsync(async (req: Request, res: Response, next: NextFu
     return httpError(next, error as ZodError, req, 422);
   }
 
-  const { accessToken, refreshToken, domain } = await authService.loginUser(value, req, next);
+  const loginResult = await authService.loginUser(value, req, next);
+
+  if (!loginResult) {
+    return;
+  }
+
+  const { accessToken, refreshToken, domain } = loginResult;
   // Set cookies
   res
     .cookie('accessToken', accessToken, {
       path: '/api/v1',
-      // domain,
+      domain,
       sameSite: 'strict',
       maxAge: 1000 * 3600,
       httpOnly: true,
@@ -66,7 +72,7 @@ export const login = catchAsync(async (req: Request, res: Response, next: NextFu
     })
     .cookie('refreshToken', refreshToken, {
       path: '/api/v1',
-      // domain,
+      domain,
       sameSite: 'strict',
       maxAge: 1000 * 3600,
       httpOnly: true,
@@ -171,7 +177,7 @@ export const changePassword = catchAsync(
     }
 
     await authService.changeUserPassword(
-      req.user!._id,
+      req.user!._id.toString(),
       value.oldPassword,
       value.newPassword,
       req,

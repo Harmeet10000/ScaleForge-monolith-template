@@ -6,13 +6,13 @@ import { logger } from './logger.js';
 import config from '../config/dotenvConfig.js';
 
 export const httpError = (
-  nextFunc: NextFunction,
+  next: NextFunction,
   err: Error,
   req: Request,
   errorStatusCode = 500
 ) => {
   const errorObj: THttpError = errorObject(err, req, errorStatusCode);
-  return nextFunc(errorObj);
+  return next(errorObj);
 };
 
 const errorObject = (err: Error, req: Request, errorStatusCode = 500): THttpError => {

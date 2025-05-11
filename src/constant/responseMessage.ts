@@ -1,8 +1,8 @@
 export const SUCCESS = 'The operation has been successful';
 export const SOMETHING_WENT_WRONG = 'Something went wrong!';
-export const NOT_FOUND = (entity) => `${entity} not found`;
+export const NOT_FOUND = (entity: string) => `${entity} not found`;
 export const TOO_MANY_REQUESTS = 'Too many requests! Please try again after some time';
-export const ALREADY_EXIST = (entity, identifier) => `${entity} already exist with ${identifier}`;
+export const ALREADY_EXIST = (entity: string, identifier: string) => `${entity} already exist with ${identifier}`;
 export const INVALID_PHONE_NUMBER = `Invalid phone number`;
 export const INVALID_TIMEZONE = `Invalid timezone`;
 export const INVALID_EMAIL = `Invalid email address`;
