@@ -57,8 +57,11 @@ export const protect = catchAsync(
       // 4) Verification token
       const decoded = await new Promise<JwtPayload>((resolve, reject) => {
         jwt.verify(tokenString, secretKey, (err, payload) => {
-          if (err) reject(err);
-          else resolve(payload as JwtPayload);
+          if (err) {
+            reject(err);
+          } else {
+            resolve(payload as JwtPayload);
+          }
         });
       });
       logger.debug(`Decoded token: ${JSON.stringify(decoded)}, Current IP: ${currentIp}`);
@@ -115,8 +118,9 @@ export const protect = catchAsync(
   }
 );
 
-export const restrictTo = (...roles: string[]) => {
-  return (req: AuthRequest, res: Response, next: NextFunction): void => {
+export const restrictTo =
+  (...roles: string[]) =>
+  (req: AuthRequest, res: Response, next: NextFunction): void => {
     if (!req.user || !roles.includes(req.user.role)) {
       return httpError(
         next,
@@ -127,4 +131,3 @@ export const restrictTo = (...roles: string[]) => {
     }
     next();
   };
-};

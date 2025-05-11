@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
-import { httpResponse } from '../utils/httpResponse.js';
-import { httpError } from '../utils/httpError.js';
-import { catchAsync } from '../utils/catchAsync.js';
+import { httpResponse } from '../utils/httpResponse';
+import { httpError } from '../utils/httpError';
+import { catchAsync } from '../utils/catchAsync';
 import {
   validateSchema,
   ValidateRegisterBody,
@@ -9,13 +9,13 @@ import {
   ValidateForgotPasswordBody,
   ValidateResetPasswordBody,
   ValidateChangePasswordBody
-} from '../validations/authValidation.js';
-import * as authService from '../services/authService.js';
-import { SUCCESS } from '../constant/responseMessage.js';
-import { EApplicationEnvironment } from '../constant/application.js';
-import { getDomainFromUrl } from '../helpers/generalHelper.js';
-import config from '../config/dotenvConfig.js';
-import { ZodError } from "zod";
+} from '../validations/authValidation';
+import * as authService from '../services/authService';
+import { SUCCESS } from '../constant/responseMessage';
+import { EApplicationEnvironment } from '../constant/application';
+import { getDomainFromUrl } from '../helpers/generalHelper';
+import config from '../config/dotenvConfig';
+import { ZodError } from 'zod';
 import {
   IChangePasswordRequestBody,
   IForgotPasswordRequestBody,
@@ -58,7 +58,7 @@ export const login = catchAsync(async (req: Request, res: Response, next: NextFu
   res
     .cookie('accessToken', accessToken, {
       path: '/api/v1',
-      domain,
+      // domain,
       sameSite: 'strict',
       maxAge: 1000 * 3600,
       httpOnly: true,
@@ -66,7 +66,7 @@ export const login = catchAsync(async (req: Request, res: Response, next: NextFu
     })
     .cookie('refreshToken', refreshToken, {
       path: '/api/v1',
-      domain,
+      // domain,
       sameSite: 'strict',
       maxAge: 1000 * 3600,
       httpOnly: true,

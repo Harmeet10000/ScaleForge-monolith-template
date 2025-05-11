@@ -9,6 +9,7 @@ import * as sourceMapSupport from 'source-map-support';
 import path, { dirname } from 'path';
 import { fileURLToPath } from 'url';
 import config from '../config/dotenvConfig.js';
+import DailyRotateFile from 'winston-daily-rotate-file';
 
 // Linking Trace Support
 sourceMapSupport.install();
@@ -111,6 +112,19 @@ const MongodbTransport = (): Array<MongoDBTransportInstance> => [
   })
 ];
 
+// eslint-disable-next-line @typescript-eslint/no-unsafe-return
+const DailyRotateFileTransport = (): DailyRotateFile[] => [
+  new DailyRotateFile({
+    filename: path.join(__dirname, '../', '../', 'logs', 'application-%DATE%.log'),
+    datePattern: 'YYYY-MM-DD',
+    maxSize: '20m',
+    maxFiles: '14d',
+    level: 'info',
+    format: format.combine(format.timestamp(), fileLogFormat),
+    dirname: path.join(__dirname, '../', '../', 'logs')
+  })
+];
+
 const levels = {
   error: 0,
   warn: 1,
@@ -123,5 +137,5 @@ export const logger: Logger = createLogger({
   defaultMeta: {
     meta: {}
   },
-  transports: [...FileTransport(), ...consoleTransport(), ...MongodbTransport()]
+  transports: [...FileTransport(), ...consoleTransport(), ...MongodbTransport(), ...DailyRotateFileTransport()]
 });

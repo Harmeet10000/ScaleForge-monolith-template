@@ -123,6 +123,7 @@
     "ts-node-dev": "2.0.0",
     "uuid": "^11.1.0",
     "winston": "^3.17.0",
+    "winston-daily-rotate-file": "5.0.0",
     "winston-mongodb": "6.0.0",
     "xss": "^1.0.15"
   }
