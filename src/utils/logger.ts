@@ -4,7 +4,7 @@ import { createLogger, format, transports, Logger } from 'winston';
 import { EApplicationEnvironment } from '../constant/application.js';
 import { red, blue, yellow, green, magenta, cyan } from 'colorette';
 import { ConsoleTransportInstance, FileTransportInstance } from 'winston/lib/winston/transports';
-import { MongoDBTransportInstance } from 'winston-mongodb';
+import { PostgresTransport } from '@innova2/winston-pg';
 import * as sourceMapSupport from 'source-map-support';
 import path, { dirname } from 'path';
 import { fileURLToPath } from 'url';
@@ -99,16 +99,15 @@ const FileTransport = (): Array<FileTransportInstance> => [
   })
 ];
 
-const MongodbTransport = (): Array<MongoDBTransportInstance> => [
-  new transports.MongoDB({
+// eslint-disable-next-line @typescript-eslint/no-unsafe-return
+const PostgresTransportInstance = (): PostgresTransport[] => [
+  new PostgresTransport({
     level: 'info',
-    db: config.DATABASE as string,
-    metaKey: 'meta',
-    expireAfterSeconds: 3600 * 24 * 30,
-    options: {
-      useUnifiedTopology: true
-    },
-    collection: 'application-logs'
+    connectionString: config.DATABASE as string,
+    tableName: 'application_logs',
+    maxPool: 10,
+    metaKey: 'meta', // Use a similar meta structure as MongoDB
+    expiration: 3600 * 24 * 30 // 30 days
   })
 ];
 
@@ -137,5 +136,10 @@ export const logger: Logger = createLogger({
   defaultMeta: {
     meta: {}
   },
-  transports: [...FileTransport(), ...consoleTransport(), ...MongodbTransport(), ...DailyRotateFileTransport()]
+  transports: [
+    ...FileTransport(),
+    ...consoleTransport(),
+    ...PostgresTransportInstance(),
+    ...DailyRotateFileTransport()
+  ]
 });

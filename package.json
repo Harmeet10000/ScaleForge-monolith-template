@@ -9,8 +9,9 @@
   },
   "scripts": {
     "dev": "npx tsx watch src/index.ts",
-    "build": "rm -rf dist && npx webpack --config webpack.config.js",
-    "dist": "npx tsc -p .",
+    "build": "npm run build:ts && npm run build:webpack",
+    "build:webpack": "rm -rf dist && npx webpack --config webpack.config.js",
+    "built:ts": "npx tsc -p .",
     "dev:prod": "node dist/index.cjs",
     "start": "cross-env NODE_ENV=production node dist/index.cjs",
     "swagger": "node ./docs/swagger.js",
@@ -94,6 +95,7 @@
   "dependencies": {
     "@aws-sdk/client-s3": "3.797.0",
     "@aws-sdk/s3-request-presigner": "3.797.0",
+    "@innova2/winston-pg": "1.4.0",
     "@neondatabase/serverless": "1.0.0",
     "@paralleldrive/cuid2": "2.2.2",
     "amqplib": "0.10.7",

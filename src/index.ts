@@ -1,7 +1,6 @@
 import config from './config/dotenvConfig';
-import mongoose from 'mongoose';
 import app from './app';
-import connectDB from './connections/connectDB';
+import { initDatabase } from './connections/connectDB';
 import { connectRedis, redisClient } from './connections/connectRedis';
 import { createConnection, closeConnection } from './connections/rabbitMQConnection';
 import { logger } from './utils/logger';
@@ -10,14 +9,14 @@ import type { Server } from 'http';
 
 // --- Connect to Databases ---
 // Use Promise.all to connect concurrently, or connect sequentially if preferred/needed
-Promise.all([connectDB(), connectRedis(), createConnection()])
+Promise.all([initDatabase(), connectRedis(), createConnection()])
   .then(() => {
     const server: Server = app.listen(config.PORT, () => {
       logger.info(`Server is running at port: ${config.PORT}, in ${config.NODE_ENV} mode`);
     });
 
     // Graceful shutdown function
-    const gracefulShutdown = async (signal: string): Promise<void> => {
+    const gracefulShutdown = (signal: string) => {
       logger.info(`${signal} received. Shutting down gracefully...`);
 
       server.close(async () => {
@@ -35,13 +34,7 @@ Promise.all([connectDB(), connectRedis(), createConnection()])
           logger.warn('Redis client not connected or already disconnected.');
         }
 
-        // Disconnect MongoDB
-        try {
-          await mongoose.disconnect();
-          logger.info('MongoDB disconnected gracefully.');
-        } catch (dbErr) {
-          logger.error(`Error during MongoDB disconnection on ${signal}:`, { error: dbErr });
-        }
+        // NeonDB connections are automatically managed, no explicit disconnect needed
 
         // Disconnect RabbitMQ
         try {
@@ -74,12 +67,11 @@ Promise.all([connectDB(), connectRedis(), createConnection()])
   })
   .catch((err) => {
     logger.error('Application startup failed!', { error: err });
-    // Attempt to disconnect Redis, DB, and RabbitMQ even on startup failure
+    // Attempt to disconnect Redis and RabbitMQ on startup failure
     void Promise.allSettled([
       redisClient.status === 'ready' || redisClient.status === 'connect'
         ? redisClient.quit()
         : Promise.resolve(),
-      mongoose.connection.readyState === 1 ? mongoose.disconnect() : Promise.resolve(),
       closeConnection().catch(() => Promise.resolve())
     ]).finally(() => {
       process.exit(1);

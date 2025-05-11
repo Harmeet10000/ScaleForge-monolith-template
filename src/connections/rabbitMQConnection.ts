@@ -3,7 +3,7 @@ import config from '../config/dotenvConfig';
 import { logger } from '../utils/logger';
 
 // Define a custom type that extends the amqplib Connection interface
-type Connection = AmqpConnection & {
+export type Connection = AmqpConnection & {
   close(): Promise<void>;
 };
 
@@ -59,7 +59,7 @@ export const createConnection = async (): Promise<Connection> => {
     connectionAttempts = 0;
 
     newConnection.on('close', (err) => {
-      // logger.warn('RabbitMQ connection closed', { meta: err });
+      logger.warn('RabbitMQ connection closed', { meta: err });
       connection = null;
       setTimeout(
         () =>

@@ -1,4 +1,4 @@
-import { getConnection } from '../connections/rabbitMQConnection';
+import {  getConnection } from '../connections/rabbitMQConnection';
 import { logger } from '../utils/logger';
 import { Channel, Options } from 'amqplib';
 
@@ -24,12 +24,12 @@ type RetryOptions = {
 let channel: Channel | null = null;
 
 const initializeChannel = async (config: ProducerConfig): Promise<Channel> => {
-  if (channel) return channel;
+  if (channel) {
+    return channel;
+  }
 
   try {
     const connection = await getConnection();
-    // Cast to any to bypass potential TypeScript type mismatch issues with createChannel,
-    // similar to the pattern used in RabbitMQConsumer.ts.
     channel = await (connection as any).createChannel();
 
     if (!channel) {
@@ -131,7 +131,9 @@ export const publishWithRetry = async (
       return await publish(config, message, routingKey, options);
     } catch (error) {
       attempt++;
-      if (attempt > maxRetries) throw error;
+      if (attempt > maxRetries) {
+        throw error;
+      }
 
       logger.warn(`Retrying publish (${attempt}/${maxRetries}) after ${delay}ms`, {
         meta: {

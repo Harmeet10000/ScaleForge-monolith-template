@@ -9,7 +9,7 @@ interface AppConfig {
   PORT: string | undefined;
   SERVER_URL: string;
   FRONTEND_URL: string | undefined;
-  DATABASE: string | undefined;
+  DATABASE: string;
   DB_POOL_SIZE: number;
   MIGRATE_MONGO_URI: string | undefined;
   MIGRATE_AUTOSYNC: boolean;
@@ -42,7 +42,7 @@ const _config: AppConfig = {
   FRONTEND_URL: process.env.FRONTEND_URL,
 
   // Database
-  DATABASE: process.env.DATABASE,
+  DATABASE: String(process.env.DATABASE),
   DB_POOL_SIZE: Number(process.env.DB_POOL_SIZE) || 10,
 
   // Migration
