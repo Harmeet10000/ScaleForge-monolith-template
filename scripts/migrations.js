@@ -1,53 +1,16 @@
-import { exec } from 'node:child_process';
+import { migrate } from 'drizzle-orm/neon-http/migrator';
+import { db } from '../config/database';
+import { logger } from '../utils/logger';
 
-// Command Line Arguments
-const command = process.argv[2];
-const migrationName = process.argv[3];
-
-// Valid Migration Commands
-const validCommands = ['create', 'up', 'down', 'list', 'prune'];
-if (!validCommands.includes(command)) {
-  console.error(`Invalid command: Command must be one of ${validCommands}`);
-  process.exit(0);
-}
-
-const commandsWithoutMigrationNameRequired = ['list', 'prune'];
-if (!commandsWithoutMigrationNameRequired.includes(command)) {
-  if (!migrationName) {
-    console.error('Migration name is required');
-    process.exit(0);
+async function runMigrations() {
+  try {
+    logger.info('Running migrations...');
+    await migrate(db, { migrationsFolder: 'drizzle' });
+    logger.info('Migrations completed successfully');
+  } catch (error) {
+    logger.error('Migration failed:', error);
+    process.exit(1);
   }
 }
 
-function runNpmScript() {
-  return new Promise((resolve, reject) => {
-    let execCommand = ``;
-
-    if (commandsWithoutMigrationNameRequired.includes(command)) {
-      execCommand = `migrate ${command}`;
-    } else {
-      execCommand = `migrate ${command} ${migrationName}`;
-    }
-
-    const childProcess = exec(execCommand, (error, stdout) => {
-      if (error) {
-        reject(`Error running script: ${error}`);
-      } else {
-        resolve(stdout);
-      }
-    });
-
-    childProcess.stderr.on('data', (data) => {
-      console.error(data);
-    });
-  });
-}
-
-// Example usage:
-runNpmScript()
-  .then((output) => {
-    console.info(output);
-  })
-  .catch((error) => {
-    console.error('Error:', error);
-  });
+runMigrations();

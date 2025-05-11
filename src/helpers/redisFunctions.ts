@@ -1,5 +1,5 @@
 import { logger } from '../utils/logger';
-import { redisClient } from '../db/connectRedis';
+import { redisClient } from '../connections/connectRedis';
 
 // Use Case | Recommended Redis Type
 // Caching a JWT token or simple API response | String

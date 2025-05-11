@@ -114,7 +114,7 @@
     "docs",
     "*.d.ts",
     "test-runner.js",
-    "migrations",
+    "src/db/migrations",
     "test",
     "*.config.js",
     "logs",

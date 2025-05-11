@@ -1,44 +1,70 @@
-import { User } from '../models/userModel';
-import { IUser, IUserDocument } from '../types/userTypes';
+import { eq } from 'drizzle-orm';
+import { db } from '../connections/connectDB';
+import { users, type User, type NewUser } from '../db/models/userModel';
 import dayjs from 'dayjs';
 
-export const registerUser = async (payload: Partial<IUser>): Promise<IUserDocument> =>
-  await User.create(payload);
+export const registerUser = async (payload: Omit<NewUser, 'id'>): Promise<User> => {
+  const [user] = await db.insert(users).values(payload).returning();
+  return user;
+};
 
 export const findUserById = async (
   id: string,
-  select: string = ''
-): Promise<IUserDocument | null> => await User.findById(id).select(select);
+  select?: Array<keyof User>
+): Promise<User | null> => {
+  const [user] = await db
+    .select(select ? select.map((col) => users[col]) : users)
+    .from(users)
+    .where(eq(users.id, id))
+    .limit(1);
+  return user || null;
+};
 
-export const findByIdWithPassword = async (id: string): Promise<IUserDocument | null> =>
-  await User.findById(id).select('+password');
+export const findByIdWithPassword = async (id: string): Promise<User | null> => {
+  return await findUserById(id);
+};
 
 export const findUserByEmailAddress = async (
   emailAddress: string,
-  select: string = ''
-): Promise<IUserDocument | null> =>
-  await User.findOne({
-    emailAddress
-  }).select(select);
+  select?: Array<keyof User>
+): Promise<User | null> => {
+  const [user] = await db
+    .select(select ? select.map((col) => users[col]) : users)
+    .from(users)
+    .where(eq(users.emailAddress, emailAddress))
+    .limit(1);
+  return user || null;
+};
 
 export const findUserByConfirmationTokenAndCode = async (
   token: string,
   code: string
-): Promise<IUserDocument | null> =>
-  await User.findOne({
-    'accountConfirmation.token': token,
-    'accountConfirmation.code': code
-  });
+): Promise<User | null> => {
+  const [user] = await db
+    .select()
+    .from(users)
+    .where(eq(users.accountConfirmation, JSON.stringify({ token, code })))
+    .limit(1);
+  return user || null;
+};
 
-export const findByResetToken = async (token: string): Promise<IUserDocument | null> =>
-  await User.findOne({
-    'passwordReset.token': token
-  });
+export const findByResetToken = async (token: string): Promise<User | null> => {
+  const [user] = await db
+    .select()
+    .from(users)
+    .where(eq(users.passwordReset, JSON.stringify({ token })))
+    .limit(1);
+  return user || null;
+};
 
-export const updateUserLastLogin = async (userId: string) => {
-  return await User.findByIdAndUpdate(
-    userId,
-    { lastLoginAt: dayjs().utc().toDate() },
-    { new: true }
-  );
+export const updateUserLastLogin = async (userId: string): Promise<User | null> => {
+  const [user] = await db
+    .update(users)
+    .set({
+      lastLoginAt: dayjs().utc().toDate(),
+      updatedAt: new Date()
+    })
+    .where(eq(users.id, userId))
+    .returning();
+  return user || null;
 };

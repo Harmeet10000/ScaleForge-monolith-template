@@ -3,7 +3,7 @@ import { catchAsync } from '../utils/catchAsync';
 import { httpError } from '../utils/httpError';
 import jwt from 'jsonwebtoken';
 import config from '../config/dotenvConfig';
-import { User } from '../models/userModel';
+import { User } from '../db/models/userModel';
 import { getCache, setCache } from '../helpers/redisFunctions';
 import { logger } from '../utils/logger';
 import { IUserWithId } from '../types/userTypes';

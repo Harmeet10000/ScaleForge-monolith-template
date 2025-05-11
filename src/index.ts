@@ -1,9 +1,9 @@
 import config from './config/dotenvConfig';
 import mongoose from 'mongoose';
 import app from './app';
-import connectDB from './db/connectDB';
-import { connectRedis, redisClient } from './db/connectRedis';
-import { createConnection, closeConnection } from './db/rabbitMQConnection';
+import connectDB from './connections/connectDB';
+import { connectRedis, redisClient } from './connections/connectRedis';
+import { createConnection, closeConnection } from './connections/rabbitMQConnection';
 import { logger } from './utils/logger';
 import process from 'process';
 import type { Server } from 'http';

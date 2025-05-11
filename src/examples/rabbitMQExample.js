@@ -12,7 +12,7 @@ import {
 } from '../helpers/rabbitMQConsumer.js';
 import { logger } from '../utils/logger.js';
 import { catchAsync } from '../utils/catchAsync.js';
-import { closeConnection } from '../db/rabbitMQConnection.js';
+import { closeConnection } from '../connections/rabbitMQConnection.js';
 
 /**
  * Example: Using RabbitMQ producers

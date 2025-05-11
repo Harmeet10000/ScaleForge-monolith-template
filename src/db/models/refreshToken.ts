@@ -1,6 +1,6 @@
 import mongoose, { Schema } from 'mongoose';
-import { IRefreshToken } from '../types/userTypes';
-import config from '../config/dotenvConfig.js';
+import { IRefreshToken } from '../../types/userTypes.js';
+import config from '../../config/dotenvConfig.js';
 
 const refreshTokenSchema = new Schema<IRefreshToken>(
   {

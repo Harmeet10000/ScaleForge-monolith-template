@@ -1,4 +1,4 @@
-import { RefreshToken as RefreshTokenModel } from '../models/refreshToken';
+import { RefreshToken as RefreshTokenModel } from '../db/models/refreshToken';
 import { IRefreshToken } from '../types/userTypes';
 
 export const createRefreshToken = async (tokenData: Pick<IRefreshToken, 'token'>) =>
