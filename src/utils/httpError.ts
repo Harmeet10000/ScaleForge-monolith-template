@@ -5,12 +5,7 @@ import { THttpError } from '../types/types.js';
 import { logger } from './logger.js';
 import config from '../config/dotenvConfig.js';
 
-export const httpError = (
-  next: NextFunction,
-  err: Error,
-  req: Request,
-  errorStatusCode = 500
-) => {
+export const httpError = (next: NextFunction, err: Error, req: Request, errorStatusCode = 500) => {
   const errorObj: THttpError = errorObject(err, req, errorStatusCode);
   return next(errorObj);
 };

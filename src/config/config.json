@@ -1,68 +1,60 @@
 {
-    "development": {
-        "type": "postgres",
-        "username": "dev_user",
-        "password": "dev_password",
-        "host": "localhost",
-        "port": 5432,
-        "database": "auth_dev",
-        "pool": {
-            "min": 2,
-            "max": 10,
-            "idleTimeout": 60000,
-            "connectionTimeout": 2000
-        },
-        "ssl": {
-            "rejectUnauthorized": false
-        },
-        "debug": true,
-        "logging": [
-            "query",
-            "error",
-            "schema"
-        ]
+  "development": {
+    "type": "postgres",
+    "username": "dev_user",
+    "password": "dev_password",
+    "host": "localhost",
+    "port": 5432,
+    "database": "auth_dev",
+    "pool": {
+      "min": 2,
+      "max": 10,
+      "idleTimeout": 60000,
+      "connectionTimeout": 2000
     },
-    "test": {
-        "type": "postgres",
-        "username": "test_user",
-        "password": "test_password",
-        "host": "test-db.example.com",
-        "port": 5432,
-        "database": "auth_test",
-        "pool": {
-            "min": 1,
-            "max": 5,
-            "idleTimeout": 30000,
-            "connectionTimeout": 2000
-        },
-        "ssl": {
-            "rejectUnauthorized": false
-        },
-        "debug": false,
-        "logging": [
-            "error"
-        ]
+    "ssl": {
+      "rejectUnauthorized": false
     },
-    "production": {
-        "type": "postgres",
-        "username": "${PROD_DB_USER}",
-        "password": "${PROD_DB_PASSWORD}",
-        "host": "${PROD_DB_HOST}",
-        "port": 5432,
-        "database": "auth_prod",
-        "pool": {
-            "min": 5,
-            "max": 20,
-            "idleTimeout": 300000,
-            "connectionTimeout": 5000
-        },
-        "ssl": {
-            "rejectUnauthorized": true,
-            "ca": "${PROD_DB_CA_CERT}"
-        },
-        "debug": false,
-        "logging": [
-            "error"
-        ]
-    }
+    "debug": true,
+    "logging": ["query", "error", "schema"]
+  },
+  "test": {
+    "type": "postgres",
+    "username": "test_user",
+    "password": "test_password",
+    "host": "test-db.example.com",
+    "port": 5432,
+    "database": "auth_test",
+    "pool": {
+      "min": 1,
+      "max": 5,
+      "idleTimeout": 30000,
+      "connectionTimeout": 2000
+    },
+    "ssl": {
+      "rejectUnauthorized": false
+    },
+    "debug": false,
+    "logging": ["error"]
+  },
+  "production": {
+    "type": "postgres",
+    "username": "${PROD_DB_USER}",
+    "password": "${PROD_DB_PASSWORD}",
+    "host": "${PROD_DB_HOST}",
+    "port": 5432,
+    "database": "auth_prod",
+    "pool": {
+      "min": 5,
+      "max": 20,
+      "idleTimeout": 300000,
+      "connectionTimeout": 5000
+    },
+    "ssl": {
+      "rejectUnauthorized": true,
+      "ca": "${PROD_DB_CA_CERT}"
+    },
+    "debug": false,
+    "logging": ["error"]
+  }
 }

@@ -1,7 +1,4 @@
 import cron from 'node-cron';
-import dotenv from 'dotenv';
-import path from 'path';
-import { fileURLToPath } from 'url';
 import { db } from '../../src/connections/connectDB.js'; // Adjust if your connectDB exports are different for JS
 import { refreshTokens } from '../../src/db/models/refreshToken.js';
 import { logger } from '../../src/utils/logger.js';
@@ -10,7 +7,6 @@ import config from '../../src/config/dotenvConfig.js';
 
 // Configure environment variables
 const NODE_ENV = config.NODE_ENV || 'development';
-
 
 logger.info(`Running in ${NODE_ENV} mode.`);
 

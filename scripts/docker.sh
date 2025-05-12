@@ -9,7 +9,7 @@ docker run -d \
   auth-service:latest
 
 # View the logs of the Docker container
-docker logs -f name-container
+docker logs -f auth-service-container
 
 # tag the docker image - DockerHub
 docker tag name harmeet10000/name:latest

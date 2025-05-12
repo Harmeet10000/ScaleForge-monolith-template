@@ -6,11 +6,53 @@ import { createConnection, closeConnection } from './connections/connectRabbitMQ
 import { logger } from './utils/logger';
 import process from 'process';
 import type { Server } from 'http';
+import { exec } from 'child_process'; // For running the migration script
 
-// --- Connect to Databases ---
-// Use Promise.all to connect concurrently, or connect sequentially if preferred/needed
+const runDbMigrate = (): Promise<void> =>
+  new Promise((resolve, reject) => {
+    logger.info('🚀 Attempting to run database migrations...');
+    const migrateProcess = exec('npm run db:migrate', (error, stdout, stderr) => {
+      if (error) {
+        logger.error('❌ Migration script execution failed:', {
+          message: error.message,
+          stdout,
+          stderr
+        });
+        return reject(error);
+      }
+      if (stderr) {
+        logger.warn('Migration script stderr (may include info):', stderr);
+      }
+      logger.info('Migration script stdout:', stdout);
+      logger.info('✅ Database migrations checked/applied successfully via script.');
+      resolve();
+    });
+
+    migrateProcess.on('exit', (code) => {
+      if (code !== 0 && code !== null) {
+        // Covered by the callback's error handling, but good for explicit logging
+        logger.error(`Migration script exited with code ${code}`);
+      }
+    });
+  });
+
+// Use Promise.all to connect concurrently
 Promise.all([connectDB(), connectRedis(), createConnection()])
-  .then(() => {
+  .then(async () => {
+    // Run migrations, e.g., only in development or if a specific flag is set
+    if (config.NODE_ENV === 'development') {
+      try {
+        await runDbMigrate();
+      } catch (migrationError) {
+        logger.error('Halting application startup due to migration failure.', {
+          error: migrationError
+        });
+        process.exit(1); // Exit if migrations fail in dev
+      }
+    } else {
+      logger.info('Skipping automatic migrations in non-development environment.');
+    }
+
     const server: Server = app.listen(config.PORT, () => {
       logger.info(`Server is running at port: ${config.PORT}, in ${config.NODE_ENV} mode`);
     });

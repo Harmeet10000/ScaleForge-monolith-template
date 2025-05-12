@@ -1,5 +1,10 @@
 {
-    "out": ".src/db/migrations",
-    "schema": "./src/db/models/userModel.ts",
-    "breakpoints": false
+    "schema": "./src/db/models/**/*.ts",
+    "out": "./src/db/migrations",
+    "dialect": "postgresql",
+    "dbCredentials": {
+        "url": "env:DATABASE_URL"
+    },
+    "verbose": true,
+    "strict": true
 }

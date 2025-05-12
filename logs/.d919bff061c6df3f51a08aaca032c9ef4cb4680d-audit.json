@@ -1,20 +1,20 @@
 {
-    "keep": {
-        "days": true,
-        "amount": 14
+  "keep": {
+    "days": true,
+    "amount": 14
+  },
+  "auditLog": "/home/harmeet/Desktop/Projects/Production-grade-Auth-template/backend/logs/.d919bff061c6df3f51a08aaca032c9ef4cb4680d-audit.json",
+  "files": [
+    {
+      "date": 1746961702981,
+      "name": "/home/harmeet/Desktop/Projects/Production-grade-Auth-template/backend/logs/application-2025-05-11.log",
+      "hash": "0b14731a607c233724cb364deaf8830a3b1923ba353e55c1b3cf550936f5149a"
     },
-    "auditLog": "/home/harmeet/Desktop/Projects/Production-grade-Auth-template/backend/logs/.d919bff061c6df3f51a08aaca032c9ef4cb4680d-audit.json",
-    "files": [
-        {
-            "date": 1746961702981,
-            "name": "/home/harmeet/Desktop/Projects/Production-grade-Auth-template/backend/logs/application-2025-05-11.log",
-            "hash": "0b14731a607c233724cb364deaf8830a3b1923ba353e55c1b3cf550936f5149a"
-        },
-        {
-            "date": 1746997221353,
-            "name": "/home/harmeet/Desktop/Projects/Production-grade-Auth-template/backend/logs/application-2025-05-12.log",
-            "hash": "14a9b6c1500391a3d77b548dc9549f74a48395aa385f03987bcd74174369db1c"
-        }
-    ],
-    "hashType": "sha256"
+    {
+      "date": 1746997221353,
+      "name": "/home/harmeet/Desktop/Projects/Production-grade-Auth-template/backend/logs/application-2025-05-12.log",
+      "hash": "14a9b6c1500391a3d77b548dc9549f74a48395aa385f03987bcd74174369db1c"
+    }
+  ],
+  "hashType": "sha256"
 }

@@ -7,38 +7,64 @@ interface CustomError extends Error {
   statusCode?: number;
   status?: string;
   isOperational?: boolean;
-  code?: number;
+  code?: number | string; // PostgreSQL error codes are strings
   path?: string;
-  value?: any;
-  errmsg?: string;
-  errors?: Record<string, { message: string }>;
+  value?: unknown;
+  errmsg?: string; // Mongoose specific, might not be present
+  errors?: Record<string, { message: string }>; // Mongoose specific
   request?: Request;
+  // PostgreSQL specific error fields (optional, from node-postgres)
+  constraint?: string;
+  table?: string;
+  column?: string;
+  dataType?: string;
+  detail?: string;
+  routine?: string;
 }
 
-const handleCastErrorDB = (err: CustomError, next: NextFunction, req: Request): CustomError => {
-  const message = `Invalid ${err.path}: ${err.value}`;
-  httpError(next, new Error(message), req, 400);
-  return err;
-};
+// Removed Mongoose-specific handlers: handleCastErrorDB, handleDuplicateFieldsDB, handleValidationErrorDB
 
-const handleDuplicateFieldsDB = (
+const handlePgUniqueViolation = (
   err: CustomError,
   next: NextFunction,
   req: Request
 ): CustomError => {
-  const value = err.errmsg?.match(/(["'])(\\?.)*?\1/)?.[0] || '';
-  const message = `Duplicate field value: ${value}. Please use another value!`;
-  httpError(next, new Error(message), req, 400);
+  const message =
+    err.detail ||
+    `Duplicate field value. Please use another value! Constraint: ${err.constraint || 'unknown'}`;
+  httpError(next, new Error(message), req, 400); // 400 Bad Request or 409 Conflict
   return err;
 };
 
-const handleValidationErrorDB = (
+const handlePgNotNullViolation = (
   err: CustomError,
   next: NextFunction,
   req: Request
 ): CustomError => {
-  const errors = Object.values(err.errors || {}).map((el) => el.message);
-  const message = `Invalid input data. ${errors.join('. ')}`;
+  const column = err.column || 'unknown';
+  const message = `Field '${column}' cannot be null.`;
+  httpError(next, new Error(message), req, 400);
+  return err;
+};
+
+const handlePgForeignKeyViolation = (
+  err: CustomError,
+  next: NextFunction,
+  req: Request
+): CustomError => {
+  const constraint = err.constraint || 'unknown';
+  const message = `Foreign key constraint '${constraint}' violated. Related record does not exist.`;
+  httpError(next, new Error(message), req, 400);
+  return err;
+};
+
+const handlePgInvalidTextRepresentation = (
+  // Error code 22P02
+  err: CustomError,
+  next: NextFunction,
+  req: Request
+): CustomError => {
+  const message = err.detail || `Invalid input syntax for type. Check data types.`;
   httpError(next, new Error(message), req, 400);
   return err;
 };
@@ -92,22 +118,41 @@ export const globalErrorHandler = (
   res: Response,
   next: NextFunction
 ): void => {
+  err.statusCode = err.statusCode || 500;
+  err.status = err.status || 'error';
+
   if (config.NODE_ENV === 'development') {
     sendErrorDev(err, res);
   } else if (config.NODE_ENV === 'production') {
-    let error: CustomError = { ...err };
-    error.message = err.message;
-    error.stack = err.stack;
+    let error: CustomError = { ...err, message: err.message, stack: err.stack }; // Ensure message and stack are copied
 
-    if (error.name === 'CastError') {
-      error = handleCastErrorDB(error, next, req);
+    // Handle PostgreSQL specific errors by code
+    // Note: err.code from node-postgres is a string
+    if (typeof error.code === 'string') {
+      switch (error.code) {
+        case '23505': // unique_violation
+          error = handlePgUniqueViolation(error, next, req);
+          break;
+        case '23502': // not_null_violation
+          error = handlePgNotNullViolation(error, next, req);
+          break;
+        case '23503': // foreign_key_violation
+          error = handlePgForeignKeyViolation(error, next, req);
+          break;
+        case '22P02': // invalid_text_representation (generic casting/format error)
+          error = handlePgInvalidTextRepresentation(error, next, req);
+          break;
+        // Add more PostgreSQL error codes as needed
+        default:
+          // Log unhandled PG errors if necessary
+          logger.warn(`Unhandled PostgreSQL error code: ${error.code}`, {
+            errorDetail: error.detail
+          });
+          break;
+      }
     }
-    if (error.code === 11000) {
-      error = handleDuplicateFieldsDB(error, next, req);
-    }
-    if (error.name === 'ValidationError') {
-      error = handleValidationErrorDB(error, next, req);
-    }
+
+    // Handle JWT errors (these are not DB specific)
     if (error.name === 'JsonWebTokenError') {
       error = handleJWTError(error, next, req);
     }

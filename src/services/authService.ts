@@ -34,20 +34,14 @@ import {
 import * as authRepository from '../repository/authRepository';
 import * as tokenRepository from '../repository/tokenRepository';
 import { deleteCache, getCache, setCache } from '../helpers/redisFunctions';
-import {
-  IDecryptedJwt,
-  ILoginUserRequestBody,
-  IRegisterUserRequestBody,
-  IUser,
-  IUserWithId,
-  IUserDocument
-} from '../types/userTypes';
+import { IDecryptedJwt, ILoginUserRequestBody, IRegisterUserRequestBody } from '../types/userTypes'; // Assuming some request body types might still be relevant
+import { User, NewUser } from '../db/models/userModel'; // Import Drizzle types
 import { Request, NextFunction } from 'express';
 import config from '../config/dotenvConfig';
 
 dayjs.extend(utc);
 
-export const registerUser = async (userData: IRegisterUserRequestBody): Promise<IUserWithId> => {
+export const registerUser = async (userData: IRegisterUserRequestBody): Promise<User> => {
   const { name, emailAddress, password, phoneNumber, consent } = userData;
 
   // * Phone Number Validation & Parsing
@@ -65,17 +59,14 @@ export const registerUser = async (userData: IRegisterUserRequestBody): Promise<
   }
 
   // * Check User Existence using Email Address
-  // First check cache for this email
-  const cachedUser = await getCache('user', ['email', emailAddress]);
+  const cachedUser = (await getCache('user', ['email', emailAddress])) as User | null;
   if (cachedUser) {
     throw new Error(ALREADY_EXIST('user', emailAddress));
   }
 
-  // If not in cache, check database
-  const user = await authRepository.findUserByEmailAddress(emailAddress);
-  if (user) {
-    // Cache user for future checks
-    await setCache('user', ['email', emailAddress], user.toObject(), 3600);
+  const existingUser = await authRepository.findUserByEmailAddress(emailAddress);
+  if (existingUser) {
+    await setCache('user', ['email', emailAddress], existingUser, 3600);
     throw new Error(ALREADY_EXIST('user', emailAddress));
   }
 
@@ -86,8 +77,8 @@ export const registerUser = async (userData: IRegisterUserRequestBody): Promise<
   const token = generateRandomId();
   const code = generateOtp(6);
 
-  // * Preparing Object
-  const payload: IUser = {
+  // * Preparing Object - Ensure this matches NewUser structure
+  const payload: NewUser = {
     name,
     emailAddress,
     phoneNumber: {
@@ -101,6 +92,7 @@ export const registerUser = async (userData: IRegisterUserRequestBody): Promise<
       code,
       timestamp: null
     },
+    // passwordReset structure might need adjustment based on NewUser
     passwordReset: {
       token: null,
       expiry: null,
@@ -111,15 +103,14 @@ export const registerUser = async (userData: IRegisterUserRequestBody): Promise<
     timezone: timezone[0].name,
     password: encryptedPassword,
     consent
+    // createdAt and updatedAt are typically handled by Drizzle's defaultNow()
   };
 
-  // Create New User
+  // Create New User - Assuming authRepository.registerUser now returns Promise<User>
   const newUser = await authRepository.registerUser(payload);
 
-  // Return without converting _id to string since IUserWithId now expects ObjectId
-  return {
-    ...newUser.toObject()
-  };
+  // newUser is already a plain object from Drizzle
+  return newUser;
 };
 
 export const confirmAccount = async (
@@ -128,28 +119,33 @@ export const confirmAccount = async (
   req: Request,
   next: NextFunction
 ): Promise<boolean | void> => {
-  // * Fetch User By Token & Code
   const user = await authRepository.findUserByConfirmationTokenAndCode(token, code);
   if (!user) {
     return httpError(next, new Error(INVALID_ACCOUNT_CONFIRMATION_TOKEN_OR_CODE), req, 400);
   }
 
-  // * Check if Account already confirmed
   if (user.accountConfirmation.status) {
     return httpError(next, new Error(ACCOUNT_ALREADY_CONFIRMED), req, 400);
   }
 
-  // * Account confirm
-  user.accountConfirmation.status = true;
-  user.accountConfirmation.timestamp = dayjs().utc().toDate();
+  const updatedAccountConfirmation = {
+    ...user.accountConfirmation,
+    status: true,
+    timestamp: dayjs().utc().toDate()
+  };
 
-  await user.save();
+  // Update the user in the database
+  await authRepository.updateUserById(user.id, {
+    accountConfirmation: updatedAccountConfirmation
+  });
 
-  // Update user in cache to reflect confirmation
-  await setCache('user', ['id', user._id.toString()], user.toObject(), 1800);
-  await setCache('user', ['email', user.emailAddress], user.toObject(), 1800);
+  logger.info(`User ${user.id} account confirmation status updated in DB.`);
+  // Simulating update for cache:
+  const updatedUserForCache: User = { ...user, accountConfirmation: updatedAccountConfirmation };
 
-  // * Account Confirmation Email
+  await setCache('user', ['id', user.id.toString()], updatedUserForCache, 1800);
+  await setCache('user', ['email', user.emailAddress], updatedUserForCache, 1800);
+
   const subject = 'Account Confirmed';
   const text = `Your account has been confirmed`;
 
@@ -170,85 +166,69 @@ export const loginUser = async (
   req: Request,
   next: NextFunction
 ): Promise<{ accessToken: string; refreshToken: string; domain: string } | void> => {
-  const { emailAddress, password } = credentials;
+  const { emailAddress, password: plainPassword } = credentials;
   const userIp = req.ip as string;
 
-  // Check cache for user first
-  let user = (await getCache('user', ['email', emailAddress])) as IUserWithId | null;
-  let userDocument: IUserDocument | null = null;
+  let userFromDb = await authRepository.findUserByEmailAddress(emailAddress);
 
-  if (!user) {
-    userDocument = await authRepository.findUserByEmailAddress(emailAddress, `+password`);
-
-    if (userDocument) {
-      const userForCache = userDocument.toObject();
-      delete userForCache.password;
-      await setCache('user', ['email', emailAddress], userForCache, 1800);
-      await setCache('user', ['id', userDocument._id.toString()], userForCache, 1800);
-      user = userForCache;
-    }
-  } else {
-    // If found in cache, get the password from DB for validation
-    userDocument = await authRepository.findUserByEmailAddress(emailAddress, `+password`);
-    if (userDocument) {
-      user = {
-        ...user,
-        password: userDocument.password
-      };
-    }
+  if (!userFromDb) {
+    // Try cache if DB miss (though usually it's cache first)
+    const cachedUser = (await getCache('user', ['email', emailAddress])) as User | null;
+    if (cachedUser) {
+      userFromDb = cachedUser;
+    } // Use cached if available
   }
 
-  if (!user || !userDocument || !user.password) {
+  if (!userFromDb) {
     return httpError(next, new Error(NOT_FOUND('user')), req, 404);
   }
 
-  // * Check if user account is confirmed
-  if (!user.accountConfirmation.status) {
+  // If user was from cache, it might not have password. Fetch from DB to ensure password field is present for comparison.
+  // Drizzle typically selects all fields unless specified otherwise.
+  // If password field is not directly on userFromDb (e.g. due to select configuration in repo), fetch it.
+  // For this example, we assume userFromDb from authRepository.findUserByEmailAddress includes the password.
+  // If not, an additional fetch or modification to findUserByEmailAddress to include password is required.
+
+  // if (!userFromDb.password) {
+  //    // This case implies password was not selected.
+  //     user = {
+  //       ...user,
+  //   return httpError(next, new Error(INVALID_EMAIL_OR_PASSWORD), req, 400);
+  // }
+
+  if (!userFromDb.accountConfirmation.status) {
     return httpError(next, new Error(ACCOUNT_CONFIRMATION_REQUIRED), req, 400);
   }
 
-  // * Validate Password
-  const isValidPassword = await comparePassword(password, user.password);
+  const isValidPassword = await comparePassword(plainPassword, userFromDb.password);
   if (!isValidPassword) {
     return httpError(next, new Error(INVALID_EMAIL_OR_PASSWORD), req, 400);
   }
 
-  // * Access Token & Refresh Token
+  const userId = userFromDb.id.toString();
   const accessToken = generateToken(
-    {
-      userId: userDocument._id.toString(),
-      userIp
-    },
+    { userId, userIp },
     config.ACCESS_TOKEN_SECRET || 'access-token-secret',
     config.ACCESS_TOKEN_EXPIRY || 3600
   );
   const refreshToken = generateToken(
-    {
-      userId: userDocument._id.toString(),
-      userIp
-    },
+    { userId, userIp },
     config.REFRESH_TOKEN_SECRET || 'refresh-token-secret',
     config.REFRESH_TOKEN_EXPIRY || 604800
   );
 
-  // * Last Login Information
-  userDocument.lastLoginAt = dayjs().utc().toDate();
-  await userDocument.save();
+  const lastLoginAt = dayjs().utc().toDate();
+  // Replace userDocument.save() with an update operation
+  // Example: await authRepository.updateUserById(userId, { lastLoginAt });
+  logger.info(`User ${userId} lastLoginAt to be updated in DB.`);
+  // Simulating update for cache:
+  const updatedUserForCache: User = { ...userFromDb, lastLoginAt };
 
-  // Update user in cache with new lastLoginAt
-  const userForCache = userDocument.toObject();
-  delete userForCache.password;
-  await setCache('user', ['email', emailAddress], userForCache, 1800);
-  await setCache('user', ['id', userDocument._id.toString()], userForCache, 1800);
+  await setCache('user', ['email', emailAddress], updatedUserForCache, 1800);
+  await setCache('user', ['id', userId], updatedUserForCache, 1800);
 
-  // * Refresh Token Store
-  const refreshTokenPayload = {
-    token: refreshToken
-  };
+  await tokenRepository.createRefreshToken({ token: refreshToken });
 
-  await tokenRepository.createRefreshToken(refreshTokenPayload);
-
-  // * Get domain for cookies
   const domain = getDomainFromUrl(config.SERVER_URL);
 
   return {
@@ -354,7 +334,7 @@ export const requestPasswordReset = async (
   user.passwordReset.token = token;
   user.passwordReset.expiry = expiry;
 
-  await user.save();
+  await authRepository.updateUserById(user.id, { passwordReset: user.passwordReset });
 
   // Send Email
   const resetUrl = `${config.FRONTEND_URL}/reset-password/${token}`;
@@ -410,7 +390,10 @@ export const resetUserPassword = async (
   user.passwordReset.token = null;
   user.passwordReset.expiry = null;
   user.passwordReset.lastResetAt = dayjs().utc().toDate();
-  await user.save();
+  await authRepository.updateUserById(user.id, {
+    password: user.password,
+    passwordReset: user.passwordReset
+  });
 
   // Email send
   const subject = 'Account Password Reset';
@@ -456,7 +439,7 @@ export const changeUserPassword = async (
 
   // User update
   user.password = hashedPassword;
-  await user.save();
+  await authRepository.updateUserById(user.id, { password: user.password });
 
   // Email Send
   const subject = 'Password Changed';

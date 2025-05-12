@@ -6,7 +6,9 @@ import { randomInt } from 'crypto';
 import jwt, { SignOptions } from 'jsonwebtoken';
 import dayjs from 'dayjs';
 
-export const extractInfoPhoneNumber = (phoneNumber: string): { countryCode: string | null; isoCode: string | null; internationalNumber: string | null } => {
+export const extractInfoPhoneNumber = (
+  phoneNumber: string
+): { countryCode: string | null; isoCode: string | null; internationalNumber: string | null } => {
   try {
     const parsedContactNumber = parsePhoneNumberWithError(phoneNumber);
     if (parsedContactNumber) {
@@ -48,7 +50,11 @@ export const generateOtp = (length: number): string => {
   return randomInt(min, max + 1).toString();
 };
 
-export const generateToken = (payload: Record<string, any>, secret: string, expiry: number): string => {
+export const generateToken = (
+  payload: Record<string, any>,
+  secret: string,
+  expiry: number
+): string => {
   const options: SignOptions = {
     expiresIn: expiry
   };
