@@ -23,6 +23,7 @@ Desktop.ini
 
 # Logs and temporary files
 *.log
+logs/.d919bff061c6df3f51a08aaca032c9ef4cb4680d-audit.json
 *.tmp
 tmp/
 temp/
