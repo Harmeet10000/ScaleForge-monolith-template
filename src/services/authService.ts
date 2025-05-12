@@ -239,7 +239,7 @@ export const loginUser = async (
 };
 
 export const logoutUser = async (refreshToken: string): Promise<boolean> => {
-  logger.info('Logout called with refresh:', refreshToken);
+  // logger.info('Logout called with refresh:', refreshToken);
   if (refreshToken) {
     try {
       // Get user ID from refresh token
@@ -249,11 +249,9 @@ export const logoutUser = async (refreshToken: string): Promise<boolean> => {
       ) as IDecryptedJwt;
 
       if (decoded && decoded.userId) {
-        // Remove user from cache when logging out
         await deleteCache('user', ['id', decoded.userId]);
       }
 
-      // Delete the refresh token from database
       await tokenRepository.deleteRefreshToken(refreshToken);
     } catch (err) {
       logger.error('Error in logout:', err);

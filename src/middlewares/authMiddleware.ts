@@ -5,10 +5,11 @@ import jwt from 'jsonwebtoken';
 import config from '../config/dotenvConfig';
 import { getCache, setCache } from '../helpers/redisFunctions';
 import { logger } from '../utils/logger';
-import { IUserWithId } from '../types/userTypes';
+import { User } from '../db/models/userModel'; // Import Drizzle User type
+import * as authRepository from '../repository/authRepository'; // Import your auth repository
 
 interface AuthRequest extends Request {
-  user?: IUserWithId;
+  user?: User; // Use Drizzle User type
 }
 
 interface JwtPayload {
@@ -72,19 +73,20 @@ export const protect = catchAsync(
       }
 
       // 5) Check if user exists in cache first
-      const cachedUser = await getCache('user', ['id', decoded.userId]);
-      let currentUser;
+      const cachedUser = (await getCache('user', ['id', decoded.userId])) as User | null;
+      let currentUser: User | null = null;
 
       if (cachedUser) {
         logger.debug(`User found in cache: ${decoded.userId}`);
         currentUser = cachedUser;
       } else {
-        // If not in cache, fetch from database
-        currentUser = await User.findById(decoded.userId);
+        // If not in cache, fetch from database using the repository
+        currentUser = await authRepository.findUserById(decoded.userId);
 
         // If user exists, cache it for future requests (30 min expiry)
         if (currentUser) {
-          await setCache('user', ['id', decoded.userId], currentUser.toObject(), 1800);
+          // Drizzle returns plain objects, no .toObject() needed
+          await setCache('user', ['id', decoded.userId], currentUser, 1800);
           logger.debug(`User cached: ${decoded.userId}`);
         }
       }
@@ -99,7 +101,11 @@ export const protect = catchAsync(
       }
 
       // 6) Check if user changed password after the token was issued
-      if (currentUser.changedPasswordAfter && currentUser.changedPasswordAfter(decoded.iat)) {
+      // Assuming `passwordReset.lastResetAt` stores the timestamp of the last password change.
+      if (
+        currentUser.passwordReset?.lastResetAt &&
+        new Date(currentUser.passwordReset.lastResetAt).getTime() / 1000 > decoded.iat
+      ) {
         return httpError(
           next,
           new Error('User recently changed password! Please log in again.'),

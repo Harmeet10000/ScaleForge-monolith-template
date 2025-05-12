@@ -64,7 +64,7 @@ export const login = catchAsync(async (req: Request, res: Response, next: NextFu
   res
     .cookie('accessToken', accessToken, {
       path: '/api/v1',
-      domain,
+      // domain,
       sameSite: 'strict',
       maxAge: 1000 * 3600,
       httpOnly: true,
@@ -72,7 +72,7 @@ export const login = catchAsync(async (req: Request, res: Response, next: NextFu
     })
     .cookie('refreshToken', refreshToken, {
       path: '/api/v1',
-      domain,
+      // domain,
       sameSite: 'strict',
       maxAge: 1000 * 3600,
       httpOnly: true,
@@ -93,7 +93,7 @@ export const logout = catchAsync(async (req: Request, res: Response) => {
   // Cookies clear
   res.clearCookie('accessToken', {
     path: '/api/v1',
-    domain: DOMAIN,
+    // domain: DOMAIN,
     sameSite: 'strict',
     httpOnly: true,
     secure: !(config.NODE_ENV === EApplicationEnvironment.DEVELOPMENT)
@@ -101,7 +101,7 @@ export const logout = catchAsync(async (req: Request, res: Response) => {
 
   res.clearCookie('refreshToken', {
     path: '/api/v1',
-    domain: DOMAIN,
+    // domain: DOMAIN,
     sameSite: 'strict',
     httpOnly: true,
     secure: !(config.NODE_ENV === EApplicationEnvironment.DEVELOPMENT)
