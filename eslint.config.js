@@ -39,21 +39,21 @@ export default tseslint.config(
       // --- Possible Errors ---
       'no-console': 'warn',
       'no-debugger': 'warn',
-      'no-unused-vars': ['warn', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
+      // 'no-unused-vars' is handled by '@typescript-eslint/no-unused-vars'
       'no-extra-semi': 'error',
       'no-unreachable': 'error',
 
       // --- Best Practices ---
       eqeqeq: ['error', 'always', { null: 'ignore' }],
       curly: ['error', 'all'],
-      'no-shadow': ['error', { hoist: 'all' }],
+      // 'no-shadow' is handled by '@typescript-eslint/no-shadow'
       'no-var': 'error',
       'prefer-const': ['warn', { destructuring: 'all' }],
       'no-param-reassign': ['warn', { props: false }],
       'no-useless-catch': 'warn',
       radix: 'error',
       'no-implicit-coercion': 'warn',
-      'no-loop-func': 'error',
+      // 'no-loop-func' is handled by '@typescript-eslint/no-loop-func'
 
       // --- Stylistic Issues ---
       semi: ['error', 'always'],
@@ -68,10 +68,20 @@ export default tseslint.config(
 
       // --- ES6 ---
       'prefer-template': 'warn',
-      'no-useless-constructor': 'warn',
+      // 'no-useless-constructor' is handled by '@typescript-eslint/no-useless-constructor'
       'prefer-destructuring': ['warn', { object: true, array: false }],
 
       // --- TypeScript ---
+      // Configure TypeScript-specific versions of rules previously defined with base ESLint
+      '@typescript-eslint/no-unused-vars': [
+        'warn',
+        { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }
+      ],
+      '@typescript-eslint/no-shadow': ['error', { hoist: 'all' }], // Consider TS-specific options like ignoreTypeValueShadow if needed
+      '@typescript-eslint/no-loop-func': 'error',
+      '@typescript-eslint/no-useless-constructor': 'warn',
+
+      // Existing TypeScript rule configurations
       '@typescript-eslint/no-misused-promises': 0,
       '@typescript-eslint/no-unsafe-call': 0,
       '@typescript-eslint/no-unsafe-assignment': 0,

@@ -53,7 +53,7 @@ const DEFAULT_RETRY_CONFIG: RetryConfig = {
 };
 
 // Internal state management
-let consumerStates = new Map<string, ConsumerState>();
+const consumerStates = new Map<string, ConsumerState>();
 
 const initializeChannel = async (
   queueName: string,

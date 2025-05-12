@@ -53,10 +53,10 @@ if (!config.BUCKET_REGION || !config.ACCESS_KEY || !config.SECRET_ACCESS_KEY) {
 
 // Use non-null assertions to satisfy S3ClientConfig
 const s3Client = new S3Client({
-  region: config.BUCKET_REGION!,
+  region: config.BUCKET_REGION,
   credentials: {
-    accessKeyId: config.ACCESS_KEY!,
-    secretAccessKey: config.SECRET_ACCESS_KEY!
+    accessKeyId: config.ACCESS_KEY,
+    secretAccessKey: config.SECRET_ACCESS_KEY
   }
 });
 

@@ -98,7 +98,6 @@ const FileTransport = (): Array<FileTransportInstance> => [
   })
 ];
 
-// eslint-disable-next-line @typescript-eslint/no-unsafe-return
 const PostgresTransportInstance = (): PostgresTransport[] => [
   new PostgresTransport({
     level: 'info',
@@ -110,7 +109,6 @@ const PostgresTransportInstance = (): PostgresTransport[] => [
   })
 ];
 
-// eslint-disable-next-line @typescript-eslint/no-unsafe-return
 const DailyRotateFileTransport = (): DailyRotateFile[] => [
   new DailyRotateFile({
     filename: path.join(__dirname, '../', '../', 'logs', 'application-%DATE%.log'),

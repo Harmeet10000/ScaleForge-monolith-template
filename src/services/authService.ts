@@ -44,17 +44,15 @@ dayjs.extend(utc);
 export const registerUser = async (userData: IRegisterUserRequestBody): Promise<User> => {
   const { name, emailAddress, password, phoneNumber, consent } = userData;
 
-  // * Phone Number Validation & Parsing
   const { countryCode, isoCode, internationalNumber } = extractInfoPhoneNumber(`+${phoneNumber}`);
 
   if (!countryCode || !isoCode || !internationalNumber) {
     throw new Error(INVALID_PHONE_NUMBER);
   }
 
-  // * Timezone
-  const timezone = countryTimezone(isoCode);
+  const timezoneResult = countryTimezone(isoCode); // Renamed to avoid conflict
 
-  if (!timezone || timezone.length === 0) {
+  if (!timezoneResult || timezoneResult.length === 0) {
     throw new Error(INVALID_TIMEZONE);
   }
 
@@ -73,40 +71,32 @@ export const registerUser = async (userData: IRegisterUserRequestBody): Promise<
   // * Encrypting Password
   const encryptedPassword = await hashPassword(password);
 
-  // * Account Confirmation Object
-  const token = generateRandomId();
-  const code = generateOtp(6);
+  const confirmationToken = generateRandomId(); // Renamed for clarity
+  const confirmationCode = generateOtp(6); // Renamed for clarity
 
-  // * Preparing Object - Ensure this matches NewUser structure
   const payload: NewUser = {
     name,
     emailAddress,
-    phoneNumber: {
-      countryCode,
-      isoCode,
-      internationalNumber
-    },
-    accountConfirmation: {
-      status: false,
-      token,
-      code,
-      timestamp: null
-    },
-    // passwordReset structure might need adjustment based on NewUser
-    passwordReset: {
-      token: null,
-      expiry: null,
-      lastResetAt: null
-    },
+    // PhoneNumber fields
+    phoneIsoCode: isoCode,
+    phoneCountryCode: countryCode,
+    phoneInternationalNumber: internationalNumber,
+    // AccountConfirmation fields
+    accountConfirmationStatus: false,
+    accountConfirmationToken: confirmationToken,
+    accountConfirmationCode: confirmationCode,
+    accountConfirmationTimestamp: null,
+    // PasswordReset fields
+    passwordResetToken: null,
+    passwordResetExpiry: null,
+    passwordResetLastResetAt: null,
     lastLoginAt: null,
     role: EUserRole.USER,
-    timezone: timezone[0].name,
+    timezone: timezoneResult[0].name,
     password: encryptedPassword,
     consent
-    // createdAt and updatedAt are typically handled by Drizzle's defaultNow()
   };
 
-  // Create New User - Assuming authRepository.registerUser now returns Promise<User>
   const newUser = await authRepository.registerUser(payload);
 
   // newUser is already a plain object from Drizzle
@@ -124,24 +114,25 @@ export const confirmAccount = async (
     return httpError(next, new Error(INVALID_ACCOUNT_CONFIRMATION_TOKEN_OR_CODE), req, 400);
   }
 
-  if (user.accountConfirmation.status) {
+  if (user.accountConfirmationStatus) {
+    // Changed
     return httpError(next, new Error(ACCOUNT_ALREADY_CONFIRMED), req, 400);
   }
 
-  const updatedAccountConfirmation = {
-    ...user.accountConfirmation,
-    status: true,
-    timestamp: dayjs().utc().toDate()
-  };
+  const newAccountConfirmationTimestamp = dayjs().utc().toDate(); // Renamed for clarity
 
-  // Update the user in the database
   await authRepository.updateUserById(user.id, {
-    accountConfirmation: updatedAccountConfirmation
+    accountConfirmationStatus: true, // Changed
+    accountConfirmationTimestamp: newAccountConfirmationTimestamp // Changed
   });
 
   logger.info(`User ${user.id} account confirmation status updated in DB.`);
-  // Simulating update for cache:
-  const updatedUserForCache: User = { ...user, accountConfirmation: updatedAccountConfirmation };
+
+  const updatedUserForCache: User = {
+    ...user,
+    accountConfirmationStatus: true, // Changed
+    accountConfirmationTimestamp: newAccountConfirmationTimestamp // Changed
+  };
 
   await setCache('user', ['id', user.id.toString()], updatedUserForCache, 1800);
   await setCache('user', ['email', user.emailAddress], updatedUserForCache, 1800);
@@ -196,7 +187,8 @@ export const loginUser = async (
   //   return httpError(next, new Error(INVALID_EMAIL_OR_PASSWORD), req, 400);
   // }
 
-  if (!userFromDb.accountConfirmation.status) {
+  if (!userFromDb.accountConfirmationStatus) {
+    // Changed
     return httpError(next, new Error(ACCOUNT_CONFIRMATION_REQUIRED), req, 400);
   }
 
@@ -217,12 +209,11 @@ export const loginUser = async (
     config.REFRESH_TOKEN_EXPIRY || 604800
   );
 
-  const lastLoginAt = dayjs().utc().toDate();
-  // Replace userDocument.save() with an update operation
-  // Example: await authRepository.updateUserById(userId, { lastLoginAt });
+  const newLastLoginAt = dayjs().utc().toDate(); // Renamed for clarity
+  await authRepository.updateUserById(userId, { lastLoginAt: newLastLoginAt }); // Updated to use updateUserById
+
   logger.info(`User ${userId} lastLoginAt to be updated in DB.`);
-  // Simulating update for cache:
-  const updatedUserForCache: User = { ...userFromDb, lastLoginAt };
+  const updatedUserForCache: User = { ...userFromDb, lastLoginAt: newLastLoginAt };
 
   await setCache('user', ['email', emailAddress], updatedUserForCache, 1800);
   await setCache('user', ['id', userId], updatedUserForCache, 1800);
@@ -283,7 +274,8 @@ export const refreshUserToken = async (
       refreshToken,
       config.REFRESH_TOKEN_SECRET || 'refresh-token-secret'
     ) as IDecryptedJwt;
-    userId = decryptedJwt.userId;
+    ({ userId } = decryptedJwt);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   } catch (err) {
     return httpError(next, new Error(UNAUTHORIZED), req, 401);
   }
@@ -320,22 +312,23 @@ export const requestPasswordReset = async (
   }
 
   // Check if user account is confirmed
-  if (!user.accountConfirmation.status) {
+  if (!user.accountConfirmationStatus) {
+    // Changed
     return httpError(next, new Error(ACCOUNT_CONFIRMATION_REQUIRED), req, 400);
   }
 
   // Password Reset token & expiry
-  const token = generateRandomId();
-  const expiry = generateResetPasswordExpiry(15);
+  const resetToken = generateRandomId(); // Renamed for clarity
 
-  // Update User
-  user.passwordReset.token = token;
-  user.passwordReset.expiry = expiry;
+  const resetExpiry = new Date(generateResetPasswordExpiry(15));
 
-  await authRepository.updateUserById(user.id, { passwordReset: user.passwordReset });
+  await authRepository.updateUserById(user.id, {
+    passwordResetToken: resetToken, // Changed
+    passwordResetExpiry: resetExpiry // Changed
+  });
 
   // Send Email
-  const resetUrl = `${config.FRONTEND_URL}/reset-password/${token}`;
+  const resetUrl = `${config.FRONTEND_URL}/reset-password/${resetToken}`;
   const subject = 'Account Password Reset Requested';
   const text = `Hey ${user.name}, Please reset your account password by clicking on the link below\n\nLink will expire within 15 Minutes\n\n${resetUrl}`;
 
@@ -364,33 +357,34 @@ export const resetUserPassword = async (
   }
 
   // Check if user account is confirmed
-  if (!user.accountConfirmation.status) {
+  if (!user.accountConfirmationStatus) {
+    // Changed
     return httpError(next, new Error(ACCOUNT_CONFIRMATION_REQUIRED), req, 400);
   }
 
   // Check expiry of the url
-  const storedExpiry = user.passwordReset.expiry;
-  const currentTimestamp = dayjs().valueOf();
+  const storedExpiry = user.passwordResetExpiry; // Changed
+  const currentTimestamp = dayjs().toDate(); // Get current Date object for comparison
 
   if (!storedExpiry) {
     return httpError(next, new Error(INVALID_REQUEST), req, 400);
   }
 
   if (currentTimestamp > storedExpiry) {
+    // Direct Date comparison
     return httpError(next, new Error(EXPIRED_URL), req, 400);
   }
 
   // Hash new password
   const hashedPassword = await hashPassword(newPassword);
+  const newPasswordResetLastResetAt = dayjs().utc().toDate(); // Renamed for clarity
 
   // User update
-  user.password = hashedPassword;
-  user.passwordReset.token = null;
-  user.passwordReset.expiry = null;
-  user.passwordReset.lastResetAt = dayjs().utc().toDate();
   await authRepository.updateUserById(user.id, {
-    password: user.password,
-    passwordReset: user.passwordReset
+    password: hashedPassword,
+    passwordResetToken: null, // Changed
+    passwordResetExpiry: null, // Changed
+    passwordResetLastResetAt: newPasswordResetLastResetAt // Changed
   });
 
   // Email send
@@ -416,8 +410,8 @@ export const changeUserPassword = async (
   req: Request,
   next: NextFunction
 ): Promise<boolean | void> => {
-  // Find User by id
-  const user = await authRepository.findUserById(userId, '+password');
+  // Find User by id - assuming findUserById selects password by default or if no specific columns are requested
+  const user = await authRepository.findUserById(userId);
   if (!user) {
     return httpError(next, new Error(NOT_FOUND('user')), req, 404);
   }
@@ -436,8 +430,7 @@ export const changeUserPassword = async (
   const hashedPassword = await hashPassword(newPassword);
 
   // User update
-  user.password = hashedPassword;
-  await authRepository.updateUserById(user.id, { password: user.password });
+  await authRepository.updateUserById(user.id, { password: hashedPassword });
 
   // Email Send
   const subject = 'Password Changed';

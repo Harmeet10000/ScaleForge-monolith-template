@@ -1,98 +1,93 @@
-import { Document, Query, FilterQuery } from 'mongoose';
+import { PgTable, PgColumn } from 'drizzle-orm/pg-core';
+import { SQLWrapper, asc, desc, eq, and, getTableColumns } from 'drizzle-orm';
 
-// More strictly type the query string, but allow unknown keys as string values
-interface QueryString {
-  page?: string;
-  sort?: string;
-  limit?: string;
-  fields?: string;
-  cursor?: string;
-  direction?: string;
-  sortField?: string;
-  [key: string]: string | undefined;
-}
+// Use a more generic type for the query
+type AnyPgSelectQuery = {
+  where: (condition: SQLWrapper) => AnyPgSelectQuery;
+  orderBy: (orderClause: unknown) => AnyPgSelectQuery;
+  limit: (limit: number) => AnyPgSelectQuery;
+  offset: (offset: number) => AnyPgSelectQuery;
+  // [key: string]: any;
+};
 
-class APIFeatures<T extends Document> {
-  query: Query<T[], T>;
-  queryString: QueryString;
+type QueryParams = Record<string, string | string[] | undefined>;
 
-  constructor(query: Query<T[], T>, queryString: QueryString) {
-    this.query = query;
-    this.queryString = queryString;
+export class APIFeatures<TTable extends PgTable, TQuery extends AnyPgSelectQuery> {
+  private _query: TQuery;
+  private _queryParams: QueryParams;
+  private _table: TTable;
+
+  constructor(table: TTable, query: TQuery, queryParams: QueryParams) {
+    this._table = table;
+    this._query = query;
+    this._queryParams = queryParams;
   }
 
-  filter() {
-    const queryObj: Record<string, string | undefined> = { ...this.queryString };
+  get query(): TQuery {
+    return this._query;
+  }
+
+  filter(): APIFeatures<TTable, TQuery> {
+    // Extract filter params (exclude pagination and sorting params)
+    const queryObj = { ...this._queryParams };
     const excludedFields = ['page', 'sort', 'limit', 'fields'];
-    excludedFields.forEach((el) => delete queryObj[el]);
+    excludedFields.forEach((field) => delete queryObj[field]);
 
-    // Advanced filtering
-    let queryStr = JSON.stringify(queryObj);
-    queryStr = queryStr.replace(/\b(gte|gt|lte|lt)\b/g, (match) => `$${match}`);
+    // Apply filter conditions
+    if (Object.keys(queryObj).length > 0) {
+      const conditions: SQLWrapper[] = [];
+      const tableColumns = getTableColumns(this._table);
 
-    // Type assertion: we expect the parsed object to be a valid FilterQuery<T>
-    this.query = this.query.find(JSON.parse(queryStr) as FilterQuery<T>);
+      for (const key in queryObj) {
+        if (tableColumns[key] && queryObj[key] !== undefined) {
+          const value = queryObj[key];
+          // For simplicity, we just handle simple equality here
+          // For complex operators like gt, gte, lt, lte, you'd need more logic
+          conditions.push(eq(tableColumns[key] as PgColumn, value));
+        }
+      }
 
-    return this;
-  }
-
-  sort() {
-    if (this.queryString.sort) {
-      const sortBy = this.queryString.sort.split(',').join(' ');
-      this.query = this.query.sort(sortBy);
-    } else {
-      this.query = this.query.sort('-createdAt');
-    }
-
-    return this;
-  }
-
-  limitFields() {
-    if (this.queryString.fields) {
-      const fields = this.queryString.fields.split(',').join(' ');
-      // Type assertion: select may change the result type, but we expect T[]
-      this.query = this.query.select(fields) as Query<T[], T>;
-    } else {
-      this.query = this.query.select('-__v') as Query<T[], T>;
-    }
-
-    return this;
-  }
-
-  paginate() {
-    const page = this.queryString.page ? parseInt(this.queryString.page, 10) : 1;
-    const limit = this.queryString.limit ? parseInt(this.queryString.limit, 10) : 100;
-    const skip = (page - 1) * limit;
-
-    this.query = this.query.skip(skip).limit(limit);
-
-    return this;
-  }
-
-  cursorPaginate() {
-    const limit = this.queryString.limit ? parseInt(this.queryString.limit, 10) : 10;
-    const cursor = this.queryString.cursor || null;
-    const direction = this.queryString.direction?.toLowerCase() === 'prev' ? 'prev' : 'next';
-    const sortField = this.queryString.sortField || '_id';
-
-    if (cursor) {
-      if (direction === 'next') {
-        this.query = this.query.find({ [sortField]: { $gt: cursor } } as FilterQuery<T>);
-      } else {
-        this.query = this.query.find({ [sortField]: { $lt: cursor } } as FilterQuery<T>);
+      if (conditions.length > 0) {
+        // Add the WHERE clause to our query
+        // We're using any casting here as TypeScript struggles with the complex types
+        this._query = this._query.where(and(...conditions)!) as TQuery;
       }
     }
 
-    this.query = this.query.limit(limit);
+    return this;
+  }
 
-    if (direction === 'next') {
-      this.query = this.query.sort({ [sortField]: 1 });
-    } else {
-      this.query = this.query.sort({ [sortField]: -1 });
+  sort(): APIFeatures<TTable, TQuery> {
+    if (this._queryParams.sort) {
+      const sortBy = (this._queryParams.sort as string).split(',');
+      const tableColumns = getTableColumns(this._table);
+
+      for (const sortItem of sortBy) {
+        const sortField = sortItem.startsWith('-') ? sortItem.substring(1) : sortItem;
+
+        if (tableColumns[sortField]) {
+          const sortOrder = sortItem.startsWith('-') ? desc : asc;
+          // Add ORDER BY to our query
+          // We're using any casting here as TypeScript struggles with the complex types
+          this._query = this._query.orderBy(
+            sortOrder(tableColumns[sortField] as PgColumn)
+          ) as TQuery;
+        }
+      }
     }
 
     return this;
   }
-}
 
-export default APIFeatures;
+  paginate(): APIFeatures<TTable, TQuery> {
+    const page = parseInt(this._queryParams.page as string, 10) || 1;
+    const limit = parseInt(this._queryParams.limit as string, 10) || 100;
+    const offset = (page - 1) * limit;
+
+    // Add LIMIT and OFFSET to our query
+    // We're using any casting here as TypeScript struggles with the complex types
+    this._query = this._query.limit(limit).offset(offset) as TQuery;
+
+    return this;
+  }
+}

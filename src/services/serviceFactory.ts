@@ -1,37 +1,47 @@
-import { Model, Document, PopulateOptions } from 'mongoose';
-import * as repositoryFactory from '../repository/repositoryFactory.js';
-import { catchAsync } from '../utils/catchAsync.js';
+import { PgTable } from 'drizzle-orm/pg-core';
+import * as repositoryFactory from '../repository/repositoryFactory'; // Use .ts if that's the convention
+import { catchAsync } from '../utils/catchAsync'; // Use .ts
 import { Request, Response, NextFunction } from 'express';
 
-// Define PopulateType to match repository implementation
-type PopulateType = PopulateOptions | (string | PopulateOptions)[];
+// Define a helper type for the table's selectable shape, similar to repositoryFactory
+// type TableSelectType<T extends PgTable> = T['_']['inferSelect'];
 
-export const getAll = <T extends Document>(model: Model<T>, popOptions?: PopulateType) =>
+export const getAll = <TTable extends PgTable>(table: TTable) =>
   catchAsync(async (req: Request, res: Response, next: NextFunction) => {
-    const documents = await repositoryFactory.getAll<T>(model, popOptions)(req, res, next);
+    // The filter argument for repositoryFactory.getAll is optional and comes from req.query internally
+    // If you need to pass a specific pre-defined filter from the service layer, it would be the 4th argument.
+    // eslint-disable-next-line @typescript-eslint/await-thenable
+    const documents = await repositoryFactory.getAll<TTable>(table)(req, res, next);
     return documents;
   });
 
-export const getOne = <T extends Document>(model: Model<T>, popOptions?: PopulateType) =>
+export const getOne = <TTable extends PgTable>(table: TTable) =>
   catchAsync(async (req: Request, res: Response, next: NextFunction) => {
-    const document = await repositoryFactory.getOne<T>(model, popOptions)(req, res, next);
+    // eslint-disable-next-line @typescript-eslint/await-thenable
+    const document = await repositoryFactory.getOne<TTable>(table)(req, res, next);
     return document;
   });
 
-export const createOne = <T extends Document>(model: Model<T>) =>
-  catchAsync(async (req: Request, res: Response, next: NextFunction) => {
-    const newDocument = await repositoryFactory.createOne<T>(model)(req, res, next);
+export const createOne = <TTable extends PgTable>(table: TTable) =>
+  catchAsync(async (req: Request, res: Response) => {
+    // repositoryFactory.createOne expects req.body to contain the data
+    // eslint-disable-next-line @typescript-eslint/await-thenable
+    const newDocument = await repositoryFactory.createOne<TTable>(table)(req, res);
     return newDocument;
   });
 
-export const updateOne = <T extends Document>(model: Model<T>) =>
+export const updateOne = <TTable extends PgTable>(table: TTable) =>
   catchAsync(async (req: Request, res: Response, next: NextFunction) => {
-    const updatedDocument = await repositoryFactory.updateOne<T>(model)(req, res, next);
+    // repositoryFactory.updateOne expects req.params.id and req.body
+    // eslint-disable-next-line @typescript-eslint/await-thenable
+    const updatedDocument = await repositoryFactory.updateOne<TTable>(table)(req, res, next);
     return updatedDocument;
   });
 
-export const deleteOne = <T extends Document>(model: Model<T>) =>
+export const deleteOne = <TTable extends PgTable>(table: TTable) =>
   catchAsync(async (req: Request, res: Response, next: NextFunction) => {
-    const deletedDocument = await repositoryFactory.deleteOne<T>(model)(req, res, next);
+    // repositoryFactory.deleteOne expects req.params.id
+    // eslint-disable-next-line @typescript-eslint/await-thenable
+    const deletedDocument = await repositoryFactory.deleteOne<TTable>(table)(req, res, next);
     return deletedDocument;
   });

@@ -103,8 +103,8 @@ export const protect = catchAsync(
       // 6) Check if user changed password after the token was issued
       // Assuming `passwordReset.lastResetAt` stores the timestamp of the last password change.
       if (
-        currentUser.passwordReset?.lastResetAt &&
-        new Date(currentUser.passwordReset.lastResetAt).getTime() / 1000 > decoded.iat
+        currentUser.passwordResetLastResetAt &&
+        new Date(currentUser.passwordResetLastResetAt).getTime() / 1000 > decoded.iat
       ) {
         return httpError(
           next,
