@@ -3,7 +3,7 @@ export const EApplicationEnvironment = {
   DEVELOPMENT: 'development'
 };
 
-export const EUserRole = {
-  ADMIN: 'Admin',
-  USER: 'User'
-};
+export enum EUserRole {
+  ADMIN = 'admin',
+  USER = 'user'
+}

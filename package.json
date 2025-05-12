@@ -23,8 +23,8 @@
     "lint:fix": "eslint . --fix",
     "format": "prettier . --check",
     "format:fix": "prettier . --write",
-    "db:generate": "drizzle-kit generate:pg",
-    "db:migrate": "tsx src/scripts/migrate.ts",
+    "db:generate": "drizzle-kit generate --config drizzle.config.json",
+    "db:migrate": "tsx scripts/migrate.ts",
     "backup:start": "node scripts/dbBackup.js",
     "backup:once": "cross-env RUN_BACKUP_ONCE=true node scripts/dbBackup.js"
   },

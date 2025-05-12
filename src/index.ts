@@ -1,15 +1,15 @@
 import config from './config/dotenvConfig';
 import app from './app';
-import { initDatabase } from './connections/connectDB';
+import { connectDB } from './connections/connectDB';
 import { connectRedis, redisClient } from './connections/connectRedis';
-import { createConnection, closeConnection } from './connections/rabbitMQConnection';
+import { createConnection, closeConnection } from './connections/connectRabbitMQ';
 import { logger } from './utils/logger';
 import process from 'process';
 import type { Server } from 'http';
 
 // --- Connect to Databases ---
 // Use Promise.all to connect concurrently, or connect sequentially if preferred/needed
-Promise.all([initDatabase(), connectRedis(), createConnection()])
+Promise.all([connectDB(), connectRedis(), createConnection()])
   .then(() => {
     const server: Server = app.listen(config.PORT, () => {
       logger.info(`Server is running at port: ${config.PORT}, in ${config.NODE_ENV} mode`);

@@ -1,6 +1,6 @@
 import { migrate } from 'drizzle-orm/neon-http/migrator';
-import { db } from '../config/database';
-import { logger } from '../utils/logger';
+import { db } from '../src/connections/connectDB';
+import { logger } from '../src/utils/logger';
 
 async function runMigrations() {
   try {

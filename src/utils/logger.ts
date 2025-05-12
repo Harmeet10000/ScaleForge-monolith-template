@@ -1,15 +1,14 @@
 import util from 'util';
-import 'winston-mongodb';
-import { createLogger, format, transports, Logger } from 'winston';
-import { EApplicationEnvironment } from '../constant/application.js';
-import { red, blue, yellow, green, magenta, cyan } from 'colorette';
-import { ConsoleTransportInstance, FileTransportInstance } from 'winston/lib/winston/transports';
 import { PostgresTransport } from '@innova2/winston-pg';
+import DailyRotateFile from 'winston-daily-rotate-file';
+import { createLogger, format, transports, Logger } from 'winston';
+import { ConsoleTransportInstance, FileTransportInstance } from 'winston/lib/winston/transports';
+import { red, blue, yellow, green, magenta, cyan } from 'colorette';
+import { EApplicationEnvironment } from '../constant/application.js';
 import * as sourceMapSupport from 'source-map-support';
 import path, { dirname } from 'path';
 import { fileURLToPath } from 'url';
 import config from '../config/dotenvConfig.js';
-import DailyRotateFile from 'winston-daily-rotate-file';
 
 // Linking Trace Support
 sourceMapSupport.install();
@@ -103,7 +102,7 @@ const FileTransport = (): Array<FileTransportInstance> => [
 const PostgresTransportInstance = (): PostgresTransport[] => [
   new PostgresTransport({
     level: 'info',
-    connectionString: config.DATABASE as string,
+    connectionString: config.DATABASE,
     tableName: 'application_logs',
     maxPool: 10,
     metaKey: 'meta', // Use a similar meta structure as MongoDB

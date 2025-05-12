@@ -1,4 +1,4 @@
-import {  getConnection } from '../connections/rabbitMQConnection';
+import { getConnection } from '../connections/connectRabbitMQ';
 import { logger } from '../utils/logger';
 import { Channel, Options } from 'amqplib';
 

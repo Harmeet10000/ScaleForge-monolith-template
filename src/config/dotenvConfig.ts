@@ -13,6 +13,7 @@ interface AppConfig {
   DB_POOL_SIZE: number;
   MIGRATE_MONGO_URI: string | undefined;
   MIGRATE_AUTOSYNC: boolean;
+  NEON_WS_PROXY: string | undefined;
   REDIS_HOST: string | undefined;
   REDIS_PORT: number;
   REDIS_USERNAME: string | undefined;
@@ -44,6 +45,7 @@ const _config: AppConfig = {
   // Database
   DATABASE: String(process.env.DATABASE),
   DB_POOL_SIZE: Number(process.env.DB_POOL_SIZE) || 10,
+  NEON_WS_PROXY: process.env.NEON_WS_PROXY,
 
   // Migration
   MIGRATE_MONGO_URI: process.env.MIGRATE_MONGO_URI,
