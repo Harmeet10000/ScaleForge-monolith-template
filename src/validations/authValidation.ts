@@ -1,6 +1,6 @@
 import { z, ZodError, ZodFormattedError } from 'zod';
 
-export const ValidateRegisterBody = z.object({
+export const validateRegisterBody = z.object({
   name: z.string().min(2).max(72).trim(),
   emailAddress: z.string().email().trim(),
   phoneNumber: z.string().min(4).max(20).trim(),
@@ -10,20 +10,20 @@ export const ValidateRegisterBody = z.object({
   })
 });
 
-export const ValidateLoginBody = z.object({
+export const validateLoginBody = z.object({
   emailAddress: z.string().email().trim(),
   password: z.string().min(8).max(24).trim()
 });
 
-export const ValidateForgotPasswordBody = z.object({
+export const validateForgotPasswordBody = z.object({
   emailAddress: z.string().email().trim()
 });
 
-export const ValidateResetPasswordBody = z.object({
+export const validateResetPasswordBody = z.object({
   newPassword: z.string().min(8).max(24).trim()
 });
 
-export const ValidateChangePasswordBody = z
+export const validateChangePasswordBody = z
   .object({
     oldPassword: z.string().min(8).max(24).trim(),
     newPassword: z.string().min(8).max(24).trim(),

@@ -25,6 +25,7 @@ export const extractInfoPhoneNumber = (
       internationalNumber: null
     };
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   } catch (err) {
     return {
       countryCode: null,

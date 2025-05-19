@@ -84,26 +84,25 @@ const initializeChannel = async (
     }
 
     try {
+      // Check if queue exists but DON'T try to assert it yet
       await channel.checkQueue(queueName);
       state.queueExists = true;
-      logger.info('Queue already exists, using existing configuration', {
+      logger.info('Queue already exists, skipping queue assertion to avoid conflicts', {
         meta: { queueName }
       });
     } catch {
+      // Queue doesn't exist, we'll create it with our options
       state.queueExists = false;
-    }
 
-    await channel.assertQueue(queueName, state.queueExists ? {} : state.queueOptions);
+      // Only assert the queue if it doesn't exist to avoid PRECONDITION_FAILED errors
+      await channel.assertQueue(queueName, state.queueOptions);
+      logger.info('Queue created with specified options', {
+        meta: { queueName, options: state.queueOptions }
+      });
+    }
 
     state.channel = channel;
     consumerStates.set(queueName, state);
-
-    logger.info('RabbitMQ consumer initialized', {
-      meta: {
-        queueName,
-        queueOptions: state.queueExists ? 'using existing configuration' : state.queueOptions
-      }
-    });
 
     return channel;
   } catch (error: unknown) {
@@ -122,19 +121,57 @@ export const bindQueue = async (
   queueName: string,
   exchangeName: string,
   bindingKey = '',
-  bindingOptions: BindingOptions = {}
+  bindingOptions: BindingOptions = {},
+  queueOptions: AssertQueueOptions = {} // Add queue options parameter
 ): Promise<void> => {
-  const channel = await initializeChannel(queueName);
+  const channel = await initializeChannel(queueName, queueOptions);
+  const state = consumerStates.get(queueName);
+
+  // Ensure the queue exists before trying to bind it
+  if (state && !state.queueExists) {
+    try {
+      // Try to create the queue if it doesn't already exist
+      logger.info(`Ensuring queue ${queueName} exists before binding`, {
+        meta: { queueName, exchangeName }
+      });
+      await channel.assertQueue(queueName, state.queueOptions);
+      state.queueExists = true;
+      consumerStates.set(queueName, state);
+    } catch (error: unknown) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      // If the queue already exists (code 406), we can continue
+      if (err.message && err.message.includes('PRECONDITION_FAILED')) {
+        logger.warn(
+          `Queue ${queueName} already exists with different options, continuing with binding`,
+          {
+            meta: { queueName, exchangeName, error: err.message }
+          }
+        );
+      } else {
+        logger.error(`Failed to assert queue ${queueName} before binding`, {
+          meta: { queueName, exchangeName, error: err.message }
+        });
+        throw err;
+      }
+    }
+  }
+
+  // Also ensure the exchange exists before binding to it
+  try {
+    await channel.checkExchange(exchangeName);
+  } catch (error: unknown) {
+    const err = error instanceof Error ? error : new Error(String(error));
+    logger.error(`Exchange ${exchangeName} does not exist for binding`, {
+      meta: { exchangeName, queueName, error: err.message }
+    });
+    throw new Error(`Exchange ${exchangeName} does not exist for binding to queue ${queueName}`);
+  }
 
   try {
     await channel.bindQueue(queueName, exchangeName, bindingKey, bindingOptions);
 
     logger.info('Queue bound to exchange', {
-      meta: {
-        queueName,
-        exchangeName,
-        bindingKey
-      }
+      meta: { queueName, exchangeName, bindingKey }
     });
   } catch (error: unknown) {
     const err = error instanceof Error ? error : new Error(String(error));
@@ -157,7 +194,11 @@ const setupRetryMechanism = async (
 ): Promise<void> => {
   const state = consumerStates.get(queueName);
 
+  // Don't try to modify existing queue configurations
   if (!state || state.queueExists) {
+    logger.info('Skipping retry mechanism setup for existing queue to avoid conflicts', {
+      meta: { queueName }
+    });
     return;
   }
 
@@ -165,6 +206,7 @@ const setupRetryMechanism = async (
   const retryExchange = `${queueName}.retry`;
   const retryQueue = `${queueName}.retry`;
 
+  // First assert the exchanges
   await channel.assertExchange(deadLetterExchange, ExchangeTypes.DIRECT, {
     durable: true
   });
@@ -172,17 +214,15 @@ const setupRetryMechanism = async (
     durable: true
   });
 
-  await channel.assertQueue(queueName, {
-    ...queueOptions,
-    deadLetterExchange
-  });
-
+  // We already asserted the main queue in initializeChannel, so we don't need to do it again
+  // But we do need to assert the retry queue
   await channel.assertQueue(retryQueue, {
     durable: true,
     deadLetterExchange: '',
     deadLetterRoutingKey: queueName
   });
 
+  // Bind the queues to their exchanges
   await channel.bindQueue(retryQueue, retryExchange, '');
   await channel.bindQueue(queueName, deadLetterExchange, '');
 
@@ -409,8 +449,44 @@ export const createBoundConsumer = async (
   options: { queueOptions?: AssertQueueOptions; bindingOptions?: BindingOptions } = {}
 ): Promise<void> => {
   const { queueOptions = {}, bindingOptions = {} } = options;
-  await initializeChannel(queueName, queueOptions);
-  await bindQueue(queueName, exchangeName, bindingKey, bindingOptions);
+
+  // Combine queue options with default retry configuration
+  const fullQueueOptions = {
+    deadLetterExchange: `${queueName}.dlx`, // Consistent deadLetterExchange naming
+    ...queueOptions
+  };
+
+  // First, initialize channel and create the exchange if needed
+  const channel = await initializeChannel(queueName, fullQueueOptions);
+
+  try {
+    // Also ensure the exchange exists
+    try {
+      await channel.checkExchange(exchangeName);
+    } catch {
+      // Exchange doesn't exist, assert it as a direct exchange by default
+      logger.info(`Exchange ${exchangeName} not found, creating as direct exchange`, {
+        meta: { exchangeName }
+      });
+      await channel.assertExchange(exchangeName, ExchangeTypes.DIRECT, {
+        durable: true
+      });
+    }
+
+    // Now bind with the same options used for initialization
+    await bindQueue(queueName, exchangeName, bindingKey, bindingOptions, fullQueueOptions);
+  } catch (error: unknown) {
+    const err = error instanceof Error ? error : new Error(String(error));
+    logger.error('Failed to create bound consumer', {
+      meta: {
+        error: err.message,
+        queueName,
+        exchangeName,
+        bindingKey
+      }
+    });
+    throw err;
+  }
 };
 
 export const setupPriorityQueue = async (
@@ -419,10 +495,14 @@ export const setupPriorityQueue = async (
   queueOptions: AssertQueueOptions = {}
 ): Promise<void> => {
   try {
-    await createConsumer(queueName, {
+    // Use consistent options everywhere
+    const fullQueueOptions = {
+      deadLetterExchange: `${queueName}.dlx`, // Consistent naming
       ...queueOptions,
       maxPriority
-    });
+    };
+
+    await createConsumer(queueName, fullQueueOptions);
 
     logger.info('Priority queue set up successfully', {
       meta: {

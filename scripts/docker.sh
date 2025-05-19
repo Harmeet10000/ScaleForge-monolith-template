@@ -1,5 +1,5 @@
 # The Docker container is built using the Dockerfile in the project directory.
-docker build -t auth-service -f docker/prod/Dockerfile .
+docker build -t auth-service -f docker/dev/Dockerfile .
 
 # Run the Docker container for the Shiksha Dost Backend
 docker run -d \

@@ -3,59 +3,19 @@
 <div align="center">
   <img src="https://img.shields.io/badge/node.js-20.14.0-brightgreen" alt="Node.js Version" />
   <img src="https://img.shields.io/badge/express-4.x-blue" alt="Express Version" />
-  <img src="https://img.shields.io/badge/mongodb-latest-green" alt="MongoDB" />
+  <img src="https://img.shields.io/badge/postgres-latest-blue" alt="Postgres" />
   <img src="https://img.shields.io/badge/redis-latest-red" alt="Redis" />
+  <img src="https://img.shields.io/badge/rabbitmq-latest-orange" alt="RabbitMQ" />
   <br/>
   <img src="https://img.shields.io/badge/docker-ready-blue" alt="Docker Ready" />
   <img src="https://img.shields.io/badge/license-ISC-lightgrey" alt="License" />
 </div>
 
-<div align="center">
-  <h3>Key Dependencies</h3>
-  <img src="https://img.shields.io/badge/typescript-5.8.3-blue" alt="TypeScript" />
-  <img src="https://img.shields.io/badge/mongoose-8.x-green" alt="Mongoose" />
-  <img src="https://img.shields.io/badge/ioredis-5.6.1-red" alt="IORedis" />
-  <img src="https://img.shields.io/badge/winston-3.17.0-orange" alt="Winston" />
-  <br/>
-  <img src="https://img.shields.io/badge/joi-17.x-yellow" alt="Joi" />
-  <img src="https://img.shields.io/badge/swagger--ui--express-5.0.1-green" alt="Swagger UI" />
-  <img src="https://img.shields.io/badge/helmet-8.0.0-lightgrey" alt="Helmet" />
-  <img src="https://img.shields.io/badge/cors-2.8.5-orange" alt="CORS" />
-  <br/>
-  <img src="https://img.shields.io/badge/amqplib-0.10.7-purple" alt="RabbitMQ" />
-  <img src="https://img.shields.io/badge/aws--sdk-3.797.0-yellow" alt="AWS SDK" />
-  <img src="https://img.shields.io/badge/jsonwebtoken-9.0.2-blue" alt="JWT" />
-  <img src="https://img.shields.io/badge/compression-1.8.0-lightgrey" alt="Compression" />
-  <br/>
-  <img src="https://img.shields.io/badge/prometheus-client-orange" alt="Prometheus" />
-  <img src="https://img.shields.io/badge/prettier-3.5.2-pink" alt="Prettier" />
-  <img src="https://img.shields.io/badge/eslint-9.26.0-purple" alt="ESLint" />
-  <img src="https://img.shields.io/badge/husky-9.x-brown" alt="Husky" />
-</div>
+<p align="center">A robust, secure, and scalable authentication service template built with Node.js, Express, Neon/Postgres, Redis, RabbitMQ, and more.</p>
 
-<p align="center">A robust, secure, and scalable authentication service template built with Node.js, Express, MongoDB, and Redis.</p>
-
-<details open>
-<summary>📑 Table of Contents</summary>
-
-- [✨ Features](#-features)
-- [📋 Prerequisites](#-prerequisites)
-- [🚀 Getting Started](#-getting-started)
-- [📊 Project Structure](#-project-structure)
-- [⚙️ Configuration](#️-configuration)
-- [🛠️ Available Scripts](#️-available-scripts)
-- [🔒 Security Features](#-security-features)
-- [🧪 Testing](#-testing)
-- [🤝 Contributing](#-contributing)
-- [📄 License](#-license)
-
-</details>
+---
 
 ## ✨ Features
-
-<details open>
-<summary><b>🔑 Complete Authentication System</b></summary>
-<br/>
 
 - ✅ User registration with email verification
 - ✅ Login with JWT (access and refresh tokens)
@@ -64,85 +24,35 @@
 - ✅ Session management with Redis
 - ✅ Secure password handling with bcrypt
 - ✅ Refresh token rotation
+- ✅ Graceful shutdowns for all services
+- ✅ Response compression for responses above 15KB
+- ✅ RabbitMQ for async jobs (e.g., sending emails)
+- ✅ Prometheus and Grafana for monitoring
+- ✅ Webpack for optimized production builds
+- ✅ Factory handlers for DRY code (repository, service, controller layers)
+- ✅ Database backups and cron jobs for refresh token cleanup
+- ✅ Redis for caching
+- ✅ Swagger documentation for API
+- ✅ Razorpay integration for payments
+- ✅ S3 for media storage
+- ✅ Docker for development and deployment
+- ✅ Resend for transactional emails
+- ✅ MVC pattern: repository, services, models, routes, controllers
 
-</details>
-
-<details open>
-<summary><b>🛡️ Security First Approach</b></summary>
-<br/>
-
-- ✅ CORS protection with configurable origins
-- ✅ Helmet security headers
-- ✅ Intelligent rate limiting
-- ✅ MongoDB sanitization against NoSQL injection
-- ✅ XSS protection with input sanitization
-- ✅ Secure HTTP-only cookies
-- ✅ Comprehensive input validation with Joi
-- ✅ Content security policies
-
-</details>
-
-<details open>
-<summary><b>🏭 Production Ready</b></summary>
-<br/>
-
-- ✅ Dockerized deployment with separate dev/prod configs
-- ✅ Webpack bundling for optimized builds
-- ✅ Environment-specific configurations
-- ✅ Comprehensive error handling
-- ✅ API documentation with Swagger
-- ✅ Structured logging system
-- ✅ Health check endpoints
-- ✅ Database backup to S3
-- ✅ Response compression
-- ✅ RabbitMQ integration for microservice communication
-
-</details>
-
-<details open>
-<summary><b>👨‍💻 Developer Experience</b></summary>
-<br/>
-
-- ✅ Hot reloading in development
-- ✅ Code linting and formatting with ESLint and Prettier
-- ✅ Git hooks with Husky
-- ✅ Comprehensive test suite
-- ✅ Conventional commit messages
-- ✅ Clear project structure
-- ✅ Utility scripts for common tasks
-
-</details>
+---
 
 ## 📋 Prerequisites
 
-<table>
-  <tr>
-    <td>Node.js</td>
-    <td>≥ 22.14.0</td>
-  </tr>
-  <tr>
-    <td>npm</td>
-    <td>≥ 10.7.0</td>
-  </tr>
-  <tr>
-    <td>MongoDB</td>
-    <td>Latest</td>
-  </tr>
-  <tr>
-    <td>Redis</td>
-    <td>Latest</td>
-  </tr>
-  <tr>
-    <td>Docker</td>
-    <td>Optional for containerized deployment</td>
-  </tr>
-</table>
+- Node.js >= 20.14.0
+- npm >= 10.7.0
+- Neon/Postgres
+- Redis
+- RabbitMQ
+- Docker (optional, for containerized deployment)
+
+---
 
 ## 🚀 Getting Started
-
-<details open>
-<summary><b>⬇️ Installation</b></summary>
-<br/>
 
 1. **Clone the repository**
 
@@ -168,7 +78,7 @@ PORT=3000
 SERVER_URL=http://localhost:3000
 
 # Database
-DATABASE_URL=mongodb://localhost:27017/auth-service
+DATABASE_URL=postgres://user:password@localhost:5432/auth_service
 REDIS_URL=redis://localhost:6379
 
 # JWT
@@ -183,6 +93,7 @@ EMAIL_PORT=587
 EMAIL_USER=your_email@example.com
 EMAIL_PASSWORD=your_email_password
 EMAIL_FROM=noreply@yourservice.com
+RESEND_API_KEY=your_resend_api_key
 
 # Frontend
 FRONTEND_URL=http://localhost:5173
@@ -191,66 +102,16 @@ FRONTEND_URL=http://localhost:5173
 S3_BACKUP_ENABLED=true
 S3_BUCKET_NAME=your-backup-bucket
 AWS_REGION=us-east-1
-S3_PREFIX=mongodb-backups/
+S3_PREFIX=postgres-backups/
+
+# Razorpay
+RAZORPAY_KEY_ID=your_razorpay_key_id
+RAZORPAY_KEY_SECRET=your_razorpay_key_secret
 ```
 
-</details>
-
-<details>
-<summary><b>▶️ Running the Application</b></summary>
-<br/>
-
-#### Development Mode
-
-```bash
-npm run dev
-```
-
-#### Production Build
-
-```bash
-npm run build
-npm start
-```
-
-</details>
-
-<details>
-<summary><b>🐳 Docker Deployment</b></summary>
-<br/>
-
-#### Development
-
-```bash
-docker build -t auth-service-dev -f docker/dev/Dockerfile .
-docker run -p 3000:3000 --env-file .env.development auth-service-dev
-```
-
-#### Production
-
-```bash
-docker build -t auth-service-prod -f docker/prod/Dockerfile .
-docker run -p 3000:3000 --env-file .env.production auth-service-prod
-```
-
-</details>
-
-<details>
-<summary><b>📝 API Documentation</b></summary>
-<br/>
-
-Once the server is running, access the Swagger documentation at:
-
-```
-http://localhost:3000/api-docs
-```
-
-</details>
+---
 
 ## 📊 Project Structure
-
-<details open>
-<summary><b>🗂️ Folder Organization</b></summary>
 
 ```
 backend/
@@ -262,28 +123,28 @@ backend/
 │   └── swagger.js
 ├── logs/                  # Application logs
 ├── nginx/                 # Nginx configuration for deployment
-│   ├── http.conf
-│   └── https.conf
-├── scripts/               # Utility scripts
-│   ├── cron.sh
-│   ├── dbBackup.js
+├── scripts/               # Utility scripts & cron jobs
+│   ├── cron-jobs/         # Cron jobs (e.g., cleanupExpiredRefreshTokens.js, dbBackup.js)
+│   ├── migrate.ts         # DB migration script
 │   └── docker.sh
 ├── src/                   # Source code
 │   ├── config/            # Configuration files
 │   ├── constant/          # Constants and enums
 │   ├── controllers/       # Request handlers
-│   ├── db/                # Database connection modules
-│   ├── helpers/           # Helper utilities
-│   ├── middlewares/       # Express middlewares
-│   ├── models/            # Mongoose models
-│   ├── repository/        # Data access layer
+│   ├── db/                # Database connection, models, migrations
+│   │   ├── migrations/    # Drizzle migrations
+│   │   ├── models/        # Drizzle models (userModel.ts, refreshToken.ts)
+│   │   └── seeders/       # Seed scripts
+│   ├── helpers/           # Helper utilities (email, rabbitMQ, redis, s3, etc.)
+│   ├── middlewares/       # Express middlewares (auth, error handler, etc.)
+│   ├── repository/        # Data access layer (factory pattern)
 │   ├── routes/            # API routes
-│   ├── services/          # Business logic layer
+│   ├── services/          # Business logic layer (factory pattern)
 │   ├── types/             # TypeScript type definitions
-│   ├── utils/             # Utility functions
+│   ├── utils/             # Utility functions (apiFeatures, logger, etc.)
 │   ├── validations/       # Input validation schemas
-│   ├── app.js             # Express application setup
-│   └── index.js           # Application entry point
+│   ├── app.ts             # Express application setup
+│   └── index.ts           # Application entry point
 └── test/                  # Test files
     ├── mockData/          # Mock data for tests
     ├── routes/            # API route tests
@@ -291,32 +152,14 @@ backend/
     └── validations/       # Validation tests
 ```
 
-</details>
-
-## ⚙️ Configuration
-
-<details>
-<summary><b>📄 Configuration Files</b></summary>
-<br/>
-
-- **webpack.config.js**: Configures bundling for production deployment
-- **eslint.config.js**: JavaScript linting rules
-- **commitlint.config.js**: Conventional commit message validation
-- **test-runner.js**: Test runner configuration
-- **prometheus.yml**: Prometheus monitoring configuration
-
-</details>
+---
 
 ## 🛠️ Available Scripts
-
-<details open>
-<summary><b>📋 NPM Commands</b></summary>
-<br/>
 
 | Command                 | Description                                  |
 | ----------------------- | -------------------------------------------- |
 | `npm run dev`           | Start the development server with hot reload |
-| `npm run build`         | Build the production bundle                  |
+| `npm run build`         | Build the production bundle (Webpack)        |
 | `npm run dev:prod`      | Run production build with nodemon            |
 | `npm start`             | Start the production server                  |
 | `npm run swagger`       | Generate Swagger documentation               |
@@ -329,31 +172,32 @@ backend/
 | `npm run format:fix`    | Fix formatting issues automatically          |
 | `npm run migrate:dev`   | Run database migrations in development       |
 | `npm run migrate:prod`  | Run database migrations in production        |
+| `npm run db:generate`   | Generate Drizzle migrations                  |
+| `npm run db:migrate`    | Run Drizzle migrations                       |
 
-</details>
+---
 
-## 🔒 Security Features
+## 🔒 Security & Architecture Highlights
 
-<details open>
-<summary><b>🔐 Security Implementation</b></summary>
-<br/>
+- **Graceful Shutdowns:** Ensures all services (HTTP, Redis, RabbitMQ, DB) close cleanly on exit.
+- **Compression:** Only compresses responses above 15KB for optimal performance.
+- **RabbitMQ:** Used for async job handling (e.g., sending emails, load distribution).
+- **Prometheus & Grafana:** Integrated for real-time monitoring and alerting.
+- **Webpack:** Used for bundling and optimizing production code.
+- **Factory Handlers:** Repository, service, and controller factories to avoid code repetition.
+- **Database Backups:** Automated scripts for regular DB backups (S3 supported).
+- **Redis Caching:** For session and data caching, improving performance.
+- **Swagger:** API documentation auto-generated and available at `/api-docs`.
+- **Razorpay:** Payment gateway integration for handling payments.
+- **Cron Jobs:** Automated cleanup of expired refresh tokens and other scheduled tasks.
+- **S3 Storage:** For media and backup storage.
+- **Docker:** Ensures consistent development and deployment environments.
+- **Resend:** For reliable transactional email delivery.
+- **MVC Pattern:** Clean separation of concerns with repository, service, model, route, and controller layers.
 
-- **JWT Authentication**: Secure token-based authentication with refresh token rotation
-- **Password Security**: Bcrypt hashing with appropriate salt rounds
-- **Rate Limiting**: Protection against brute force attacks
-- **Data Validation**: Joi schemas for request validation
-- **HTTP Security Headers**: Using Helmet middleware
-- **Cookie Security**: HTTP-only, secure cookies with proper domain and path settings
-- **MongoDB Sanitization**: Protection against NoSQL injection
-- **XSS Protection**: Sanitization of user input
-
-</details>
+---
 
 ## 🧪 Testing
-
-<details>
-<summary><b>🧠 Test Commands</b></summary>
-<br/>
 
 Run all tests:
 
@@ -373,40 +217,19 @@ Generate test coverage report:
 npm run test:coverage
 ```
 
-</details>
+---
 
-## 🔄 API Endpoints
+## 📝 API Documentation
 
-<details>
-<summary><b>🔑 Authentication Routes</b></summary>
-<br/>
+Once the server is running, access the Swagger documentation at:
 
-- `POST /api/v1/auth/register` - Register new user
-- `PUT /api/v1/auth/confirmation/:token` - Confirm user account
-- `POST /api/v1/auth/login` - Login user
-- `PUT /api/v1/auth/logout` - Logout user
-- `POST /api/v1/auth/refresh-token` - Generate new access token
-- `PUT /api/v1/auth/forgot-password` - Request password reset
-- `PUT /api/v1/auth/reset-password/:token` - Reset password
-- `PUT /api/v1/auth/change-password` - Change password (authenticated)
+```
+http://localhost:3000/api-docs
+```
 
-</details>
-
-<details>
-<summary><b>🩺 Health Routes</b></summary>
-<br/>
-
-- `GET /api/v1/health` - Check API health
-- `GET /api/v1/health/db` - Check database connection
-- `GET /api/v1/health/redis` - Check Redis connection
-
-</details>
+---
 
 ## 🤝 Contributing
-
-<details>
-<summary><b>📜 Contribution Guidelines</b></summary>
-<br/>
 
 1. Fork the repository
 2. Create your feature branch (`git checkout -b feature/amazing-feature`)
@@ -414,7 +237,7 @@ npm run test:coverage
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
-</details>
+---
 
 ## 📄 License
 

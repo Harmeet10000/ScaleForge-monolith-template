@@ -1,20 +1,30 @@
 {
-  "keep": {
-    "days": true,
-    "amount": 14
-  },
-  "auditLog": "/home/harmeet/Desktop/Projects/Production-grade-Auth-template/backend/logs/.d919bff061c6df3f51a08aaca032c9ef4cb4680d-audit.json",
-  "files": [
-    {
-      "date": 1746961702981,
-      "name": "/home/harmeet/Desktop/Projects/Production-grade-Auth-template/backend/logs/application-2025-05-11.log",
-      "hash": "0b14731a607c233724cb364deaf8830a3b1923ba353e55c1b3cf550936f5149a"
+    "keep": {
+        "days": true,
+        "amount": 14
     },
-    {
-      "date": 1746997221353,
-      "name": "/home/harmeet/Desktop/Projects/Production-grade-Auth-template/backend/logs/application-2025-05-12.log",
-      "hash": "14a9b6c1500391a3d77b548dc9549f74a48395aa385f03987bcd74174369db1c"
-    }
-  ],
-  "hashType": "sha256"
+    "auditLog": "/home/harmeet/Desktop/Projects/Production-grade-Auth-template/backend/logs/.d919bff061c6df3f51a08aaca032c9ef4cb4680d-audit.json",
+    "files": [
+        {
+            "date": 1746961702981,
+            "name": "/home/harmeet/Desktop/Projects/Production-grade-Auth-template/backend/logs/application-2025-05-11.log",
+            "hash": "0b14731a607c233724cb364deaf8830a3b1923ba353e55c1b3cf550936f5149a"
+        },
+        {
+            "date": 1746997221353,
+            "name": "/home/harmeet/Desktop/Projects/Production-grade-Auth-template/backend/logs/application-2025-05-12.log",
+            "hash": "14a9b6c1500391a3d77b548dc9549f74a48395aa385f03987bcd74174369db1c"
+        },
+        {
+            "date": 1747129799292,
+            "name": "/home/harmeet/Desktop/Projects/Production-grade-Auth-template/backend/logs/application-2025-05-13.log",
+            "hash": "bb6e3e59614682ac6f69652650975a593c03e258d2ecd51b71a16c6f0c23a0f7"
+        },
+        {
+            "date": 1747423167726,
+            "name": "/home/harmeet/Desktop/Projects/Production-grade-Auth-template/backend/logs/application-2025-05-17.log",
+            "hash": "3503f51987e19189542c98780108691cace24756179f380cb7161a8515f50363"
+        }
+    ],
+    "hashType": "sha256"
 }

@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, varchar, boolean, integer } from 'drizzle-orm/pg-core';
+import { pgTable, text, timestamp, varchar, boolean } from 'drizzle-orm/pg-core';
 import { createId } from '@paralleldrive/cuid2';
 import { EUserRole } from '../../constant/application';
 

@@ -4,11 +4,11 @@ import { httpError } from '../utils/httpError';
 import { catchAsync } from '../utils/catchAsync';
 import {
   validateSchema,
-  ValidateRegisterBody,
-  ValidateLoginBody,
-  ValidateForgotPasswordBody,
-  ValidateResetPasswordBody,
-  ValidateChangePasswordBody
+  validateRegisterBody,
+  validateLoginBody,
+  validateForgotPasswordBody,
+  validateResetPasswordBody,
+  validateChangePasswordBody
 } from '../validations/authValidation';
 import * as authService from '../services/authService';
 import { SUCCESS } from '../constant/responseMessage';
@@ -31,7 +31,7 @@ interface AuthRequest extends Request {
 }
 
 export const register = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
-  const { error, value } = validateSchema<IRegisterUserRequestBody>(ValidateRegisterBody, req.body);
+  const { error, value } = validateSchema<IRegisterUserRequestBody>(validateRegisterBody, req.body);
   if (error) {
     return httpError(next, error as ZodError, req, 422);
   }
@@ -48,7 +48,7 @@ export const confirmation = catchAsync(async (req: Request, res: Response, next:
 });
 
 export const login = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
-  const { error, value } = validateSchema<ILoginUserRequestBody>(ValidateLoginBody, req.body);
+  const { error, value } = validateSchema<ILoginUserRequestBody>(validateLoginBody, req.body);
   if (error) {
     return httpError(next, error as ZodError, req, 422);
   }
@@ -139,7 +139,7 @@ export const genNewAccessToken = catchAsync(
 export const forgotPassword = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const { error, value } = validateSchema<IForgotPasswordRequestBody>(
-      ValidateForgotPasswordBody,
+      validateForgotPasswordBody,
       req.body
     );
     if (error) {
@@ -154,7 +154,7 @@ export const forgotPassword = catchAsync(
 
 export const resetPassword = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
   const { error, value } = validateSchema<IResetPasswordRequestBody>(
-    ValidateResetPasswordBody,
+    validateResetPasswordBody,
     req.body
   );
   if (error) {
@@ -169,7 +169,7 @@ export const resetPassword = catchAsync(async (req: Request, res: Response, next
 export const changePassword = catchAsync(
   async (req: AuthRequest, res: Response, next: NextFunction) => {
     const { error, value } = validateSchema<IChangePasswordRequestBody>(
-      ValidateChangePasswordBody,
+      validateChangePasswordBody,
       req.body
     );
     if (error) {

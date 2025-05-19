@@ -3,7 +3,6 @@ import { catchAsync } from '../utils/catchAsync';
 import { httpError } from '../utils/httpError';
 import jwt from 'jsonwebtoken';
 import config from '../config/dotenvConfig';
-import { getCache, setCache } from '../helpers/redisFunctions';
 import { logger } from '../utils/logger';
 import { User } from '../db/models/userModel'; // Import Drizzle User type
 import * as authRepository from '../repository/authRepository'; // Import your auth repository
@@ -72,24 +71,7 @@ export const protect = catchAsync(
         return httpError(next, new Error('Token is not valid for this IP address.'), req, 401);
       }
 
-      // 5) Check if user exists in cache first
-      const cachedUser = (await getCache('user', ['id', decoded.userId])) as User | null;
-      let currentUser: User | null = null;
-
-      if (cachedUser) {
-        logger.debug(`User found in cache: ${decoded.userId}`);
-        currentUser = cachedUser;
-      } else {
-        // If not in cache, fetch from database using the repository
-        currentUser = await authRepository.findUserById(decoded.userId);
-
-        // If user exists, cache it for future requests (30 min expiry)
-        if (currentUser) {
-          // Drizzle returns plain objects, no .toObject() needed
-          await setCache('user', ['id', decoded.userId], currentUser, 1800);
-          logger.debug(`User cached: ${decoded.userId}`);
-        }
-      }
+      const currentUser = await authRepository.findUserById(decoded.userId);
 
       if (!currentUser) {
         return httpError(
