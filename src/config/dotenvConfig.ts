@@ -32,6 +32,8 @@ interface AppConfig {
   ACCESS_KEY: string | undefined;
   SECRET_ACCESS_KEY: string | undefined;
   RUN_BACKUP_ONCE: boolean;
+  GOOGLE_CLIENT_ID: string | undefined;
+  GOOGLE_CLIENT_SECRET: string | undefined;
 }
 
 const _config: AppConfig = {
@@ -80,7 +82,11 @@ const _config: AppConfig = {
   SECRET_ACCESS_KEY: process.env.SECRET_ACCESS_KEY,
 
   // Backup
-  RUN_BACKUP_ONCE: process.env.RUN_BACKUP_ONCE === 'true'
+  RUN_BACKUP_ONCE: process.env.RUN_BACKUP_ONCE === 'true',
+
+  // Google
+  GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
+  GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET
 };
 
 const config = Object.freeze(_config);

@@ -4,7 +4,7 @@ import helmet from 'helmet';
 import mongoSanitize from 'express-mongo-sanitize';
 import compression from 'compression';
 import type { CompressionOptions } from 'compression';
-// import xss from 'xss';
+// import xss from 'xss-clean';
 import cors, { CorsOptions } from 'cors';
 import hpp from 'hpp';
 import globalErrorHandler from './middlewares/globalErrorHandler.js';
@@ -19,6 +19,8 @@ import config from './config/dotenvConfig.js';
 import authRoutes from './routes/authRoutes.js';
 import healthRoutes from './routes/healthRoutes.js';
 import rabbitmqRoutes from './routes/rabbitmqRoutes.js';
+import oauthRoutes from './routes/oauthRoutes.js'; // Added for OAuth
+import passport from './config/passportConfig.js'; // Added for Passport configuration
 // import promBundle from 'express-prom-bundle';
 // import { register } from 'prom-client';
 // import { trackRequestMetrics, trackConnections } from './middlewares/metricsMiddleware.js';
@@ -59,11 +61,12 @@ try {
 
 const server: Express = express();
 
+server.use(passport.initialize());
+
 // 1) GLOBAL MIDDLEWARES
 // Set security HTTP headers
 server.use(helmet());
 
-// Add compression middleware - compress all responses
 server.use(
   compression({
     level: 6,
@@ -71,37 +74,23 @@ server.use(
       if (req.headers['x-no-compression']) {
         return false;
       }
-      // Compress responses larger than 500 bytes
       return compression.filter(req, res);
     },
-    threshold: 50 * 1000 // Only compress responses above 50KB
+    threshold: 15 * 1000 
   } as CompressionOptions)
 );
 
-// Limit requests from same API
 const limiter = rateLimit({
   max: 500,
   windowMs: 60 * 60 * 1000,
   message: 'Too many requests from this IP, please try again in an hour!'
 });
 server.use('/api', limiter);
-
-// Body parser, reading data from body into req.body
 server.use(express.json({ limit: '16kb' }));
-
-// Middleware to handle URL-encoded data
 server.use(express.urlencoded({ extended: true }));
-
-// Parse cookies
 server.use(cookieParser());
-
-// Data sanitization against NoSQL query injection
 server.use(mongoSanitize());
-
-// Data sanitization against XSS
 // server.use(xss());
-
-// Prevent parameter pollution
 server.use(
   hpp({
     whitelist: []
@@ -125,6 +114,7 @@ server.use(cors(corsOptions));
 // server.use(trackConnections);
 
 // 3) ROUTES
+
 // Swagger setup
 server.use(
   '/api-docs',
@@ -140,23 +130,21 @@ server.use(
   })
 );
 
+server.get('/swagger.json', (req: Request, res: Response) => {
+  res.setHeader('Content-Type', 'application/json');
+  res.send(swaggerDocument);
+});
 // Prometheus metrics endpoint
 // server.get('/metrics', async (req, res) => {
 //   res.set('Content-Type', register.contentType);
 //   res.end(await register.metrics());
 // });
-
-// Endpoint to serve the swagger.json file
-server.get('/swagger.json', (req: Request, res: Response) => {
-  res.setHeader('Content-Type', 'application/json');
-  res.send(swaggerDocument);
-});
 server.use('/api/v1/health', healthRoutes);
 server.use('/api/v1/auth', authRoutes);
 server.use('/api/v1/rabbitmq', rabbitmqRoutes);
+server.use('/api/v1/oauth', oauthRoutes); 
 // server.use('/api/v1/users', userRoutes)
 
-// 4) CATCHES ALL ROUTES THAT ARE NOT DEFINED
 server.all('*', (req: Request, res: Response, next: NextFunction) => {
   httpError(next, new Error(`Can't find ${req.originalUrl} on this server!`), req, 404);
 });

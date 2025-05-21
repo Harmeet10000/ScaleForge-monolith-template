@@ -24,17 +24,19 @@ export default tseslint.config(
   {
     languageOptions: {
       parserOptions: {
-        project: true,
-        tsconfigRootDir: import.meta.dirname
+        ecmaVersion: 2020,
+        sourceType: 'module',
+        project: './tsconfig.json'
       }
     },
     files: ['**/*.ts', '**/*.d.ts'],
 
     extends: [
       eslint.configs.recommended,
-      ...tseslint.configs.recommendedTypeChecked,
+      // ...tseslint.configs.recommendedTypeChecked,
       eslintConfigPrettier
     ],
+
     rules: {
       // --- Possible Errors ---
       'no-console': 'warn',

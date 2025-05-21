@@ -30,6 +30,10 @@ export const findUserByConfirmationTokenAndCode = async (
     'accountConfirmation.code': code
   });
 
+// Added for Google OAuth
+export const findUserByGoogleId = async (googleId: string): Promise<IUserDocument | null> =>
+  await User.findOne({ googleId });
+
 export const findByResetToken = async (token: string): Promise<IUserDocument | null> =>
   await User.findOne({
     'passwordReset.token': token

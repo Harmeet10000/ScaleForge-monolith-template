@@ -1,5 +1,5 @@
 // Define interfaces for type safety
-export interface EmailRequestBody {
+export interface IEmailRequestBody {
   name?: string;
   to?: string;
   verificationURL?: string;
@@ -19,7 +19,7 @@ export interface EmailRequestBody {
   message?: string;
 }
 
-export interface EmailResponse {
+export interface IEmailResponse {
   id: string;
   [key: string]: any;
 }

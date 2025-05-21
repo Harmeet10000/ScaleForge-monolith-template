@@ -18,6 +18,8 @@ export interface IUserBase {
     code: string;
     timestamp: Date | null;
   };
+  googleId?: string; // Added for Google OAuth
+  avatar?: string; // Added for Google OAuth
   passwordReset: {
     token: string | null;
     expiry: number | null;

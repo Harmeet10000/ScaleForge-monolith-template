@@ -1,6 +1,6 @@
 import mongoose, { Schema } from 'mongoose';
-import { IUser } from '../types/userTypes.js';
-import { EUserRole } from '../constant/application.js';
+import { IUser } from '../types/userTypes';
+import { EUserRole } from '../constant/application';
 
 const userSchema = new Schema<IUser>(
   {

@@ -5,7 +5,7 @@ import { catchAsync } from '../utils/catchAsync.js';
 import { httpResponse } from '../utils/httpResponse.js'; // Import httpResponse
 import { logger } from '../utils/logger.js';
 import config from '../config/dotenvConfig.js';
-import { EmailRequestBody } from '../types/interfaces.js';
+import { IEmailRequestBody } from '../types/interfaces.js';
 
 // New function for sending emails without requiring Express Request
 export const sendEmail = async (
@@ -55,7 +55,7 @@ export const Resendmail = catchAsync(async (req: Request, res: Response, next: N
     razorpay_order_id = '',
     razorpay_payment_id = '',
     razorpay_signature = ''
-  } = (req.body as EmailRequestBody) || {};
+  } = (req.body as IEmailRequestBody) || {};
 
   logger.info('Sending email', { meta: { to, role, use } });
 
@@ -96,13 +96,13 @@ export const Resendmail = catchAsync(async (req: Request, res: Response, next: N
     subject = 'Verify Your Email Address';
   } else if (use === 'otp') {
     // OTP email template
-    htmlContent = getOTPTemplate(name, (req.body as EmailRequestBody).otp || '');
+    htmlContent = getOTPTemplate(name, (req.body as IEmailRequestBody).otp || '');
     subject = 'Your Verification Code';
   } else if (use === 'confirmation') {
     // General confirmation email
     htmlContent = getConfirmationTemplate(
       name,
-      (req.body as EmailRequestBody).message || 'Your request has been confirmed'
+      (req.body as IEmailRequestBody).message || 'Your request has been confirmed'
     );
     subject = 'Confirmation from ShikshaDost';
   } else {

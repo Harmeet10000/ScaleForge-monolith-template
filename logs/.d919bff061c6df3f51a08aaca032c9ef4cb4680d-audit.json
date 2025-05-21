@@ -14,6 +14,16 @@
             "date": 1747059942481,
             "name": "/home/harmeet/Desktop/Projects/Production-grade-Auth-template/backend/logs/application-2025-05-12.log",
             "hash": "2cad78c5f154ca15d0599ae71b9d874b8e0c2476299cf158872bb7caaa7a3066"
+        },
+        {
+            "date": 1747815516179,
+            "name": "/home/harmeet/Desktop/Projects/Production-grade-Auth-template/backend/logs/application-2025-05-21.log",
+            "hash": "466788a284f1044c7cd5822c5bb5fa8c34f59b82a53f99328794d3b3707dafb5"
+        },
+        {
+            "date": 1747861300115,
+            "name": "/home/harmeet/Desktop/Projects/Production-grade-Auth-template/backend/logs/application-2025-05-22.log",
+            "hash": "5aa68f32a71540f2f599f214eb78831309f938fac2dd88a5cb7552a371f08e51"
         }
     ],
     "hashType": "sha256"
