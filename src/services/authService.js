@@ -40,43 +40,31 @@ dayjs.extend(utc);
 export const registerUser = async (userData) => {
   const { name, emailAddress, password, phoneNumber, consent } = userData;
 
-  // * Phone Number Validation & Parsing
   const { countryCode, isoCode, internationalNumber } = extractInfoPhoneNumber(`+${phoneNumber}`);
-
   if (!countryCode || !isoCode || !internationalNumber) {
     throw new Error(INVALID_PHONE_NUMBER);
   }
 
-  // * Timezone
   const timezone = countryTimezone(isoCode);
-
   if (!timezone || timezone.length === 0) {
     throw new Error(INVALID_TIMEZONE);
   }
 
-  // * Check User Existence using Email Address
-  // First check cache for this email
   const cachedUser = await getCache('user', ['email', emailAddress]);
   if (cachedUser) {
     throw new Error(ALREADY_EXIST('user', emailAddress));
   }
 
-  // If not in cache, check database
   const user = await authRepository.findUserByEmailAddress(emailAddress);
   if (user) {
-    // Cache user for future checks
     await setCache('user', ['email', emailAddress], user.toObject(), 3600);
     throw new Error(ALREADY_EXIST('user', emailAddress));
   }
 
-  // * Encrypting Password
   const encryptedPassword = await hashPassword(password);
-
-  // * Account Confirmation Object
   const token = generateRandomId();
   const code = generateOtp(6);
 
-  // * Preparing Object
   const payload = {
     name,
     emailAddress,
@@ -103,10 +91,8 @@ export const registerUser = async (userData) => {
     consent
   };
 
-  // Create New User
   const newUser = await authRepository.registerUser(payload);
 
-  // * Send Email
   const confirmationUrl = `${process.env.FRONTEND_URL}/confirmation/${token}?code=${code}`;
   const to = [emailAddress];
   const subject = 'Confirm Your Account';
@@ -122,28 +108,23 @@ export const registerUser = async (userData) => {
 };
 
 export const confirmAccount = async (token, code, req, next) => {
-  // * Fetch User By Token & Code
   const user = await authRepository.findUserByConfirmationTokenAndCode(token, code);
   if (!user) {
     return httpError(next, new Error(INVALID_ACCOUNT_CONFIRMATION_TOKEN_OR_CODE), req, 400);
   }
 
-  // * Check if Account already confirmed
   if (user.accountConfirmation.status) {
     return httpError(next, new Error(ACCOUNT_ALREADY_CONFIRMED), req, 400);
   }
 
-  // * Account confirm
   user.accountConfirmation.status = true;
   user.accountConfirmation.timestamp = dayjs().utc().toDate();
 
   await user.save();
 
-  // Update user in cache to reflect confirmation
   await setCache('user', ['id', user._id], user.toObject(), 1800);
   await setCache('user', ['email', user.emailAddress], user.toObject(), 1800);
 
-  // * Account Confirmation Email
   const to = [user.emailAddress];
   const subject = 'Account Confirmed';
   const text = `Your account has been confirmed`;
@@ -161,23 +142,16 @@ export const loginUser = async (credentials, req, next) => {
   const { emailAddress, password } = credentials;
   const userIp = req.ip;
 
-  // Check cache for user first
   let user = await getCache('user', ['email', emailAddress]);
-
-  // If not in cache, fetch from database
   if (!user) {
     user = await authRepository.findUserByEmailAddress(emailAddress, `+password`);
-
-    // If user exists, store in cache for future requests
     if (user) {
-      // Don't store the user with password in cache for security
       const userForCache = { ...user.toObject() };
       delete userForCache.password;
       await setCache('user', ['email', emailAddress], userForCache, 1800);
       await setCache('user', ['id', user._id], userForCache, 1800);
     }
   } else {
-    // If found in cache, get the password from DB for validation
     const userWithPassword = await authRepository.findUserByEmailAddress(emailAddress, `+password`);
     if (userWithPassword) {
       user.password = userWithPassword.password;
@@ -187,22 +161,18 @@ export const loginUser = async (credentials, req, next) => {
   if (!user) {
     return httpError(next, new Error(NOT_FOUND('user')), req, 404);
   }
-
-  // * Check if user account is confirmed
   if (!user.accountConfirmation.status) {
     return httpError(next, new Error(ACCOUNT_CONFIRMATION_REQUIRED), req, 400);
   }
 
-  // * Validate Password
   const isValidPassword = await comparePassword(password, user.password);
   if (!isValidPassword) {
     return httpError(next, new Error(INVALID_EMAIL_OR_PASSWORD), req, 400);
   }
 
-  // * Access Token & Refresh Token
   const accessToken = generateToken(
     {
-      userId: user.id || user._id, // Handle both object and plain object
+      userId: user.id || user._id,
       userIp
     },
     process.env.ACCESS_TOKEN_SECRET,
@@ -217,34 +187,28 @@ export const loginUser = async (credentials, req, next) => {
     3600
   );
 
-  // * Last Login Information
   if (typeof user.save === 'function') {
     user.lastLoginAt = dayjs().utc().toDate();
     await user.save();
 
-    // Update user in cache with new lastLoginAt
     const userForCache = { ...user.toObject() };
     delete userForCache.password;
     await setCache('user', ['email', emailAddress], userForCache, 1800);
     await setCache('user', ['id', user._id], userForCache, 1800);
   } else {
-    // If user is from cache and doesn't have save method
     await authRepository.updateUserLastLogin(user._id);
 
-    // Update cache with new login time
     user.lastLoginAt = dayjs().utc().toDate();
     await setCache('user', ['email', emailAddress], user, 1800);
     await setCache('user', ['id', user._id], user, 1800);
   }
 
-  // * Refresh Token Store
   const refreshTokenPayload = {
     token: refreshToken
   };
 
   await tokenRepository.createRefreshToken(refreshTokenPayload);
 
-  // * Get domain for cookies
   const domain = getDomainFromUrl(process.env.SERVER_URL);
 
   return {

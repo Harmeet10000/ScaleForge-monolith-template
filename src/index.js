@@ -1,13 +1,11 @@
 import './config/dotenvConfig.js';
 import app from './app.js';
+import mongoose from 'mongoose';
 import connectDB from './db/connectDB.js';
 import { logger } from './utils/logger.js';
 import { connectRedis, redisClient } from './db/connectRedis.js';
-import mongoose from 'mongoose';
 import { createConnection, closeConnection } from './db/rabbitMQConnection.js';
 
-// --- Connect to Databases ---
-// Use Promise.all to connect concurrently, or connect sequentially if preferred/needed
 Promise.all([connectDB(), connectRedis(), createConnection()])
   .then(() => {
     const server = app.listen(process.env.PORT, () => {
@@ -22,7 +20,6 @@ Promise.all([connectDB(), connectRedis(), createConnection()])
       server.close(async () => {
         logger.info('HTTP server closed.');
 
-        // Disconnect Redis
         if (redisClient.status === 'ready' || redisClient.status === 'connect') {
           try {
             await redisClient.quit();
@@ -34,7 +31,6 @@ Promise.all([connectDB(), connectRedis(), createConnection()])
           logger.warn('Redis client not connected or already disconnected.');
         }
 
-        // Disconnect MongoDB
         try {
           await mongoose.disconnect();
           logger.info('MongoDB disconnected gracefully.');
@@ -42,7 +38,6 @@ Promise.all([connectDB(), connectRedis(), createConnection()])
           logger.error(`Error during MongoDB disconnection on ${signal}:`, { error: dbErr });
         }
 
-        // Disconnect RabbitMQ
         try {
           await closeConnection();
           logger.info('RabbitMQ disconnected gracefully.');
@@ -64,7 +59,6 @@ Promise.all([connectDB(), connectRedis(), createConnection()])
       gracefulShutdown('SIGTERM');
     });
 
-    // Handle SIGINT (Ctrl+C)
     process.on('SIGINT', () => {
       gracefulShutdown('SIGINT');
     });

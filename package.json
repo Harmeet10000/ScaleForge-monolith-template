@@ -7,7 +7,6 @@
     "node": ">=22.14.0",
     "npm": ">=10.7.0"
   },
-
   "scripts": {
     "dev": "nodemon  src/index.js",
     "build": "rm -rf dist && npx webpack --config webpack.config.js",
@@ -115,6 +114,6 @@
     "winston": "^3.17.0",
     "winston-mongodb": "^6.0.0",
     "xss": "^1.0.15",
-    "xss-clean": "^0.1.4"
+    "xss-clean": "0.1.4"
   }
 }

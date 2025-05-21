@@ -100,7 +100,7 @@ server.use(cookieParser());
 server.use(mongoSanitize());
 
 // Data sanitization against XSS
-server.use(xss());
+// server.use(xss());
 
 // Prevent parameter pollution
 server.use(
