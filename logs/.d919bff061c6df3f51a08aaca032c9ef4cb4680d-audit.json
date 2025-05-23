@@ -24,6 +24,11 @@
             "date": 1747861300115,
             "name": "/home/harmeet/Desktop/Projects/Production-grade-Auth-template/backend/logs/application-2025-05-22.log",
             "hash": "5aa68f32a71540f2f599f214eb78831309f938fac2dd88a5cb7552a371f08e51"
+        },
+        {
+            "date": 1747998552290,
+            "name": "/home/harmeet/Desktop/Projects/Production-grade-Auth-template/backend/logs/application-2025-05-23.log",
+            "hash": "cf61880cf82a50d6b948d2d5a72016358883683303eed393cd2acb716c0cd0cb"
         }
     ],
     "hashType": "sha256"

@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import { NextFunction } from 'express';
 import { logger } from './logger';
 

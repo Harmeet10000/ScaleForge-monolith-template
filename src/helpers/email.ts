@@ -53,8 +53,7 @@ export const Resendmail = catchAsync(async (req: Request, res: Response, next: N
     schedule = {},
     meetingLink = '',
     razorpay_order_id = '',
-    razorpay_payment_id = '',
-    razorpay_signature = ''
+    razorpay_payment_id = ''
   } = (req.body as IEmailRequestBody) || {};
 
   logger.info('Sending email', { meta: { to, role, use } });
@@ -86,8 +85,7 @@ export const Resendmail = catchAsync(async (req: Request, res: Response, next: N
       schedule,
       meetingLink,
       razorpay_order_id,
-      razorpay_payment_id,
-      razorpay_signature
+      razorpay_payment_id
     );
     subject = 'Meeting Details from ShikshaDost';
   } else if (role === 'student' && use === 'signup') {
@@ -127,8 +125,11 @@ export const Resendmail = catchAsync(async (req: Request, res: Response, next: N
 /**
  * Template for mentor signup emails
  */
-const getMentorSignupTemplate = (name: string, email: string, password: string): string => {
-  return `<!DOCTYPE html>
+const getMentorSignupTemplate = (
+  name: string,
+  email: string,
+  password: string
+): string => `<!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
@@ -230,13 +231,11 @@ const getMentorSignupTemplate = (name: string, email: string, password: string):
     </div>
 </body>
 </html>`;
-};
 
 /**
  * Template for student signup emails
  */
-const getStudentSignupTemplate = (name: string, verificationURL: string): string => {
-  return `<!DOCTYPE html>
+const getStudentSignupTemplate = (name: string, verificationURL: string): string => `<!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
@@ -338,7 +337,6 @@ const getStudentSignupTemplate = (name: string, verificationURL: string): string
     </div>
 </body>
 </html>`;
-};
 
 /**
  * Template for mentor meeting emails
@@ -347,8 +345,7 @@ const getMentorMeetingTemplate = (
   name: string,
   schedule: { on?: string | Date; start?: string; end?: string },
   meetingLink: string
-): string => {
-  return `<!DOCTYPE html>
+): string => `<!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
@@ -450,7 +447,6 @@ const getMentorMeetingTemplate = (
     </div>
 </body>
 </html>`;
-};
 
 /**
  * Template for student meeting emails
@@ -460,10 +456,8 @@ const getStudentMeetingTemplate = (
   schedule: { on?: string | Date; start?: string; end?: string },
   meetingLink: string,
   orderId: string,
-  paymentId: string,
-  signature: string
-): string => {
-  return `<!DOCTYPE html>
+  paymentId: string
+): string => `<!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
@@ -591,13 +585,11 @@ const getStudentMeetingTemplate = (
     </div>
 </body>
 </html>`;
-};
 
 /**
  * Template for OTP verification emails
  */
-const getOTPTemplate = (name: string, otp: string): string => {
-  return `<!DOCTYPE html>
+const getOTPTemplate = (name: string, otp: string): string => `<!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
@@ -694,13 +686,11 @@ const getOTPTemplate = (name: string, otp: string): string => {
     </div>
 </body>
 </html>`;
-};
 
 /**
  * Template for general confirmation emails
  */
-const getConfirmationTemplate = (name: string, message: string): string => {
-  return `<!DOCTYPE html>
+const getConfirmationTemplate = (name: string, message: string): string => `<!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
@@ -775,4 +765,3 @@ const getConfirmationTemplate = (name: string, message: string): string => {
     </div>
 </body>
 </html>`;
-};

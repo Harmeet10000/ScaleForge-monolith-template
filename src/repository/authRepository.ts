@@ -40,7 +40,7 @@ export const findByResetToken = async (token: string): Promise<IUserDocument | n
   });
 
 export const updateUserLastLogin = async (userId: string) => {
-  return await User.findByIdAndUpdate(
+   await User.findByIdAndUpdate(
     userId,
     { lastLoginAt: dayjs().utc().toDate() },
     { new: true }

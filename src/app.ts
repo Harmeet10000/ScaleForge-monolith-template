@@ -76,7 +76,7 @@ server.use(
       }
       return compression.filter(req, res);
     },
-    threshold: 15 * 1000 
+    threshold: 15 * 1000
   } as CompressionOptions)
 );
 
@@ -142,7 +142,7 @@ server.get('/swagger.json', (req: Request, res: Response) => {
 server.use('/api/v1/health', healthRoutes);
 server.use('/api/v1/auth', authRoutes);
 server.use('/api/v1/rabbitmq', rabbitmqRoutes);
-server.use('/api/v1/oauth', oauthRoutes); 
+server.use('/api/v1/oauth', oauthRoutes);
 // server.use('/api/v1/users', userRoutes)
 
 server.all('*', (req: Request, res: Response, next: NextFunction) => {
