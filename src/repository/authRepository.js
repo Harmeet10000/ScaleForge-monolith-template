@@ -20,3 +20,10 @@ export const findByResetToken = async (token) =>
   await User.findOne({
     'passwordReset.token': token
   });
+
+export const updateUserLastLogin = async (userId) =>
+  await User.findByIdAndUpdate(
+    userId,
+    { lastLoginAt: new Date() },
+    { new: true, runValidators: true }
+  );

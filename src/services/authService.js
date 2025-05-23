@@ -255,8 +255,9 @@ export const refreshUserToken = async (refreshToken, req, next) => {
 
   try {
     const decryptedJwt = verifyToken(refreshToken, process.env.REFRESH_TOKEN_SECRET);
-    userId = decryptedJwt.userId;
+    ({ userId } = decryptedJwt);
   } catch (err) {
+    logger.error('Error in refresh token:', err);
     return httpError(next, new Error(UNAUTHORIZED), req, 401);
   }
 

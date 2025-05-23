@@ -3,10 +3,10 @@ import webpackNodeExternals from 'webpack-node-externals';
 import Dotenv from 'dotenv-webpack';
 
 export default {
-  entry: './src/index.js', // Entry point updated to src/index.js
+  entry: './src/index.js',
   target: 'node',
-  mode: 'production', // Use production mode for optimizations
-  externals: [webpackNodeExternals()], // Exclude node_modules from the bundle
+  mode: 'production',
+  externals: [webpackNodeExternals()],
   output: {
     filename: 'index.cjs',
 
@@ -20,7 +20,7 @@ export default {
         use: {
           loader: 'babel-loader',
           options: {
-            presets: ['@babel/preset-env'] // Transpile modern JavaScript
+            presets: ['@babel/preset-env']
           }
         }
       }
@@ -28,14 +28,14 @@ export default {
   },
   plugins: [
     new Dotenv({
-      path: './.env.dev',
-      systemvars: true // Allow system variables to override
+      path: './.env',
+      systemvars: true
     })
   ],
   optimization: {
-    minimize: true // Minify the output for production
+    minimize: true
   },
   stats: {
-    warningsFilter: /node_modules/ // Suppress warnings from node_modules
+    warningsFilter: /node_modules/
   }
 };
