@@ -39,7 +39,7 @@
   },
   "homepage": "https://github.com/Harmeet10000/ts-backend-production-template#readme",
   "lint-staged": {
-    "*.ts": [
+    ".ts": [
       "npm run lint:fix",
       "npm run format:fix"
     ]

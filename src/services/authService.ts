@@ -271,8 +271,8 @@ export const refreshUserToken = async (
       config.REFRESH_TOKEN_SECRET || 'refresh-token-secret'
     ) as IDecryptedJwt;
     ({ userId } = decryptedJwt);
-    // eslint-disable-next-line no-unused-vars
   } catch (err) {
+    logger.error('Error in refreshUserToken:', err);
     return httpError(next, new Error(UNAUTHORIZED), req, 401);
   }
 

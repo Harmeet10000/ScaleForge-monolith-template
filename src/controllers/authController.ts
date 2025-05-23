@@ -25,6 +25,11 @@ import {
   IUserWithId
 } from '../types/userTypes';
 
+// Define AuthRequest to properly type the req.user property
+interface AuthRequest extends Request {
+  user?: IUserWithId;
+}
+
 export const register = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
   const { error, value } = validateSchema<IRegisterUserRequestBody>(validateRegisterBody, req.body);
   if (error) {
@@ -32,7 +37,6 @@ export const register = catchAsync(async (req: Request, res: Response, next: Nex
   }
 
   const newUser = await authService.registerUser(value);
-
   httpResponse(req, res, 201, SUCCESS, { _id: newUser._id });
 });
 
@@ -162,7 +166,7 @@ export const resetPassword = catchAsync(async (req: Request, res: Response, next
 });
 
 export const changePassword = catchAsync(
-  async (req: Request, res: Response, next: NextFunction) => {
+  async (req: AuthRequest, res: Response, next: NextFunction) => {
     const { error, value } = validateSchema<IChangePasswordRequestBody>(
       validateChangePasswordBody,
       req.body
@@ -171,8 +175,12 @@ export const changePassword = catchAsync(
       return httpError(next, error as ZodError, req, 422);
     }
 
+    if (!req.user || !req.user._id) {
+      return httpError(next, new Error('User not found'), req, 404);
+    }
+
     await authService.changeUserPassword(
-      req.user!._id as IUserWithId,
+      req.user._id.toString(),
       value.oldPassword,
       value.newPassword,
       req,

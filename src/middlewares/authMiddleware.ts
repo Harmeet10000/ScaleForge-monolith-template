@@ -110,7 +110,8 @@ export const protect = catchAsync(
       }
 
       // Grant access to protected route
-      authReq.user = currentUser;
+      // Convert User model instance to IUserWithId type
+      authReq.user = currentUser.toObject ? currentUser.toObject() : currentUser;
       next();
     } catch (err) {
       httpError(next, err as Error, req, 401);
@@ -120,8 +121,9 @@ export const protect = catchAsync(
 
 export const restrictTo =
   (...roles: string[]) =>
-  (req: AuthRequest, res: Response, next: NextFunction): void => {
-    if (!req.user || !roles.includes(req.user.role)) {
+  (req: Request, res: Response, next: NextFunction): void => {
+    const authReq = req as AuthRequest;
+    if (!authReq.user || !roles.includes(authReq.user.role)) {
       return httpError(
         next,
         new Error('You do not have permission to perform this action'),
