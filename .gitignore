@@ -41,6 +41,8 @@ coverage/
 *.key
 *.pem
 *.pfx
+*.cert
+# certs/
 
 # Uploads
 uploads/

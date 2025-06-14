@@ -3,7 +3,7 @@ import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
 import mongoSanitize from 'express-mongo-sanitize';
 import compression from 'compression';
-import xss from 'xss-clean';
+// import xss from 'xss-clean';
 import hpp from 'hpp';
 import cors from 'cors';
 import globalErrorHandler from './middlewares/globalErrorHandler.js';
@@ -14,9 +14,12 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { httpError } from './utils/httpError.js';
 import { logger } from './utils/logger.js';
+import { connectKafkaProducer } from './db/connectKafka.js';
+import { consumeMessages } from './helpers/kafka.js';
 import authRoutes from './routes/authRoutes.js';
 import healthRoutes from './routes/healthRoutes.js';
 import rabbitmqRoutes from './routes/rabbitmqRoutes.js';
+
 // import promBundle from 'express-prom-bundle';
 // import { register } from 'prom-client';
 
@@ -120,6 +123,24 @@ server.use(cors(corsOptions));
 
 // Apply Prometheus metrics middleware - must be before routes
 // server.use(metricsMiddleware);
+
+// * Initialize Kafka Producer and Consumer
+const initializeKafka = async () => {
+  try {
+    await connectKafkaProducer();
+    logger.info('Kafka producer connected successfully');
+
+    // Start consuming messages
+    await consumeMessages('chats');
+    logger.info('Kafka consumer started successfully');
+  } catch (error) {
+    logger.error('Failed to initialize Kafka:', error);
+    process.exit(1);
+  }
+};
+
+// Initialize Kafka
+initializeKafka();
 
 // 3) ROUTES
 // Swagger setup

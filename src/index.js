@@ -5,6 +5,7 @@ import connectDB from './db/connectDB.js';
 import { logger } from './utils/logger.js';
 import { connectRedis, redisClient } from './db/connectRedis.js';
 import { createConnection, closeConnection } from './db/rabbitMQConnection.js';
+import { catchAsync } from './utils/catchAsync.js';
 
 Promise.all([connectDB(), connectRedis(), createConnection()])
   .then(() => {
@@ -14,36 +15,32 @@ Promise.all([connectDB(), connectRedis(), createConnection()])
       );
     });
 
+    const disconnectRedis = catchAsync(async () => {
+      if (redisClient.status === 'ready' || redisClient.status === 'connect') {
+        await redisClient.quit();
+        logger.info('Redis client disconnected gracefully.');
+      } else {
+        logger.warn('Redis client not connected or already disconnected.');
+      }
+    });
+
+    const disconnectMongo = catchAsync(async () => {
+      await mongoose.disconnect();
+      logger.info('MongoDB disconnected gracefully.');
+    });
+
+    const disconnectRabbitMQ = catchAsync(async () => {
+      await closeConnection();
+      logger.info('RabbitMQ disconnected gracefully.');
+    });
+
     // Graceful shutdown function
     const gracefulShutdown = async (signal) => {
       logger.info(`${signal} received. Shutting down gracefully...`);
       server.close(async () => {
         logger.info('HTTP server closed.');
 
-        if (redisClient.status === 'ready' || redisClient.status === 'connect') {
-          try {
-            await redisClient.quit();
-            logger.info('Redis client disconnected gracefully.');
-          } catch (redisErr) {
-            logger.error(`Error during Redis disconnection on ${signal}:`, { error: redisErr });
-          }
-        } else {
-          logger.warn('Redis client not connected or already disconnected.');
-        }
-
-        try {
-          await mongoose.disconnect();
-          logger.info('MongoDB disconnected gracefully.');
-        } catch (dbErr) {
-          logger.error(`Error during MongoDB disconnection on ${signal}:`, { error: dbErr });
-        }
-
-        try {
-          await closeConnection();
-          logger.info('RabbitMQ disconnected gracefully.');
-        } catch (rabbitmqErr) {
-          logger.error(`Error during RabbitMQ disconnection on ${signal}:`, { error: rabbitmqErr });
-        }
+        Promise.all([disconnectRedis(), disconnectMongo(), disconnectRabbitMQ()]);
 
         logger.info('Process terminated!');
         process.exit(signal === 'unhandledRejection' ? 1 : 0);
