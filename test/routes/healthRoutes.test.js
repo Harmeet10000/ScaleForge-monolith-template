@@ -30,28 +30,28 @@ describe('Health Routes', () => {
     // Setup express app with the routes
     app = express();
     app.use('/api/v1/health', healthRoutes);
-    
+
     // Get the router from the stack - it's the middleware that was added
     const healthLayer = app._router.stack.find(
-      layer => layer.name === 'router' && layer.regexp.test('/api/v1/health')
+      (layer) => layer.name === 'router' && layer.regexp.test('/api/v1/health')
     );
-    
+
     router = healthLayer.handle;
-    
+
     // Verify the router was created
     assert.ok(router);
   });
 
   it('should have GET /health route', () => {
     const healthRoute = router.stack.find(
-      layer => layer.route && layer.route.path === '/health' && layer.route.methods.get
+      (layer) => layer.route && layer.route.path === '/health' && layer.route.methods.get
     );
     assert.ok(healthRoute);
   });
 
   it('should have GET /self route', () => {
     const selfRoute = router.stack.find(
-      layer => layer.route && layer.route.path === '/self' && layer.route.methods.get
+      (layer) => layer.route && layer.route.path === '/self' && layer.route.methods.get
     );
     assert.ok(selfRoute);
   });

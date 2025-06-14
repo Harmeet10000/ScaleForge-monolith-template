@@ -2,8 +2,7 @@
 import { describe, it, assert, mock } from 'node:test';
 
 // Set a fake Resend API key for testing
-  const resend = new Resend("re_dPQCac4W_8N4GP3V3eGJE4trqEZsLnt3Q");
-
+const resend = new Resend('re_dPQCac4W_8N4GP3V3eGJE4trqEZsLnt3Q');
 
 // Import everything
 import express from 'express';
@@ -36,12 +35,12 @@ describe('Auth Routes', () => {
 
   it('should setup before each test', () => {
     // Apply the mocks for this test
-    Object.keys(controllerMocks).forEach(key => {
+    Object.keys(controllerMocks).forEach((key) => {
       mock.method(authController, key, controllerMocks[key]);
     });
-    
+
     mock.method(authMiddleware, 'protect', protectMock);
-    
+
     app = express();
     app.use(express.json());
     app.use('/api/v1/auth', authRoutes);
@@ -115,6 +114,6 @@ describe('Auth Routes', () => {
     // Check if the protect middleware is applied
     assert.ok(changePasswordRoute.route.stack.length > 1);
   });
-  
+
   // Note: Node's test runner automatically resets mocks between tests
 });

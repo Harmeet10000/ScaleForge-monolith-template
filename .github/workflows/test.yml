@@ -2,7 +2,7 @@ name: Run Tests
 
 on:
   pull_request:
-    branches: [ main, master, develop ]
+    branches: [main, master, develop]
 
 jobs:
   test:
@@ -13,12 +13,12 @@ jobs:
         image: mongo:6
         ports:
           - 27017:27017
-      
+
       redis:
         image: redis:alpine
         ports:
           - 6379:6379
-      
+
       rabbitmq:
         image: rabbitmq:3-management
         ports:
@@ -30,32 +30,32 @@ jobs:
         node-version: [18.x, 20.x]
 
     steps:
-    - uses: actions/checkout@v3
-    
-    - name: Use Node.js \${{ matrix.node-version }}
-      uses: actions/setup-node@v3
-      with:
-        node-version: \${{ matrix.node-version }}
-        cache: 'npm'
-    
-    - name: Install dependencies
-      run: npm ci
-    
-    - name: Create .env file
-      run: |
-        echo "NODE_ENV=test" > .env
-        echo "PORT=3000" >> .env
-        echo "MONGODB_URI=mongodb://localhost:27017/auth-test" >> .env
-        echo "REDIS_HOST=localhost" >> .env
-        echo "REDIS_PORT=6379" >> .env
-        echo "RABBITMQ_URL=amqp://localhost:5672" >> .env
-        echo "JWT_SECRET=test-secret-key" >> .env
-        echo "JWT_EXPIRES_IN=1h" >> .env
-        echo "REFRESH_TOKEN_SECRET=test-refresh-token-secret" >> .env
-        echo "REFRESH_TOKEN_EXPIRES_IN=7d" >> .env
+      - uses: actions/checkout@v3
 
-    - name: Lint code
-      run: npm run lint
-      
-    - name: Run tests
-      run: npm run test
+      - name: Use Node.js \${{ matrix.node-version }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: \${{ matrix.node-version }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Create .env file
+        run: |
+          echo "NODE_ENV=test" > .env
+          echo "PORT=3000" >> .env
+          echo "MONGODB_URI=mongodb://localhost:27017/auth-test" >> .env
+          echo "REDIS_HOST=localhost" >> .env
+          echo "REDIS_PORT=6379" >> .env
+          echo "RABBITMQ_URL=amqp://localhost:5672" >> .env
+          echo "JWT_SECRET=test-secret-key" >> .env
+          echo "JWT_EXPIRES_IN=1h" >> .env
+          echo "REFRESH_TOKEN_SECRET=test-refresh-token-secret" >> .env
+          echo "REFRESH_TOKEN_EXPIRES_IN=7d" >> .env
+
+      - name: Lint code
+        run: npm run lint
+
+      - name: Run tests
+        run: npm run test
