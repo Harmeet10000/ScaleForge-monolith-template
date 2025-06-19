@@ -2,12 +2,23 @@ import './config/dotenvConfig.js';
 import app from './app.js';
 import mongoose from 'mongoose';
 import connectDB from './db/connectDB.js';
-import { logger } from './utils/logger.js';
 import { connectRedis, redisClient } from './db/connectRedis.js';
 import { createConnection, closeConnection } from './db/rabbitMQConnection.js';
+import { connectKafkaProducer, consumeMessages } from './kafka/kafkaConnection.js';
+import { logger } from './utils/logger.js';
 import { catchAsync } from './utils/catchAsync.js';
+import { consumer, producer } from './db/connectKafka.js';
 
-Promise.all([connectDB(), connectRedis(), createConnection()])
+const initializeKafka = catchAsync(async () => {
+  await connectKafkaProducer();
+  logger.info('Kafka producer connected successfully');
+
+  // Start consuming messages
+  await consumeMessages('chats');
+  logger.info('Kafka consumer started successfully');
+});
+
+Promise.all([connectDB(), connectRedis(), createConnection(), initializeKafka()])
   .then(() => {
     const server = app.listen(process.env.PORT, () => {
       logger.info(
@@ -34,13 +45,25 @@ Promise.all([connectDB(), connectRedis(), createConnection()])
       logger.info('RabbitMQ disconnected gracefully.');
     });
 
+    // Graceful shutdown handler
+    const disconnectKafka = catchAsync(async () => {
+      await producer.disconnect();
+      logger.info('Kafka producer disconnected');
+      consumer.destroy();
+    });
+
     // Graceful shutdown function
     const gracefulShutdown = async (signal) => {
       logger.info(`${signal} received. Shutting down gracefully...`);
       server.close(async () => {
         logger.info('HTTP server closed.');
 
-        Promise.all([disconnectRedis(), disconnectMongo(), disconnectRabbitMQ()]);
+        Promise.all([
+          disconnectRedis(),
+          disconnectMongo(),
+          disconnectRabbitMQ(),
+          disconnectKafka()
+        ]);
 
         logger.info('Process terminated!');
         process.exit(signal === 'unhandledRejection' ? 1 : 0);
@@ -62,13 +85,14 @@ Promise.all([connectDB(), connectRedis(), createConnection()])
   })
   .catch((err) => {
     logger.error('Application startup failed!', { error: err });
-    // Attempt to disconnect Redis, DB, and RabbitMQ even on startup failure
+    // Attempt to disconnect Redis, DB, RabbitMQ, and Kafka even on startup failure
     Promise.allSettled([
       redisClient.status === 'ready' || redisClient.status === 'connect'
         ? redisClient.quit()
         : Promise.resolve(),
       mongoose.connection.readyState === 1 ? mongoose.disconnect() : Promise.resolve(),
       closeConnection().catch(() => Promise.resolve())
+      // disconnectKafka().catch(() => Promise.resolve())
     ]).finally(() => {
       process.exit(1);
     });

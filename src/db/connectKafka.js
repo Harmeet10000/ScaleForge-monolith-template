@@ -103,18 +103,3 @@ consumer.on('error', (err) => {
 consumer.on('data', (message) => {
   logger.info('Received message:', message.value.toString());
 });
-
-// Graceful shutdown handler
-export const disconnectKafka = async () => {
-  new Promise((resolve) => {
-    producer.disconnect((err) => {
-      if (err) {
-        logger.error('Error disconnecting Kafka producer:', err);
-      } else {
-        logger.info('Kafka producer disconnected');
-      }
-      consumer.destroy();
-      resolve();
-    });
-  });
-};

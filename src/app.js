@@ -19,6 +19,9 @@ import { consumeMessages } from './helpers/kafka.js';
 import authRoutes from './routes/authRoutes.js';
 import healthRoutes from './routes/healthRoutes.js';
 import rabbitmqRoutes from './routes/rabbitmqRoutes.js';
+import oauthRoutes from './routes/oauthRoutes.js';
+import passport from 'passport';
+import './config/passport.js';
 
 // import promBundle from 'express-prom-bundle';
 // import { register } from 'prom-client';
@@ -64,7 +67,7 @@ const server = express();
 // Set security HTTP headers
 server.use(helmet());
 
-// Add compression middleware - compress all responses
+// Add compression middleware
 server.use(
   compression({
     // Compression level (0-9), 6 is the default compression level
@@ -75,10 +78,9 @@ server.use(
         // Don't compress responses with this header
         return false;
       }
-      // Compress responses larger than 500 bytes
       return compression.filter(req, res);
     },
-    threshold: 15 * 1000 // Only compress responses above 5KB
+    threshold: 15 * 1000 // Only compress responses above 15KB
   })
 );
 
@@ -124,23 +126,8 @@ server.use(cors(corsOptions));
 // Apply Prometheus metrics middleware - must be before routes
 // server.use(metricsMiddleware);
 
-// * Initialize Kafka Producer and Consumer
-const initializeKafka = async () => {
-  try {
-    await connectKafkaProducer();
-    logger.info('Kafka producer connected successfully');
-
-    // Start consuming messages
-    await consumeMessages('chats');
-    logger.info('Kafka consumer started successfully');
-  } catch (error) {
-    logger.error('Failed to initialize Kafka:', error);
-    process.exit(1);
-  }
-};
-
-// Initialize Kafka
-initializeKafka();
+// Initialize Passport
+server.use(passport.initialize());
 
 // 3) ROUTES
 // Swagger setup
@@ -169,8 +156,11 @@ server.get('/swagger.json', (req, res) => {
   res.setHeader('Content-Type', 'application/json');
   res.send(swaggerDocument);
 });
-server.use('/api/v1/health', healthRoutes);
+server.get('/', (req, res) => {
+  res.status(200).json({ message: 'Welcome to the Auth Service API 🚀.' });
+});
 server.use('/api/v1/auth', authRoutes);
+server.use('/api/v1/health', healthRoutes);
 server.use('/api/v1/rabbitmq', rabbitmqRoutes);
 // server.use('/api/v1/users', userRoutes)
 

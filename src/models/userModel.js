@@ -17,16 +17,16 @@ const userSchema = new Schema(
     phoneNumber: {
       _id: false,
       isoCode: {
-        type: String,
-        required: true
+        type: String
+        // required: true
       },
       countryCode: {
-        type: String,
-        required: true
+        type: String
+        // required: true
       },
       internationalNumber: {
-        type: String,
-        required: true
+        type: String
+        // required: true
       }
     },
     timezone: {
@@ -34,9 +34,25 @@ const userSchema = new Schema(
       trim: true,
       required: true
     },
+    provider: {
+      type: String,
+      enum: ['local', 'google'],
+      default: 'local'
+    },
+    oauth_id: {
+      type: String,
+      sparse: true,
+      unique: true
+    },
+    image: {
+      type: String,
+      default: null
+    },
     password: {
       type: String,
-      required: true,
+      required: function () {
+        return this.provider === 'local';
+      },
       select: false
     },
     role: {
@@ -53,12 +69,12 @@ const userSchema = new Schema(
         required: true
       },
       token: {
-        type: String,
-        required: true
+        type: String
+        // required: true
       },
       code: {
-        type: String,
-        required: true
+        type: String
+        // required: true
       },
       timestamp: {
         type: Date,

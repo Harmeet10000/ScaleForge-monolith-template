@@ -1,29 +1,11 @@
 import express from 'express';
-import {
-  changePassword,
-  confirmation,
-  forgotPassword,
-  genNewAccessToken,
-  login,
-  logout,
-  register,
-  resetPassword
-} from '../controllers/authController.js';
-import { protect } from '../middlewares/authMiddleware.js';
 import passport from 'passport';
+import { httpResponse } from '../utils/httpResponse.js';
 import { catchAsync } from '../utils/catchAsync.js';
 import { OAuthService } from '../services/oauthService.js';
 
 const router = express.Router();
 
-router.post('/register', register);
-router.put('/confirmation/:token', confirmation);
-router.post('/login', login);
-router.put('/logout', protect, logout);
-router.post('/refresh-token', genNewAccessToken);
-router.put('/forgot-password', forgotPassword);
-router.put('/reset-password/:token', resetPassword);
-router.put('/change-password', protect, changePassword);
 // Google OAuth routes
 router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
 
@@ -58,5 +40,11 @@ router.get(
     }
   })
 );
+
+// Logout route
+router.get('/logout', (req, res) => {
+  res.clearCookie('jwt');
+  return httpResponse.success(res, { message: 'Logged out successfully' });
+});
 
 export default router;
