@@ -103,6 +103,7 @@
     "jsonwebtoken": "^9.0.2",
     "libphonenumber-js": "^1.12.6",
     "mongoose": "^8.10.1",
+    "nanoid": "5.1.5",
     "node-cron": "^3.0.3",
     "node-rdkafka": "3.4.1",
     "passport": "0.7.0",

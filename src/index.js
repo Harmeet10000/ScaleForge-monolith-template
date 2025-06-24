@@ -4,21 +4,11 @@ import mongoose from 'mongoose';
 import connectDB from './db/connectDB.js';
 import { connectRedis, redisClient } from './db/connectRedis.js';
 import { createConnection, closeConnection } from './db/rabbitMQConnection.js';
-import { connectKafkaProducer, consumeMessages } from './kafka/kafkaConnection.js';
+import { connectKafkaProducer, consumer, producer } from './db/connectKafka.js';
 import { logger } from './utils/logger.js';
 import { catchAsync } from './utils/catchAsync.js';
-import { consumer, producer } from './db/connectKafka.js';
 
-const initializeKafka = catchAsync(async () => {
-  await connectKafkaProducer();
-  logger.info('Kafka producer connected successfully');
-
-  // Start consuming messages
-  await consumeMessages('chats');
-  logger.info('Kafka consumer started successfully');
-});
-
-Promise.all([connectDB(), connectRedis(), createConnection(), initializeKafka()])
+Promise.all([connectDB(), connectRedis(), createConnection(), connectKafkaProducer()])
   .then(() => {
     const server = app.listen(process.env.PORT, () => {
       logger.info(
@@ -45,11 +35,13 @@ Promise.all([connectDB(), connectRedis(), createConnection(), initializeKafka()]
       logger.info('RabbitMQ disconnected gracefully.');
     });
 
-    // Graceful shutdown handler
     const disconnectKafka = catchAsync(async () => {
       await producer.disconnect();
       logger.info('Kafka producer disconnected');
-      consumer.destroy();
+      await consumer.destroy();
+      logger.info('Kafka consumer destroyed');
+      // await disconnectAdmin();
+      // logger.info('Kafka Admin client disconnected');
     });
 
     // Graceful shutdown function
@@ -58,7 +50,7 @@ Promise.all([connectDB(), connectRedis(), createConnection(), initializeKafka()]
       server.close(async () => {
         logger.info('HTTP server closed.');
 
-        Promise.all([
+        await Promise.all([
           disconnectRedis(),
           disconnectMongo(),
           disconnectRabbitMQ(),

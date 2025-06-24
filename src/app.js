@@ -14,14 +14,13 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { httpError } from './utils/httpError.js';
 import { logger } from './utils/logger.js';
-import { connectKafkaProducer } from './db/connectKafka.js';
-import { consumeMessages } from './helpers/kafka.js';
 import authRoutes from './routes/authRoutes.js';
 import healthRoutes from './routes/healthRoutes.js';
 import rabbitmqRoutes from './routes/rabbitmqRoutes.js';
 import oauthRoutes from './routes/oauthRoutes.js';
 import passport from 'passport';
 import './config/passport.js';
+import { correlationIdMiddleware } from './middlewares/corelationMiddleware.js';
 
 // import promBundle from 'express-prom-bundle';
 // import { register } from 'prom-client';
@@ -150,6 +149,8 @@ server.use(
 //   res.set('Content-Type', register.contentType);
 //   res.end(await register.metrics());
 // });
+
+server.use(correlationIdMiddleware);
 
 // Endpoint to serve the swagger.json file
 server.get('/swagger.json', (req, res) => {

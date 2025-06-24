@@ -1,4 +1,5 @@
 import { consumer, producer } from '../db/connectKafka.js';
+import { catchAsync } from '../utils/catchAsync.js';
 import { logger } from '../utils/logger.js';
 
 export const produceMessage = async (topic, message) => {
@@ -29,6 +30,32 @@ export const produceMessage = async (topic, message) => {
   });
 };
 
+// Event Handlers
+producer.on('event.error', (err) => {
+  logger.error('Producer error:', err);
+});
+
+// export const subscribeToTopics = catchAsync(async (consumer, topics) => {
+//   consumer.subscribe(topics);
+//   logger.info(`Subscribed to topics: ${topics.join(', ')}`);
+// });
+
+// export const startConsuming = catchAsync(async (consumer, messageHandler) => {
+//   consumer.consume();
+
+//   consumer.on('data', async (data) => {
+//     await messageHandler({
+//       topic: data.topic,
+//       partition: data.partition,
+//       offset: data.offset,
+//       value: data.value.toString(),
+//       timestamp: data.timestamp
+//     });
+
+//     consumer.commit(data);
+//   });
+// });
+
 export const consumeMessages = async (topic) => {
   // Consumer is already configured as a ReadStream in kafka.config.ts
   consumer.on('data', async (message) => {
@@ -48,6 +75,10 @@ export const consumeMessages = async (topic) => {
     } catch (error) {
       logger.error('Error processing message:', error);
     }
+  });
+
+  consumer.on('data', (message) => {
+    logger.info('Received message:', message.value.toString());
   });
 
   // Error handling

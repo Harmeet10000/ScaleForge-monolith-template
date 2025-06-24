@@ -38,68 +38,25 @@ export const consumer = Kafka.createReadStream(
 );
 
 // Connect Producer
+export const connectKafkaProducer = async () => {
+  producer.setPollInterval(100);
 
-export const connectKafkaProducer = () =>
-  new Promise((resolve, reject) => {
-    producer.setPollInterval(100);
-
-    producer.on('ready', () => {
-      logger.info('Kafka Producer ready');
-      resolve();
-    });
-
-    producer.on('connection.failure', (err) => {
-      logger.error('Failed to connect to Kafka:', err);
-      reject(err);
-    });
-
-    producer.connect({}, (err) => {
-      if (err) {
-        logger.error('Error connecting to Kafka:', err);
-        reject(err);
-      }
-    });
+  producer.on('ready', () => {
+    logger.info('Kafka Producer ready');
   });
 
-// Send Message Helper with retries
-export const sendMessage = async (message, retries = 3) => {
-  new Promise((resolve, reject) => {
-    try {
-      if (!producer.isConnected()) {
-        throw new Error('Producer not connected');
-      }
-
-      producer.produce(TOPIC_NAME, null, Buffer.from(message), null, Date.now(), (err) => {
-        if (err) {
-          if (retries > 0) {
-            logger.warn(`Retrying message send. Attempts remaining: ${retries}`);
-            setTimeout(() => {
-              sendMessage(message, retries - 1)
-                .then(resolve)
-                .catch(reject);
-            }, 1000);
-          } else {
-            reject(err);
-          }
-          return;
-        }
-        resolve();
-      });
-    } catch (err) {
-      reject(err);
-    }
+  producer.on('connection.failure', (err) => {
+    logger.error('Failed to connect to Kafka:', err);
+    throw err;
   });
+
+  await producer.connect({});
+  return producer;
 };
 
-// Event Handlers
-producer.on('event.error', (err) => {
-  logger.error('Producer error:', err);
-});
-
-consumer.on('error', (err) => {
-  logger.error('Consumer error:', err);
-});
-
-consumer.on('data', (message) => {
-  logger.info('Received message:', message.value.toString());
-});
+export const disconnectAdmin = async () => {
+  if (producer) {
+    await producer.disconnect();
+    logger.info('Kafka Admin client disconnected');
+  }
+};

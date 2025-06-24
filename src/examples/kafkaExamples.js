@@ -21,7 +21,7 @@ const kafkaConfig = {
 /**
  * Producer Functions
  */
-export const createProducer = catchAsync(async () => {
+const createProducer = catchAsync(async () => {
   const producer = new Kafka.Producer(kafkaConfig);
 
   return new Promise((resolve, reject) => {
@@ -39,7 +39,7 @@ export const createProducer = catchAsync(async () => {
   });
 });
 
-export const disconnectProducer = catchAsync(async (producer) => {
+const disconnectProducer = catchAsync(async (producer) => {
   new Promise((resolve) => {
     producer.disconnect(() => {
       logger.info('Kafka Producer disconnected');
@@ -48,7 +48,7 @@ export const disconnectProducer = catchAsync(async (producer) => {
   });
 });
 
-export const sendMessage = catchAsync(async (producer, { topic, message, partition = 0 }) => {
+const sendMessage = catchAsync(async (producer, { topic, message, partition = 0 }) => {
   new Promise((resolve, reject) => {
     const value = typeof message === 'string' ? message : JSON.stringify(message);
 
@@ -76,7 +76,7 @@ export const sendMessage = catchAsync(async (producer, { topic, message, partiti
 /**
  * Consumer Functions
  */
-export const createConsumer = catchAsync(async ({ groupId }) => {
+const createConsumer = catchAsync(async ({ groupId }) => {
   const consumer = new Kafka.KafkaConsumer({
     ...kafkaConfig,
     'group.id': groupId || 'my-group',
@@ -98,12 +98,12 @@ export const createConsumer = catchAsync(async ({ groupId }) => {
   });
 });
 
-export const subscribeToTopics = catchAsync(async (consumer, topics) => {
+const subscribeToTopics = catchAsync(async (consumer, topics) => {
   consumer.subscribe(topics);
   logger.info(`Subscribed to topics: ${topics.join(', ')}`);
 });
 
-export const startConsuming = catchAsync(async (consumer, messageHandler) => {
+const startConsuming = catchAsync(async (consumer, messageHandler) => {
   consumer.consume();
 
   consumer.on('data', async (data) => {
@@ -119,7 +119,7 @@ export const startConsuming = catchAsync(async (consumer, messageHandler) => {
   });
 });
 
-export const disconnectConsumer = catchAsync(async (consumer) => {
+const disconnectConsumer = catchAsync(async (consumer) => {
   new Promise((resolve) => {
     consumer.disconnect(() => {
       logger.info('Kafka Consumer disconnected');
@@ -131,7 +131,7 @@ export const disconnectConsumer = catchAsync(async (consumer) => {
 /**
  * Usage Examples
  */
-export const kafkaExamples = {
+const kafkaExamples = {
   producerExample: async () => {
     const producer = await createProducer();
 

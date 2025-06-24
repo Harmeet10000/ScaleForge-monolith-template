@@ -401,7 +401,7 @@ export const deadLetterExchangeExample = catchAsync(async () => {
   // Start consuming messages from the main queue
   await orderConsumer.consume(
     async (message, originalMessage) => {
-      logger.info(`Processing order: ${message.orderId}`, {
+      logger.info(`Processing order: ${message.orderId}, ${originalMessage}`, {
         meta: { customer: message.customer }
       });
 
