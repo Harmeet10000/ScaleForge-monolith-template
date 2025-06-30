@@ -15,7 +15,8 @@ const errorObject = (err, req, errorStatusCode = 500) => {
     request: {
       ip: req.ip || null,
       method: req.method,
-      url: req.originalUrl
+      url: req.originalUrl,
+      correlationId: req.correlationId || null
     },
     message: err instanceof Error ? err.message || SOMETHING_WENT_WRONG : SOMETHING_WENT_WRONG,
     data: null,

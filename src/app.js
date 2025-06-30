@@ -3,24 +3,27 @@ import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
 import mongoSanitize from 'express-mongo-sanitize';
 import compression from 'compression';
-// import xss from 'xss-clean';
+import xss from 'xss-clean';
 import hpp from 'hpp';
 import cors from 'cors';
-import globalErrorHandler from './middlewares/globalErrorHandler.js';
+import passport from 'passport';
+import './config/passport.js';
 import cookieParser from 'cookie-parser';
 import swaggerUi from 'swagger-ui-express';
+import RedisStore from 'rate-limit-redis';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { httpError } from './utils/httpError.js';
 import { logger } from './utils/logger.js';
+import globalErrorHandler from './middlewares/globalErrorHandler.js';
+import { correlationIdMiddleware } from './middlewares/corelationMiddleware.js';
+import { redisClient } from './db/connectRedis.js';
+import { httpResponse } from './utils/httpResponse.js';
 import authRoutes from './routes/authRoutes.js';
 import healthRoutes from './routes/healthRoutes.js';
 import rabbitmqRoutes from './routes/rabbitmqRoutes.js';
 import oauthRoutes from './routes/oauthRoutes.js';
-import passport from 'passport';
-import './config/passport.js';
-import { correlationIdMiddleware } from './middlewares/corelationMiddleware.js';
 
 // import promBundle from 'express-prom-bundle';
 // import { register } from 'prom-client';
@@ -83,12 +86,34 @@ server.use(
   })
 );
 
+const rateLimitHandler = (req, res, next, options) => {
+  logger.warn('Rate limit exceeded', {
+    correlationId: req.correlationId,
+    ip: req.ip,
+    path: req.originalUrl,
+    method: req.method
+  });
+  httpResponse(
+    req,
+    res,
+    options.statusCode,
+    options.message || 'Too many requests, please try again later.',
+    null
+  );
+};
 // Limit requests from same API
 const limiter = rateLimit({
-  max: 500,
-  windowMs: 60 * 60 * 1000,
-  message: 'Too many requests from this IP, please try again in an hour!'
+  store: new RedisStore({
+    sendCommand: (...args) => redisClient.call(...args)
+  }),
+  max: 100,
+  windowMs: 15 * 60 * 1000,
+  message: 'Too many requests from this IP, please try again in 15 minutes!',
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: rateLimitHandler
 });
+
 server.use('/api', limiter);
 
 // Body parser, reading data from body into req.body
@@ -104,7 +129,7 @@ server.use(cookieParser());
 server.use(mongoSanitize());
 
 // Data sanitization against XSS
-// server.use(xss());
+server.use(xss());
 
 // Prevent parameter pollution
 server.use(
