@@ -8,7 +8,7 @@ import { connectKafkaProducer, consumer, producer } from './db/connectKafka.js';
 import { logger } from './utils/logger.js';
 import { catchAsync } from './utils/catchAsync.js';
 
-Promise.all([connectDB(), connectRedis(), createConnection(), connectKafkaProducer()])
+Promise.all([connectDB(), connectRedis(), connectKafkaProducer()])
   .then(() => {
     const server = app.listen(process.env.PORT, () => {
       logger.info(

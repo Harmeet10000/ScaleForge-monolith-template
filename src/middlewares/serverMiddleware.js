@@ -1,12 +1,12 @@
 import { nanoid } from 'nanoid';
-import { logger } from '../utils/logger';
+import { logger } from '../utils/logger.js';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { httpResponse } from '../utils/httpResponse';
+import { httpResponse } from '../utils/httpResponse.js';
 import RedisStore from 'rate-limit-redis';
 import rateLimit from 'express-rate-limit';
-import { redisClient } from '../db/connectRedis';
+import { redisClient } from '../db/connectRedis.js';
 import promBundle from 'express-prom-bundle';
 // import { register } from 'prom-client';
 
@@ -21,7 +21,7 @@ const __dirname = path.dirname(__filename);
 export let swaggerDocument;
 try {
   swaggerDocument = JSON.parse(
-    fs.readFileSync(path.join(__dirname, '../docs/swagger-output.json'), 'utf8')
+    fs.readFileSync(path.join(__dirname, '../../docs/swagger-output.json'), 'utf8')
   );
 } catch (error) {
   logger.warn('Swagger documentation not found or invalid. API docs will not be available.', {

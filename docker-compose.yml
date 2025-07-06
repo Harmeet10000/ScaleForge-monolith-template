@@ -1,0 +1,59 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:7.0
+    container_name: mongodb
+    restart: unless-stopped
+    ports:
+      - '27017:27017'
+    volumes:
+      - mongo_data:/data/db
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    restart: unless-stopped
+    ports:
+      - '5672:5672'
+      - '15672:15672'
+
+  auth-service:
+    image: auth-service:latest
+    container_name: auth-service-container-dev
+    build:
+      context: .
+      dockerfile: docker/dev/Dockerfile
+    depends_on:
+      - mongodb
+      - rabbitmq
+    ports:
+      - '8000:8000'
+    env_file:
+      - .env.dev
+    restart: unless-stopped
+    volumes:
+      - ./src:/app/src
+      - ./package.json:/app/package.json
+      - ./package-lock.json:/app/package-lock.json
+
+  # prometheus:
+  #   image: prom/prometheus
+  #   container_name: prometheus
+  #   volumes:
+  #     - ./prometheus.yml:/etc/prometheus/prometheus.yml
+  #   ports:
+  #     - '9091:9090'
+  #   depends_on:
+  #     - auth-service
+
+  # grafana:
+  #   image: grafana/grafana
+  #   container_name: grafana
+  #   ports:
+  #     - '3001:3000'
+  #   depends_on:
+  #     - prometheus
+
+volumes:
+  mongo_data:

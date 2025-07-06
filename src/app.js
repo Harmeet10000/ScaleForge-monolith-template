@@ -19,7 +19,6 @@ import {
 } from './middlewares/serverMiddleware.js';
 import authRoutes from './routes/authRoutes.js';
 import healthRoutes from './routes/healthRoutes.js';
-import jobsRoutes from './routes/jobsRoutes.js';
 // import oauthRoutes from './routes/oauthRoutes.js';
 
 const server = express();
@@ -116,7 +115,6 @@ server.get('/', (req, res) => {
 });
 server.use('/api/v1/auth', authRoutes);
 server.use('/api/v1/health', healthRoutes);
-server.use('/api/v1/jobs', jobsRoutes);
 
 // 4) CATCHES ALL ROUTES THAT ARE NOT DEFINED
 server.all('*', (req, res, next) => {

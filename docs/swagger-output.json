@@ -13,7 +13,7 @@
       "url": "https://opensource.org/licenses/MIT"
     }
   },
-  "host": "localhost:3000",
+  "host": "localhost:8000",
   "servers": [
     {
       "url": "http://localhost:8000/api/v1",

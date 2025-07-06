@@ -1,6 +1,6 @@
 import joi from 'joi';
 
-export const ValidateRegisterBody = joi.object({
+export const validateRegisterBody = joi.object({
   name: joi.string().min(2).max(72).trim().required(),
   emailAddress: joi.string().email().trim().required(),
   phoneNumber: joi.string().min(4).max(20).trim().required(),
@@ -8,20 +8,20 @@ export const ValidateRegisterBody = joi.object({
   consent: joi.boolean().valid(true).required()
 });
 
-export const ValidateLoginBody = joi.object({
+export const validateLoginBody = joi.object({
   emailAddress: joi.string().email().trim().required(),
   password: joi.string().min(8).max(24).trim().required()
 });
 
-export const ValidateForgotPasswordBody = joi.object({
+export const validateForgotPasswordBody = joi.object({
   emailAddress: joi.string().email().trim().required()
 });
 
-export const ValidateResetPasswordBody = joi.object({
+export const validateResetPasswordBody = joi.object({
   newPassword: joi.string().min(8).max(24).trim().required()
 });
 
-export const ValidateChangePasswordBody = joi.object({
+export const validateChangePasswordBody = joi.object({
   oldPassword: joi.string().min(8).max(24).trim().required(),
   newPassword: joi.string().min(8).max(24).trim().required(),
   confirmNewPassword: joi.string().min(8).max(24).trim().valid(joi.ref('newPassword')).required()

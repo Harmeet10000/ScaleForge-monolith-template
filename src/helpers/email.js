@@ -1,735 +1,246 @@
 import { Resend } from 'resend';
-import { httpError } from '../utils/httpError.js';
-import { catchAsync } from '../utils/catchAsync.js';
 import { logger } from '../utils/logger.js';
 
-export const Resendmail = catchAsync(async (req, res, next) => {
+export const Resendmail = async (info) => {
   try {
-    const {
-      name = '',
-      to = '',
-      verificationURL = '',
-      role = '',
-      password = '',
-      use = '',
-      schedule = {},
-      meetingLink = '',
-      razorpay_order_id = '',
-      razorpay_payment_id = '',
-      razorpay_signature = ''
-    } = req.body || {};
+    logger.info('Sending email', {
+      meta: { to: info.to, subject: info.subject, purpose: info.purpose }
+    });
 
-    logger.info('Sending email', { meta: { to, role, use } });
-
-    // Get API key from environment variable
     const resendApiKey = process.env.RESEND_KEY;
     if (!resendApiKey) {
-      logger.error('Missing Resend API key');
-      return httpError(next, new Error('Email service configuration error'), req, 500);
+      logger.error('Resend API key is not configured');
+      throw new Error('Resend API key is not configured');
     }
 
     const resend = new Resend(resendApiKey);
 
     let htmlContent = '';
-    let subject = '';
-
-    if (role === 'mentor' && use === 'signup') {
-      // Mentor signup email
-      htmlContent = getMentorSignupTemplate(name, to, password);
-      subject = 'Welcome to the ShikshaDost Platform!';
-    } else if (role === 'mentor' && use === 'meeting') {
-      // Mentor meeting details email template
-      htmlContent = getMentorMeetingTemplate(name, schedule, meetingLink);
-      subject = 'Meeting Details from ShikshaDost';
-    } else if (role === 'student' && use === 'meeting') {
-      // Student meeting details email template
-      htmlContent = getStudentMeetingTemplate(
-        name,
-        schedule,
-        meetingLink,
-        razorpay_order_id,
-        razorpay_payment_id,
-        razorpay_signature
-      );
-      subject = 'Meeting Details from ShikshaDost';
-    } else if (role === 'student' && use === 'signup') {
-      // Student signup email
-      htmlContent = getStudentSignupTemplate(name, verificationURL);
-      subject = 'Verify Your Email Address';
-    } else if (use === 'otp') {
-      // OTP email template
-      htmlContent = getOTPTemplate(name, req.body.otp);
-      subject = 'Your Verification Code';
-    } else if (use === 'confirmation') {
-      // General confirmation email
-      htmlContent = getConfirmationTemplate(
-        name,
-        req.body.message || 'Your request has been confirmed'
-      );
-      subject = 'Confirmation from ShikshaDost';
-    } else {
-      logger.warn('Unknown email template requested', { meta: { role, use } });
-      return httpError(next, new Error('Invalid email template requested'), req, 400);
+    switch (info.purpose) {
+      case 'accountConfirmation':
+        htmlContent = getAccountConfirmationTemplate(info);
+        break;
+      case 'confirmationSuccess':
+        htmlContent = getConfirmationSuccessTemplate(info);
+        break;
+      case 'requestPasswordReset':
+        htmlContent = getRequestPasswordResetTemplate(info);
+        break;
+      case 'resetUserPassword':
+        htmlContent = getResetUserPasswordTemplate(info);
+        break;
+      case 'changeUserPassword':
+        htmlContent = getChangeUserPasswordTemplate(info);
+        break;
+      default:
+        htmlContent = `<p>${info.text}</p>`;
     }
 
     const emailResponse = await resend.emails.send({
       from: 'contact@shikshadost.com',
-      to,
-      subject,
+      to: info.to,
+      subject: info.subject,
       html: htmlContent
     });
 
-    logger.info('Email sent successfully', { meta: { to, emailId: emailResponse.id } });
-
-    return res.status(200).json({
+    logger.info('Email sent successfully', { meta: { to: info.to, emailId: emailResponse } });
+    return {
       success: true,
       message: 'Email sent successfully',
       data: { emailId: emailResponse.id }
-    });
+    };
   } catch (error) {
     logger.error('Failed to send email', { meta: { error: error.message, stack: error.stack } });
-    return httpError(next, error, req, 500);
+    throw error;
   }
-});
-
-/**
- * Template for mentor signup emails
- */
-const getMentorSignupTemplate = (name, email, password) => {
-  `<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Welcome to ShikshaDost</title>
-    <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            margin: 0;
-            padding: 0;
-            background-color: #f9f9f9;
-        }
-        .container {
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: #ffffff;
-            border-radius: 8px;
-            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
-        }
-        .header {
-            text-align: center;
-            padding-bottom: 15px;
-            border-bottom: 1px solid #eaeaea;
-        }
-        .header h1 {
-            color: #2c5282;
-            margin: 0;
-            font-size: 28px;
-        }
-        .content {
-            padding: 20px 0;
-        }
-        .credentials {
-            background-color: #f0f4f8;
-            padding: 15px;
-            border-radius: 5px;
-            margin: 20px 0;
-            border-left: 4px solid #2c5282;
-        }
-        .button {
-            display: inline-block;
-            padding: 12px 24px;
-            background-color: #2c5282;
-            color: white !important;
-            text-decoration: none;
-            border-radius: 5px;
-            font-weight: 600;
-            margin: 20px 0;
-            transition: background-color 0.3s ease;
-        }
-        .button:hover {
-            background-color: #1a365d;
-        }
-        .footer {
-            margin-top: 30px;
-            padding-top: 20px;
-            border-top: 1px solid #eaeaea;
-            text-align: center;
-            color: #666;
-            font-size: 14px;
-        }
-        .link {
-            word-break: break-all;
-            color: #2c5282;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>Welcome to ShikshaDost!</h1>
-        </div>
-        <div class="content">
-            <p>Hello ${name},</p>
-            
-            <p>Welcome to ShikshaDost! We are thrilled to have you join us as a mentor. Your expertise and guidance will make a meaningful impact on our community.</p>
-            
-            <div class="credentials">
-                <p><strong>Your Login Details:</strong></p>
-                <p>Email: ${email}<br>Password: ${password}</p>
-            </div>
-            
-            <center>
-                <a href="http://localhost:5173/register" class="button">Login to Your Account</a>
-            </center>
-            
-            <p><small>Or copy and paste this link in your browser:<br>
-            <span class="link">http://localhost:5173/register</span></small></p>
-            
-            <p>If you have any questions or need assistance, feel free to reach out to our support team.</p>
-        </div>
-        <div class="footer">
-            <p>Best regards,<br>Team ShikshaDost</p>
-            <p>&copy; ${new Date().getFullYear()} ShikshaDost. All rights reserved.</p>
-        </div>
-    </div>
-</body>
-</html>`;
 };
 
-/**
- * Template for student signup emails
- */
-const getStudentSignupTemplate = (name, verificationURL) => {
-  `<!DOCTYPE html>
+// Account confirmation email template
+const getAccountConfirmationTemplate = (info) => `<!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Verify Your Email</title>
+    <title>Confirm Your Account</title>
     <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            margin: 0;
-            padding: 0;
-            background-color: #f9f9f9;
-        }
-        .container {
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: #ffffff;
-            border-radius: 8px;
-            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
-        }
-        .header {
-            text-align: center;
-            padding-bottom: 15px;
-            border-bottom: 1px solid #eaeaea;
-        }
-        .header h1 {
-            color: #2c5282;
-            margin: 0;
-            font-size: 28px;
-        }
-        .content {
-            padding: 20px 0;
-        }
-        .button {
-            display: inline-block;
-            padding: 12px 24px;
-            background-color: #2c5282;
-            color: white !important;
-            text-decoration: none;
-            border-radius: 5px;
-            font-weight: 600;
-            margin: 20px 0;
-            transition: background-color 0.3s ease;
-        }
-        .button:hover {
-            background-color: #1a365d;
-        }
-        .footer {
-            margin-top: 30px;
-            padding-top: 20px;
-            border-top: 1px solid #eaeaea;
-            text-align: center;
-            color: #666;
-            font-size: 14px;
-        }
-        .notice {
-            background-color: #f0f4f8;
-            padding: 15px;
-            border-radius: 5px;
-            margin: 20px 0;
-            border-left: 4px solid #2c5282;
-            font-style: italic;
-        }
-        .link {
-            word-break: break-all;
-            color: #2c5282;
-        }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f9f9f9; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; background-color: #fff; border-radius: 8px; box-shadow: 0 3px 10px rgba(0,0,0,0.1); }
+        .header { text-align: center; padding-bottom: 15px; border-bottom: 1px solid #eaeaea; }
+        .header h1 { color: #2c5282; margin: 0; font-size: 28px; }
+        .content { padding: 20px 0; }
+        .button { display: inline-block; padding: 12px 24px; background-color: #2c5282; color: white !important; text-decoration: none; border-radius: 5px; font-weight: 600; margin: 20px 0; transition: background-color 0.3s ease; }
+        .button:hover { background-color: #1a365d; }
+        .footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #eaeaea; text-align: center; color: #666; font-size: 14px; }
+        .notice { background-color: #f0f4f8; padding: 15px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #2c5282; font-style: italic; }
+        .link { word-break: break-all; color: #2c5282; }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>Verify Your Email Address</h1>
+            <h1>Confirm Your Account</h1>
         </div>
         <div class="content">
-            <p>Hello ${name},</p>
-            
-            <p>Thank you for creating an account with ShikshaDost. To complete your registration and access all features, please verify your email address by clicking the button below:</p>
-            
+            <p>Hello ${info.name || ''},</p>
+            <p>Thank you for registering with us. Please confirm your account by clicking the button below:</p>
             <center>
-                <a href="${verificationURL}" class="button">Verify Email Address</a>
+                <a href="${info.confirmationUrl}" class="button">Confirm Account</a>
             </center>
-            
             <p><small>Or copy and paste this link in your browser:<br>
-            <span class="link">${verificationURL}</span></small></p>
-            
+            <span class="link">${info.confirmationUrl}</span></small></p>
             <div class="notice">
                 <p>This link will expire in 24 hours for security reasons.</p>
             </div>
-            
-            <p>If you didn't create an account with ShikshaDost, please ignore this email.</p>
         </div>
         <div class="footer">
-            <p>Best regards,<br>Team ShikshaDost</p>
-            <p>&copy; ${new Date().getFullYear()} ShikshaDost. All rights reserved.</p>
+            <p>Best regards,<br>Team haven</p>
+            <p>&copy; ${new Date().getFullYear()} haven. All rights reserved.</p>
         </div>
     </div>
 </body>
 </html>`;
-};
 
-/**
- * Template for mentor meeting emails
- */
-const getMentorMeetingTemplate = (name, schedule, meetingLink) => {
-  `<!DOCTYPE html>
+// Confirmation success email template
+const getConfirmationSuccessTemplate = (info) => `<!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Meeting Details</title>
+    <title>Account Confirmed</title>
     <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            margin: 0;
-            padding: 0;
-            background-color: #f9f9f9;
-        }
-        .container {
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: #ffffff;
-            border-radius: 8px;
-            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
-        }
-        .header {
-            text-align: center;
-            padding-bottom: 15px;
-            border-bottom: 1px solid #eaeaea;
-        }
-        .header h1 {
-            color: #2c5282;
-            margin: 0;
-            font-size: 28px;
-        }
-        .content {
-            padding: 20px 0;
-        }
-        .meeting-details {
-            background-color: #f0f4f8;
-            padding: 15px;
-            border-radius: 5px;
-            margin: 20px 0;
-            border-left: 4px solid #2c5282;
-        }
-        .button {
-            display: inline-block;
-            padding: 12px 24px;
-            background-color: #2c5282;
-            color: white !important;
-            text-decoration: none;
-            border-radius: 5px;
-            font-weight: 600;
-            margin: 20px 0;
-            transition: background-color 0.3s ease;
-        }
-        .button:hover {
-            background-color: #1a365d;
-        }
-        .footer {
-            margin-top: 30px;
-            padding-top: 20px;
-            border-top: 1px solid #eaeaea;
-            text-align: center;
-            color: #666;
-            font-size: 14px;
-        }
-        .link {
-            word-break: break-all;
-            color: #2c5282;
-        }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f9f9f9; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; background: #fff; border-radius: 8px; box-shadow: 0 3px 10px rgba(0,0,0,0.1); padding: 20px; }
+        .header { text-align: center; border-bottom: 1px solid #eaeaea; padding-bottom: 15px; }
+        .header h1 { color: #2c5282; margin: 0; font-size: 28px; }
+        .content { padding: 20px 0; }
+        .footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #eaeaea; text-align: center; color: #666; font-size: 14px; }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>Meeting Details</h1>
+            <h1>Account Confirmed</h1>
         </div>
         <div class="content">
-            <p>Hello ${name},</p>
-            
-            <p>Your upcoming meeting with your student has been scheduled. Please find the details below:</p>
-            
-            <div class="meeting-details">
-                <p><strong>Date:</strong> ${new Date(schedule.on).toLocaleDateString()}</p>
-                <p><strong>Time:</strong> ${schedule.start} to ${schedule.end}</p>
-                <p><strong>Meeting Link:</strong> <a href="${meetingLink}" class="link">${meetingLink}</a></p>
-            </div>
-            
+            <p>Hello ${info.name || ''},</p>
+            <p>Your account has been confirmed. You can now log in and use all features of haven.</p>
+        </div>
+        <div class="footer">
+            <p>Best regards,<br>Team haven</p>
+            <p>&copy; ${new Date().getFullYear()} haven. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>`;
+
+// Password reset request email template
+const getRequestPasswordResetTemplate = (info) => `<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Password Reset Request</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f9f9f9; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; background: #fff; border-radius: 8px; box-shadow: 0 3px 10px rgba(0,0,0,0.1); padding: 20px; }
+        .header { text-align: center; border-bottom: 1px solid #eaeaea; padding-bottom: 15px; }
+        .header h1 { color: #2c5282; margin: 0; font-size: 28px; }
+        .content { padding: 20px 0; }
+        .button { display: inline-block; padding: 12px 24px; background-color: #2c5282; color: white !important; text-decoration: none; border-radius: 5px; font-weight: 600; margin: 20px 0; transition: background-color 0.3s ease; }
+        .button:hover { background-color: #1a365d; }
+        .footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #eaeaea; text-align: center; color: #666; font-size: 14px; }
+        .notice { background-color: #f0f4f8; padding: 15px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #2c5282; font-style: italic; }
+        .link { word-break: break-all; color: #2c5282; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Password Reset Request</h1>
+        </div>
+        <div class="content">
+            <p>Hello ${info.name || ''},</p>
+            <p>We received a request to reset your password. Click the button below to set a new password:</p>
             <center>
-                <a href="${meetingLink}" class="button">Join Meeting</a>
+                <a href="${info.confirmationUrl || info.resetUrl}" class="button">Reset Password</a>
             </center>
-            
-            <p>Please ensure you join the meeting 5 minutes before the scheduled time. If you face any technical difficulties, please contact our support team.</p>
-            
-            <p>We look forward to your valuable session!</p>
-        </div>
-        <div class="footer">
-            <p>Best regards,<br>Team ShikshaDost</p>
-            <p>&copy; ${new Date().getFullYear()} ShikshaDost. All rights reserved.</p>
-        </div>
-    </div>
-</body>
-</html>`;
-};
-
-/**
- * Template for student meeting emails
- */
-const getStudentMeetingTemplate = (name, schedule, meetingLink, orderId, paymentId, signature) => {
-  `<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Meeting Details</title>
-    <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            margin: 0;
-            padding: 0;
-            background-color: #f9f9f9;
-        }
-        .container {
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: #ffffff;
-            border-radius: 8px;
-            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
-        }
-        .header {
-            text-align: center;
-            padding-bottom: 15px;
-            border-bottom: 1px solid #eaeaea;
-        }
-        .header h1 {
-            color: #2c5282;
-            margin: 0;
-            font-size: 28px;
-        }
-        .content {
-            padding: 20px 0;
-        }
-        .section {
-            margin-bottom: 25px;
-        }
-        .section-title {
-            color: #2c5282;
-            border-bottom: 1px solid #eaeaea;
-            padding-bottom: 5px;
-            margin-bottom: 15px;
-        }
-        .meeting-details, .payment-details {
-            background-color: #f0f4f8;
-            padding: 15px;
-            border-radius: 5px;
-            margin: 15px 0;
-            border-left: 4px solid #2c5282;
-        }
-        .button {
-            display: inline-block;
-            padding: 12px 24px;
-            background-color: #2c5282;
-            color: white !important;
-            text-decoration: none;
-            border-radius: 5px;
-            font-weight: 600;
-            margin: 20px 0;
-            transition: background-color 0.3s ease;
-        }
-        .button:hover {
-            background-color: #1a365d;
-        }
-        .footer {
-            margin-top: 30px;
-            padding-top: 20px;
-            border-top: 1px solid #eaeaea;
-            text-align: center;
-            color: #666;
-            font-size: 14px;
-        }
-        .link {
-            word-break: break-all;
-            color: #2c5282;
-        }
-        .payment-id {
-            font-family: monospace;
-            background-color: #eee;
-            padding: 2px 5px;
-            border-radius: 3px;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>Meeting Confirmation</h1>
-        </div>
-        <div class="content">
-            <p>Hello ${name},</p>
-            
-            <p>Thank you for booking a session with our mentor. Your meeting has been confirmed!</p>
-            
-            <div class="section">
-                <h2 class="section-title">Meeting Details</h2>
-                <div class="meeting-details">
-                    <p><strong>Date:</strong> ${new Date(schedule.on).toLocaleDateString()}</p>
-                    <p><strong>Time:</strong> ${schedule.start} to ${schedule.end}</p>
-                    <p><strong>Meeting Link:</strong> <a href="${meetingLink}" class="link">${meetingLink}</a></p>
-                </div>
-                
-                <center>
-                    <a href="${meetingLink}" class="button">Join Meeting</a>
-                </center>
-            </div>
-            
-            <div class="section">
-                <h2 class="section-title">Payment Details</h2>
-                <div class="payment-details">
-                    <p><strong>Order ID:</strong> <span class="payment-id">${orderId}</span></p>
-                    <p><strong>Payment ID:</strong> <span class="payment-id">${paymentId}</span></p>
-                    <p><strong>Transaction Status:</strong> Completed</p>
-                </div>
-                <p>Please keep this information for your records. A detailed receipt has been saved to your account.</p>
-            </div>
-            
-            <p>We look forward to your valuable learning session! If you need to reschedule, please contact us at least 24 hours before your scheduled time.</p>
-        </div>
-        <div class="footer">
-            <p>Best regards,<br>Team ShikshaDost</p>
-            <p>&copy; ${new Date().getFullYear()} ShikshaDost. All rights reserved.</p>
-        </div>
-    </div>
-</body>
-</html>`;
-};
-
-/**
- * Template for OTP verification emails
- */
-const getOTPTemplate = (name, otp) => {
-  `<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Your Verification Code</title>
-    <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            margin: 0;
-            padding: 0;
-            background-color: #f9f9f9;
-        }
-        .container {
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: #ffffff;
-            border-radius: 8px;
-            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
-        }
-        .header {
-            text-align: center;
-            padding-bottom: 15px;
-            border-bottom: 1px solid #eaeaea;
-        }
-        .header h1 {
-            color: #2c5282;
-            margin: 0;
-            font-size: 28px;
-        }
-        .content {
-            padding: 20px 0;
-            text-align: center;
-        }
-        .otp-container {
-            margin: 30px 0;
-        }
-        .otp-code {
-            font-family: monospace;
-            font-size: 36px;
-            letter-spacing: 5px;
-            background-color: #f0f4f8;
-            padding: 15px 20px;
-            border-radius: 5px;
-            border: 1px dashed #2c5282;
-            font-weight: bold;
-            color: #2c5282;
-        }
-        .notice {
-            background-color: #f0f4f8;
-            padding: 15px;
-            border-radius: 5px;
-            margin: 20px 0;
-            border-left: 4px solid #2c5282;
-            text-align: left;
-            font-style: italic;
-        }
-        .footer {
-            margin-top: 30px;
-            padding-top: 20px;
-            border-top: 1px solid #eaeaea;
-            text-align: center;
-            color: #666;
-            font-size: 14px;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>Your Verification Code</h1>
-        </div>
-        <div class="content">
-            <p>Hello ${name},</p>
-            
-            <p>Use the following code to complete your verification:</p>
-            
-            <div class="otp-container">
-                <span class="otp-code">${otp}</span>
-            </div>
-            
+            <p><small>Or copy and paste this link in your browser:<br>
+            <span class="link">${info.confirmationUrl || info.resetUrl}</span></small></p>
             <div class="notice">
-                <p>This code will expire in 10 minutes for security reasons. Please do not share this code with anyone.</p>
+                <p>This link will expire in 1 hour for security reasons.</p>
             </div>
-            
-            <p>If you didn't request this code, please ignore this email.</p>
+            <p>If you did not request a password reset, please ignore this email.</p>
         </div>
         <div class="footer">
-            <p>Best regards,<br>Team ShikshaDost</p>
-            <p>&copy; ${new Date().getFullYear()} ShikshaDost. All rights reserved.</p>
+            <p>Best regards,<br>Team haven</p>
+            <p>&copy; ${new Date().getFullYear()} haven. All rights reserved.</p>
         </div>
     </div>
 </body>
 </html>`;
-};
 
-/**
- * Template for general confirmation emails
- */
-const getConfirmationTemplate = (name, message) => {
-  `<!DOCTYPE html>
+// Password reset success email template
+const getResetUserPasswordTemplate = (info) => `<!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Confirmation</title>
+    <title>Password Reset Successful</title>
     <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            margin: 0;
-            padding: 0;
-            background-color: #f9f9f9;
-        }
-        .container {
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: #ffffff;
-            border-radius: 8px;
-            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
-        }
-        .header {
-            text-align: center;
-            padding-bottom: 15px;
-            border-bottom: 1px solid #eaeaea;
-        }
-        .header h1 {
-            color: #2c5282;
-            margin: 0;
-            font-size: 28px;
-        }
-        .content {
-            padding: 20px 0;
-        }
-        .message-box {
-            background-color: #f0f4f8;
-            padding: 20px;
-            border-radius: 5px;
-            margin: 20px 0;
-            border-left: 4px solid #2c5282;
-            font-size: 18px;
-        }
-        .footer {
-            margin-top: 30px;
-            padding-top: 20px;
-            border-top: 1px solid #eaeaea;
-            text-align: center;
-            color: #666;
-            font-size: 14px;
-        }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f9f9f9; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; background: #fff; border-radius: 8px; box-shadow: 0 3px 10px rgba(0,0,0,0.1); padding: 20px; }
+        .header { text-align: center; border-bottom: 1px solid #eaeaea; padding-bottom: 15px; }
+        .header h1 { color: #2c5282; margin: 0; font-size: 28px; }
+        .content { padding: 20px 0; }
+        .footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #eaeaea; text-align: center; color: #666; font-size: 14px; }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>Confirmation</h1>
+            <h1>Password Reset Successful</h1>
         </div>
         <div class="content">
-            <p>Hello ${name},</p>
-            
-            <div class="message-box">
-                ${message}
-            </div>
-            
-            <p>Thank you for choosing ShikshaDost. If you have any questions or need assistance, please feel free to contact our support team.</p>
+            <p>Hello ${info.name || ''},</p>
+            <p>Your password has been reset successfully. If you did not perform this action, please contact our support team immediately.</p>
         </div>
         <div class="footer">
-            <p>Best regards,<br>Team ShikshaDost</p>
-            <p>&copy; ${new Date().getFullYear()} ShikshaDost. All rights reserved.</p>
+            <p>Best regards,<br>Team haven</p>
+            <p>&copy; ${new Date().getFullYear()} haven. All rights reserved.</p>
         </div>
     </div>
 </body>
 </html>`;
-};
+
+// Password changed email template
+const getChangeUserPasswordTemplate = (info) => `<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Password Changed</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f9f9f9; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; background: #fff; border-radius: 8px; box-shadow: 0 3px 10px rgba(0,0,0,0.1); padding: 20px; }
+        .header { text-align: center; border-bottom: 1px solid #eaeaea; padding-bottom: 15px; }
+        .header h1 { color: #2c5282; margin: 0; font-size: 28px; }
+        .content { padding: 20px 0; }
+        .footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #eaeaea; text-align: center; color: #666; font-size: 14px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Password Changed</h1>
+        </div>
+        <div class="content">
+            <p>Hello ${info.name || ''},</p>
+            <p>Your password has been changed successfully. If you did not perform this action, please contact our support team immediately.</p>
+        </div>
+        <div class="footer">
+            <p>Best regards,<br>Team haven</p>
+            <p>&copy; ${new Date().getFullYear()} haven. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>`;

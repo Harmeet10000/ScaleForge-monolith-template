@@ -34,6 +34,7 @@ import {
 import * as authRepository from '../repository/authRepository.js';
 import * as tokenRepository from '../repository/tokenRepository.js';
 import { deleteCache, getCache, setCache } from '../helpers/redisFunctions.js';
+import { catchAsync } from '../utils/catchAsync.js';
 
 dayjs.extend(utc);
 
@@ -94,15 +95,15 @@ export const registerUser = async (userData) => {
   const newUser = await authRepository.registerUser(payload);
 
   const confirmationUrl = `${process.env.FRONTEND_URL}/confirmation/${token}?code=${code}`;
-  const to = [emailAddress];
-  const subject = 'Confirm Your Account';
-  const text = `Hey ${name}, Please confirm your account by clicking on the link below\n\n${confirmationUrl}`;
+  const info = {
+    to: [emailAddress],
+    subject: 'Confirm Your Account',
+    name,
+    confirmationUrl,
+    purpose: 'accountConfirmation'
+  };
 
-  Resendmail(to, subject, text).catch((err) => {
-    logger.error(`EMAIL_SERVICE`, {
-      meta: err
-    });
-  });
+  Resendmail(info);
 
   return newUser;
 };
@@ -125,15 +126,14 @@ export const confirmAccount = async (token, code, req, next) => {
   await setCache('user', ['id', user._id], user.toObject(), 1800);
   await setCache('user', ['email', user.emailAddress], user.toObject(), 1800);
 
-  const to = [user.emailAddress];
-  const subject = 'Account Confirmed';
-  const text = `Your account has been confirmed`;
+  const info = {
+    to: [user.emailAddress],
+    subject: 'Account Confirmed',
+    name: user.name,
+    purpose: 'confirmationSuccess'
+  };
 
-  Resendmail(to, subject, text).catch((err) => {
-    logger.error(`EMAIL_SERVICE`, {
-      meta: err
-    });
-  });
+  Resendmail(info);
 
   return true;
 };
@@ -218,26 +218,22 @@ export const loginUser = async (credentials, req, next) => {
   };
 };
 
-export const logoutUser = async (refreshToken) => {
+export const logoutUser = catchAsync(async (refreshToken) => {
   logger.info('Logout called with refresh:', refreshToken);
   if (refreshToken) {
-    try {
-      // Get user ID from refresh token
-      const decoded = verifyToken(refreshToken, process.env.REFRESH_TOKEN_SECRET);
+    // Get user ID from refresh token
+    const decoded = verifyToken(refreshToken, process.env.REFRESH_TOKEN_SECRET);
 
-      if (decoded && decoded.userId) {
-        // Remove user from cache when logging out
-        await deleteCache('user', ['id', decoded.userId]);
-      }
-
-      // Delete the refresh token from database
-      await tokenRepository.deleteRefreshToken(refreshToken);
-    } catch (err) {
-      logger.error('Error in logout:', err);
+    if (decoded && decoded.userId) {
+      // Remove user from cache when logging out
+      await deleteCache('user', ['id', decoded.userId]);
     }
+
+    // Delete the refresh token from database
+    await tokenRepository.deleteRefreshToken(refreshToken);
   }
   return true;
-};
+});
 
 export const refreshUserToken = async (refreshToken, req, next) => {
   if (!refreshToken) {
@@ -305,15 +301,17 @@ export const requestPasswordReset = async (emailAddress, req, next) => {
 
   // Send Email
   const resetUrl = `${process.env.FRONTEND_URL}/reset-password/${token}`;
-  const to = [emailAddress];
-  const subject = 'Account Password Reset Requested';
-  const text = `Hey ${user.name}, Please reset your account password by clicking on the link below\n\nLink will expire within 15 Minutes\n\n${resetUrl}`;
 
-  Resendmail(to, subject, text).catch((err) => {
-    logger.error(`EMAIL_SERVICE`, {
-      meta: err
-    });
-  });
+  const info = {
+    to: [emailAddress],
+    subject: 'Account Password Reset Requested',
+    name: user.name,
+    resetUrl,
+    confirmationUrl: resetUrl,
+    purpose: 'requestPasswordReset'
+  };
+
+  Resendmail(info);
 
   return true;
 };
@@ -353,16 +351,15 @@ export const resetUserPassword = async (token, newPassword, req, next) => {
   await user.save();
 
   // Email send
-  const to = [user.emailAddress];
-  const subject = 'Account Password Reset';
-  const text = `Hey ${user.name}, You account password has been reset successfully.`;
 
-  Resendmail(to, subject, text).catch((err) => {
-    logger.error(`EMAIL_SERVICE`, {
-      meta: err
-    });
-  });
+  const info = {
+    to: [user.emailAddress],
+    subject: 'Account Password Reset',
+    name: user.name,
+    purpose: 'resetUserPassword'
+  };
 
+  Resendmail(info);
   return true;
 };
 
@@ -391,15 +388,15 @@ export const changeUserPassword = async (userId, oldPassword, newPassword, req, 
   await user.save();
 
   // Email Send
-  const to = [user.emailAddress];
-  const subject = 'Password Changed';
-  const text = `Hey ${user.name}, You account password has been changed successfully.`;
 
-  Resendmail(to, subject, text).catch((err) => {
-    logger.error(`EMAIL_SERVICE`, {
-      meta: err
-    });
-  });
+  const info = {
+    to: [user.emailAddress],
+    subject: 'Password Changed',
+    name: user.name,
+    purpose: 'changeUserPassword'
+  };
+
+  Resendmail(info);
 
   return true;
 };
