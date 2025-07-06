@@ -8,7 +8,7 @@ import { createConnection, closeConnection } from './db/rabbitMQConnection.js';
 import { logger } from './utils/logger.js';
 import { catchAsync } from './utils/catchAsync.js';
 
-Promise.all([connectDB(), connectRedis(), createConnection()])
+Promise.all([connectDB(), connectRedis()])
   .then(() => {
     const server = app.listen(process.env.PORT, () => {
       logger.info(
@@ -82,8 +82,8 @@ Promise.all([connectDB(), connectRedis(), createConnection()])
       redisClient.status === 'ready' || redisClient.status === 'connect'
         ? redisClient.quit()
         : Promise.resolve(),
-      mongoose.connection.readyState === 1 ? mongoose.disconnect() : Promise.resolve(),
-      closeConnection().catch(() => Promise.resolve())
+      mongoose.connection.readyState === 1 ? mongoose.disconnect() : Promise.resolve()
+      // closeConnection().catch(() => Promise.resolve())
       // disconnectKafka().catch(() => Promise.resolve())
     ]).finally(() => {
       process.exit(1);
