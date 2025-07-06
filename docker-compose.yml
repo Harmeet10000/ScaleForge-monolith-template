@@ -20,10 +20,10 @@ services:
 
   auth-service:
     image: auth-service:latest
-    container_name: auth-service-container-dev
+    container_name: auth-service-container
     build:
       context: .
-      dockerfile: docker/dev/Dockerfile
+      dockerfile: docker/dev.Dockerfile
     depends_on:
       - mongodb
       - rabbitmq
@@ -36,6 +36,15 @@ services:
       - ./src:/app/src
       - ./package.json:/app/package.json
       - ./package-lock.json:/app/package-lock.json
+
+  # redis:
+  #   image: redis:7.2-alpine
+  #   container_name: redis
+  #   restart: unless-stopped
+  #   ports:
+  #     - '6379:6379'
+  #   volumes:
+  #     - redis_data:/data
 
   # prometheus:
   #   image: prom/prometheus
@@ -57,3 +66,4 @@ services:
 
 volumes:
   mongo_data:
+  redis_data:

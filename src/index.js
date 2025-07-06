@@ -8,7 +8,7 @@ import { createConnection, closeConnection } from './db/rabbitMQConnection.js';
 import { logger } from './utils/logger.js';
 import { catchAsync } from './utils/catchAsync.js';
 
-Promise.all([connectDB(), connectRedis()])
+Promise.all([connectDB(), connectRedis(), createConnection()])
   .then(() => {
     const server = app.listen(process.env.PORT, () => {
       logger.info(
