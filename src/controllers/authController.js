@@ -98,8 +98,8 @@ export const login = catchAsync(async (req, res, next) => {
   });
 
   httpResponse(req, res, 200, SUCCESS, {
-    ...accessTokenPayload,
-    ...refreshTokenPayload
+    accessToken,
+    refreshToken
   });
 });
 
@@ -152,7 +152,6 @@ export const genNewAccessToken = catchAsync(async (req, res, next) => {
       secure: !(process.env.NODE_ENV === EApplicationEnvironment.DEVELOPMENT)
     });
     return httpResponse(req, res, 200, SUCCESS, {
-      ...accessTokenPayload,
       accessToken: newAccessToken
     });
   }

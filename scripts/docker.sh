@@ -1,10 +1,11 @@
 # The Docker container is built using the Dockerfile in the project directory.
- 
+ docker build -t auth-service -f docker/dev.Dockerfile .
+
 # Run the Docker container for the Shiksha Dost Backend
 docker run -d \
   -p 8000:8000 \
   --name auth-service-container \
-  --env-file .env.development \
+  --env-file .env.dev \
   auth-service:latest
 
 # View the logs of the Docker container

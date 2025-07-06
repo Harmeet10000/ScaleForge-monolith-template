@@ -14,9 +14,6 @@ RUN npm ci
 # Stage 2: Development
 FROM node:22-alpine AS development
 
-# Setting environment variable
-ENV NODE_ENV=development
-
 # Setting Up Working Directory
 WORKDIR /usr/src/backend-app
 
