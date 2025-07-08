@@ -31,7 +31,7 @@ const doc = {
       description: 'Development server'
     },
     {
-      url: 'https://api.shikshadost.com/api/v1',
+      url: 'https://reasonable-amazement-production.up.railway.app/api/v1',
       description: 'Production server'
     }
   ],

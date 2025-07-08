@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   mongodb:
     image: mongo:7.0
@@ -17,6 +15,12 @@ services:
     ports:
       - '5672:5672'
       - '15672:15672'
+    environment:
+      RABBITMQ_DEFAULT_USER: myuser
+      RABBITMQ_DEFAULT_PASS: mypassword
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq # For persistent data
+      - rabbitmq_logs:/var/log/rabbitmq # For persistent logs
 
   auth-service:
     image: auth-service:latest
@@ -67,3 +71,5 @@ services:
 volumes:
   mongo_data:
   redis_data:
+  rabbitmq_data:
+  rabbitmq_logs:

@@ -33,7 +33,7 @@ export const createConnection = async () => {
     return connection;
   }
 
-  const rabbitmqUrl = process.env.RABBITMQ_URL || 'amqp://localhost';
+  const rabbitmqUrl = process.env.RABBITMQ_URL;
 
   const connect = async () => {
     connectionAttempts++;
@@ -48,7 +48,7 @@ export const createConnection = async () => {
     connectionAttempts = 0;
 
     connection.on('close', (err) => {
-      // logger.warn('RabbitMQ connection closed', { meta: err });
+      logger.warn('RabbitMQ connection closed', { meta: err });
       connection = null;
       setTimeout(
         () =>
