@@ -82,11 +82,11 @@ This document provides guidelines and instructions for using GitHub Copilot effe
 
 1. **Docker**:
 
-   - Use the `Dockerfile` in `docker/dev/` for development builds.
-   - Use the `Dockerfile` in `docker/prod/` for production builds.
+   - Use the `dev.Dockerfile` in `docker/` for development builds.
+   - Use the `prod.Dockerfile` in `docker/` for production builds.
 
 2. **Environment**:
-   - Ensure the correct `.env` file is used for the target environment.
+   - Ensure the correct `.env.dev` file is used for the target environment.
    - Verify database and Redis connections before deployment.
 
 ---

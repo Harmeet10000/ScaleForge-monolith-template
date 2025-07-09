@@ -8,7 +8,7 @@ import { createConnection, closeConnection } from './db/rabbitMQConnection.js';
 import { logger } from './utils/logger.js';
 import { catchAsync } from './utils/catchAsync.js';
 
-Promise.all([connectDB(), connectRedis(), createConnection()])
+Promise.all([connectDB(), connectRedis()])
   .then(() => {
     const server = app.listen(process.env.PORT, () => {
       logger.info(
@@ -30,10 +30,10 @@ Promise.all([connectDB(), connectRedis(), createConnection()])
       logger.info('MongoDB disconnected gracefully.');
     });
 
-    const disconnectRabbitMQ = catchAsync(async () => {
-      await closeConnection();
-      logger.info('RabbitMQ disconnected gracefully.');
-    });
+    // const disconnectRabbitMQ = catchAsync(async () => {
+    //   await closeConnection();
+    //   logger.info('RabbitMQ disconnected gracefully.');
+    // });
 
     // const disconnectKafka = catchAsync(async () => {
     //   await producer.disconnect();
@@ -52,8 +52,8 @@ Promise.all([connectDB(), connectRedis(), createConnection()])
 
         await Promise.all([
           disconnectRedis(),
-          disconnectMongo(),
-          disconnectRabbitMQ()
+          disconnectMongo()
+          // disconnectRabbitMQ()
           // disconnectKafka()
         ]);
 
