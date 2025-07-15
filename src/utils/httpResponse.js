@@ -24,7 +24,7 @@ export const httpResponse = (req, res, responseStatusCode, responseMessage, data
   // Production Env check
   if (process.env.NODE_ENV === EApplicationEnvironment.PRODUCTION) {
     delete response.request.ip;
-    // delete response.request.correlationId;
+    delete response.request.correlationId;
   }
 
   res.status(responseStatusCode).json(response);

@@ -3,11 +3,11 @@ import app from './app.js';
 import mongoose from 'mongoose';
 import connectDB from './db/connectDB.js';
 import { connectRedis, redisClient } from './db/connectRedis.js';
-import { createConnection, closeConnection } from './db/rabbitMQConnection.js';
+// import { createConnection, closeConnection } from './db/rabbitMQConnection.js';
 // import { connectKafkaProducer, consumer, producer } from './db/connectKafka.js';
 import { logger } from './utils/logger.js';
 import { catchAsync } from './utils/catchAsync.js';
-
+// logger.info('Starting application...hfghfghfghfhiuhiuhiuhihiuhiursg');
 Promise.all([connectDB(), connectRedis()])
   .then(() => {
     const server = app.listen(process.env.PORT, () => {
@@ -82,8 +82,8 @@ Promise.all([connectDB(), connectRedis()])
       redisClient.status === 'ready' || redisClient.status === 'connect'
         ? redisClient.quit()
         : Promise.resolve(),
-      mongoose.connection.readyState === 1 ? mongoose.disconnect() : Promise.resolve(),
-      closeConnection().catch(() => Promise.resolve())
+      mongoose.connection.readyState === 1 ? mongoose.disconnect() : Promise.resolve()
+      // closeConnection().catch(() => Promise.resolve())
       // disconnectKafka().catch(() => Promise.resolve())
     ]).finally(() => {
       process.exit(1);

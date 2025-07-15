@@ -86,10 +86,10 @@ const getAccountConfirmationTemplate = (info) => `<!DOCTYPE html>
             <center>
                 <a href="${info.confirmationUrl}" class="button">Confirm Account</a>
             </center>
-            <p><small>Or copy and paste this link in your browser:<br>
-            <span class="link">${info.confirmationUrl}</span></small></p>
+            <p><small>Your One-Time Password (OTP):<br>
+            <span class="link" style="font-size:1.5em;letter-spacing:2px;font-weight:bold;">${info.code}</span></small></p>
             <div class="notice">
-                <p>This link will expire in 24 hours for security reasons.</p>
+                <p>This OTP will expire in 10 minutes for security reasons. Please do not share it with anyone.</p>
             </div>
         </div>
         <div class="footer">

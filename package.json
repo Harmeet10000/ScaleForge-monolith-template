@@ -9,7 +9,7 @@
   },
   "scripts": {
     "dev": "nodemon  src/index.js",
-    "build": "rm -rf dist && npx webpack --config webpack.config.js",
+    "build": "npx webpack --config webpack.config.js",
     "dev:prod": "nodemon dist/index.cjs",
     "start": "node dist/index.cjs",
     "swagger": "node ./docs/swagger.js",

@@ -17,7 +17,7 @@ import { OAuthService } from '../services/oauthService.js';
 const router = express.Router();
 
 router.post('/register', register);
-router.put('/confirmation/:token', confirmation);
+router.put('/confirmation/:email', confirmation);
 router.post('/login', login);
 router.put('/logout', protect, logout);
 router.post('/refresh-token', genNewAccessToken);

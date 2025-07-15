@@ -14,43 +14,6 @@ import { SUCCESS } from '../constant/responseMessage.js';
 import { EApplicationEnvironment } from '../constant/application.js';
 import { getDomainFromUrl } from '../helpers/generalHelper.js';
 
-const isMobileRequest = (req) => {
-  const userAgent = req.headers['user-agent'] || '';
-  const clientType = req.headers['x-client-type'] || '';
-  return (
-    clientType.toLowerCase() === 'mobile' ||
-    userAgent.toLowerCase().includes('reactnative') ||
-    userAgent.toLowerCase().includes('okhttp')
-  );
-};
-
-const sendToken = ({
-  req,
-  res,
-  tokenName,
-  tokenValue,
-  path = '/api/v1',
-  domain,
-  sameSite = 'strict',
-  maxAge,
-  httpOnly = true,
-  secure = true
-}) => {
-  if (isMobileRequest(req)) {
-    return { [tokenName]: tokenValue };
-  } else {
-    res.cookie(tokenName, tokenValue, {
-      path,
-      domain,
-      sameSite,
-      maxAge,
-      httpOnly,
-      secure
-    });
-    return {};
-  }
-};
-
 export const register = catchAsync(async (req, res, next) => {
   const { error, value } = validateJoiSchema(validateRegisterBody, req.body);
   if (error) {
@@ -61,7 +24,7 @@ export const register = catchAsync(async (req, res, next) => {
 });
 
 export const confirmation = catchAsync(async (req, res, next) => {
-  await authService.confirmAccount(req.params.token, req.query.code, req, next);
+  await authService.confirmAccount(req.params.email, req.query.code, req, next);
   httpResponse(req, res, 200, SUCCESS);
 });
 
@@ -72,30 +35,23 @@ export const login = catchAsync(async (req, res, next) => {
   }
 
   const { accessToken, refreshToken, domain } = await authService.loginUser(value, req, next);
-  const accessTokenPayload = sendToken({
-    req,
-    res,
-    tokenName: 'accessToken',
-    tokenValue: accessToken,
-    path: '/api/v1',
-    domain,
-    sameSite: 'strict',
-    maxAge: 1000 * 3600,
-    httpOnly: true,
-    secure: !(process.env.NODE_ENV === EApplicationEnvironment.DEVELOPMENT)
-  });
-  const refreshTokenPayload = sendToken({
-    req,
-    res,
-    tokenName: 'refreshToken',
-    tokenValue: refreshToken,
-    path: '/api/v1',
-    domain,
-    sameSite: 'strict',
-    maxAge: 1000 * 3600,
-    httpOnly: true,
-    secure: !(process.env.NODE_ENV === EApplicationEnvironment.DEVELOPMENT)
-  });
+  res
+    .cookie('accessToken', accessToken, {
+      path: '/api/v1',
+      domain,
+      sameSite: 'strict',
+      maxAge: 1000 * 3600,
+      httpOnly: true,
+      secure: !(process.env.NODE_ENV === EApplicationEnvironment.DEVELOPMENT)
+    })
+    .cookie('refreshToken', refreshToken, {
+      path: '/api/v1',
+      domain,
+      sameSite: 'strict',
+      maxAge: 1000 * 3600,
+      httpOnly: true,
+      secure: !(process.env.NODE_ENV === EApplicationEnvironment.DEVELOPMENT)
+    });
 
   httpResponse(req, res, 200, SUCCESS, {
     accessToken,
@@ -139,11 +95,7 @@ export const genNewAccessToken = catchAsync(async (req, res, next) => {
   const { newAccessToken, domain } = await authService.refreshUserToken(refreshToken, req, next);
 
   if (newAccessToken) {
-    const accessTokenPayload = sendToken({
-      req,
-      res,
-      tokenName: 'accessToken',
-      tokenValue: newAccessToken,
+    res.cookie('accessToken', newAccessToken, {
       path: '/api/v1',
       domain,
       sameSite: 'strict',

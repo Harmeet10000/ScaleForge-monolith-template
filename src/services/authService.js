@@ -21,7 +21,7 @@ import {
   ACCOUNT_CONFIRMATION_REQUIRED,
   ALREADY_EXIST,
   EXPIRED_URL,
-  INVALID_ACCOUNT_CONFIRMATION_TOKEN_OR_CODE,
+  INVALID_ACCOUNT_CONFIRMATION_EMAIL_OR_CODE,
   INVALID_EMAIL_OR_PASSWORD,
   INVALID_OLD_PASSWORD,
   INVALID_PHONE_NUMBER,
@@ -94,12 +94,13 @@ export const registerUser = async (userData) => {
 
   const newUser = await authRepository.registerUser(payload);
 
-  const confirmationUrl = `${process.env.FRONTEND_URL}/confirmation/${token}?code=${code}`;
+  const confirmationUrl = `${process.env.FRONTEND_URL}/confirmation/${emailAddress}?code=${code}`;
   const info = {
     to: [emailAddress],
     subject: 'Confirm Your Account',
     name,
     confirmationUrl,
+    code,
     purpose: 'accountConfirmation'
   };
 
@@ -108,10 +109,16 @@ export const registerUser = async (userData) => {
   return newUser;
 };
 
-export const confirmAccount = async (token, code, req, next) => {
-  const user = await authRepository.findUserByConfirmationTokenAndCode(token, code);
+export const confirmAccount = async (emailAddress, code, req, next) => {
+  // Find user by email
+  const user = await authRepository.findUserByEmailAddress(emailAddress);
   if (!user) {
-    return httpError(next, new Error(INVALID_ACCOUNT_CONFIRMATION_TOKEN_OR_CODE), req, 400);
+    return httpError(next, new Error(NOT_FOUND('user')), req, 404);
+  }
+
+  // Match code in DB
+  if (user.accountConfirmation.code !== code) {
+    return httpError(next, new Error(INVALID_ACCOUNT_CONFIRMATION_EMAIL_OR_CODE), req, 400);
   }
 
   if (user.accountConfirmation.status) {
@@ -120,7 +127,8 @@ export const confirmAccount = async (token, code, req, next) => {
 
   user.accountConfirmation.status = true;
   user.accountConfirmation.timestamp = dayjs().utc().toDate();
-
+  // user.accountConfirmation.token = null;
+  // user.accountConfirmation.code = null;
   await user.save();
 
   await setCache('user', ['id', user._id], user.toObject(), 1800);

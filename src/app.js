@@ -21,14 +21,14 @@ import authRoutes from './routes/authRoutes.js';
 import healthRoutes from './routes/healthRoutes.js';
 import rabbitmqRoutes from './routes/rabbitmqRoutes.js';
 
-const server = express();
+const app = express();
 
 // 1) GLOBAL MIDDLEWARES
 // Set security HTTP headers
-server.use(helmet());
+app.use(helmet());
 
 // Add compression middleware
-server.use(
+app.use(
   compression({
     level: 6,
     filter: (req, res) => {
@@ -42,25 +42,25 @@ server.use(
   })
 );
 
-server.use('/api', limiter);
+app.use('/api', limiter);
 
 // Body parser, reading data from body into req.body
-server.use(express.json({ limit: '16kb' }));
+app.use(express.json({ limit: '16kb' }));
 
 // Middleware to handle URL-encoded data
-server.use(express.urlencoded({ extended: true }));
+app.use(express.urlencoded({ extended: true }));
 
 // Parse cookies
-server.use(cookieParser());
+app.use(cookieParser());
 
 // Data sanitization against NoSQL query injection
-server.use(mongoSanitize());
+app.use(mongoSanitize());
 
 // Data sanitization against XSS
-server.use(xss());
+app.use(xss());
 
 // Prevent parameter pollution
-server.use(
+app.use(
   hpp({
     whitelist: []
   })
@@ -73,17 +73,17 @@ const corsOptions = {
   credentials: true
 };
 
-server.use(cors(corsOptions));
+app.use(cors(corsOptions));
 
 // Apply Prometheus metrics middleware - must be before routes
-server.use(metricsMiddleware);
+app.use(metricsMiddleware);
 
 // Initialize Passport
-server.use(passport.initialize());
+app.use(passport.initialize());
 
 // 3) ROUTES
 // Swagger setup
-server.use(
+app.use(
   '/api-docs',
   swaggerUi.serve,
   swaggerUi.setup(swaggerDocument, {
@@ -98,30 +98,30 @@ server.use(
 );
 
 // Prometheus metrics endpoint
-// server.get('/metrics', async (req, res) => {
+// app.get('/metrics', async (req, res) => {
 //   res.set('Content-Type', register.contentType);
 //   res.end(await register.metrics());
 // });
 
-server.use(correlationIdMiddleware);
+app.use(correlationIdMiddleware);
 
 // Endpoint to serve the swagger.json file
-server.get('/swagger.json', (req, res) => {
+app.get('/swagger.json', (req, res) => {
   res.setHeader('Content-Type', 'application/json');
   res.send(swaggerDocument);
 });
-server.get('/', (req, res) => {
+app.get('/', (req, res) => {
   res.status(200).json({ message: 'Welcome to the Auth Service API 🚀.' });
 });
-server.use('/api/v1/auth', authRoutes);
-server.use('/api/v1/health', healthRoutes);
-server.use('/api/v1/rabbitmq', rabbitmqRoutes);
+app.use('/api/v1/auth', authRoutes);
+app.use('/api/v1/health', healthRoutes);
+app.use('/api/v1/rabbitmq', rabbitmqRoutes);
 
 // 4) CATCHES ALL ROUTES THAT ARE NOT DEFINED
-server.all('*', (req, res, next) => {
+app.all('*', (req, res, next) => {
   httpError(next, new Error(`Can't find ${req.originalUrl} on this server!`), req, 404);
 });
 
-server.use(globalErrorHandler);
+app.use(globalErrorHandler);
 
-export default server;
+export default app;
