@@ -1,3 +1,5 @@
+export const GOOGLE_OAUTH_SIGNUP_SUCCESS = 'Google OAuth signup successful';
+export const GOOGLE_OAUTH_LOGIN_SUCCESS = 'Google OAuth login successful';
 export const SUCCESS = 'The operation has been successful';
 export const SOMETHING_WENT_WRONG = 'Something went wrong!';
 export const NOT_FOUND = (entity) => `${entity} not found`;

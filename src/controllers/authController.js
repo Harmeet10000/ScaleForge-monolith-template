@@ -1,3 +1,4 @@
+import { logger } from '../utils/logger.js';
 import { httpResponse } from '../utils/httpResponse.js';
 import { httpError } from '../utils/httpError.js';
 import { catchAsync } from '../utils/catchAsync.js';
@@ -7,10 +8,16 @@ import {
   validateLoginBody,
   validateForgotPasswordBody,
   validateResetPasswordBody,
-  validateChangePasswordBody
+  validateChangePasswordBody,
+  validateGoogleLogin,
+  validateGoogleSignup
 } from '../validations/authValidation.js';
 import * as authService from '../services/authService.js';
-import { SUCCESS } from '../constant/responseMessage.js';
+import {
+  GOOGLE_OAUTH_LOGIN_SUCCESS,
+  GOOGLE_OAUTH_SIGNUP_SUCCESS,
+  SUCCESS
+} from '../constant/responseMessage.js';
 import { EApplicationEnvironment } from '../constant/application.js';
 import { getDomainFromUrl } from '../helpers/generalHelper.js';
 
@@ -146,4 +153,30 @@ export const changePassword = catchAsync(async (req, res, next) => {
   );
 
   httpResponse(req, res, 200, SUCCESS);
+});
+
+export const googleOAuthSignupHandler = catchAsync(async (req, res, next) => {
+  const { error, value } = validateJoiSchema(validateGoogleSignup, req.body);
+  if (error) {
+    return httpError(next, error, req, 400);
+  }
+  const { accessToken, refreshToken, domain } = await authService.googleOAuthSignup(
+    value,
+    req,
+    next
+  );
+  return httpResponse(req, res, 201, GOOGLE_OAUTH_SIGNUP_SUCCESS, {
+    accessToken,
+    refreshToken,
+    domain
+  });
+});
+
+export const googleOAuthLoginHandler = catchAsync(async (req, res, next) => {
+  const { error, value } = validateJoiSchema(validateGoogleLogin, req.body);
+  if (error) {
+    return httpError(next, error, req, 400);
+  }
+  const result = await authService.googleOAuthLogin(value, req, next);
+  return httpResponse(req, res, 200, GOOGLE_OAUTH_LOGIN_SUCCESS, result);
 });

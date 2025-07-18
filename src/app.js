@@ -5,8 +5,6 @@ import compression from 'compression';
 import xss from 'xss-clean';
 import hpp from 'hpp';
 import cors from 'cors';
-import passport from 'passport';
-import './config/passport.js';
 import cookieParser from 'cookie-parser';
 import swaggerUi from 'swagger-ui-express';
 import { httpError } from './utils/httpError.js';
@@ -78,8 +76,6 @@ app.use(cors(corsOptions));
 // Apply Prometheus metrics middleware - must be before routes
 app.use(metricsMiddleware);
 
-// Initialize Passport
-app.use(passport.initialize());
 
 // 3) ROUTES
 // Swagger setup

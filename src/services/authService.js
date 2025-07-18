@@ -408,3 +408,68 @@ export const changeUserPassword = async (userId, oldPassword, newPassword, req, 
 
   return true;
 };
+
+export const googleOAuthSignup = async (payload, req, next) => {
+  const { id, email, name, picture } = payload;
+  // Check if user already exists
+  let user = await authRepository.findUserByEmailAddress(email);
+  if (user) {
+    logger.warn('Google OAuth signup attempted for existing user', { meta: { email } });
+    return httpError(next, new Error('User already exists'), req, 409);
+  }
+  // Register new user
+  const newUserPayload = {
+    name,
+    emailAddress: email,
+    provider: 'google',
+    oauth_id: id,
+    image: picture,
+    role: EUserRole.USER,
+    accountConfirmation: { status: true, token: null, code: null, timestamp: new Date() },
+    consent: true,
+    timezone: 'UTC',
+    password: null
+  };
+  user = await authRepository.registerUser(newUserPayload);
+  // Generate tokens
+  const userIp = req.ip;
+  const accessToken = generateToken(
+    { userId: user._id, userIp },
+    process.env.ACCESS_TOKEN_SECRET,
+    3600
+  );
+  const refreshToken = generateToken(
+    { userId: user._id, userIp },
+    process.env.REFRESH_TOKEN_SECRET,
+    3600
+  );
+  const domain = getDomainFromUrl(process.env.SERVER_URL);
+
+  return { accessToken, refreshToken, domain };
+};
+
+export const googleOAuthLogin = async (payload, req, next) => {
+  const { id, email } = payload;
+  // Find user by email and oauth_id
+  const user = await authRepository.findUserByEmailAddress(email);
+  if (!user || user.oauth_id !== id) {
+    // logger.warn('Google OAuth login failed', { meta: { email, id } });
+    return httpError(next, new Error('Invalid Google OAuth credentials'), req, 401);
+  }
+  // logger.info('Google OAuth login successful', { meta: { userId: user._id, email } });
+  // Generate tokens
+  const userIp = req.ip;
+  const accessToken = generateToken(
+    { userId: user._id, userIp },
+    process.env.ACCESS_TOKEN_SECRET,
+    3600
+  );
+  const refreshToken = generateToken(
+    { userId: user._id, userIp },
+    process.env.REFRESH_TOKEN_SECRET,
+    3600
+  );
+  const domain = getDomainFromUrl(process.env.SERVER_URL);
+
+  return { accessToken, refreshToken, domain };
+};

@@ -1,3 +1,16 @@
+import Joi from 'joi';
+
+export const validateGoogleSignup = Joi.object({
+  id: Joi.string().required(),
+  email: Joi.string().email().required(),
+  name: Joi.string().min(2).max(72).required(),
+  picture: Joi.string().uri().optional()
+});
+
+export const validateGoogleLogin = Joi.object({
+  id: Joi.string().required(),
+  email: Joi.string().email().required()
+});
 import joi from 'joi';
 
 export const validateRegisterBody = joi.object({
