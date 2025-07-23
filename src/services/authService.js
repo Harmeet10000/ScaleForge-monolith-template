@@ -33,7 +33,7 @@ import {
 } from '../constant/responseMessage.js';
 import * as authRepository from '../repository/authRepository.js';
 import * as tokenRepository from '../repository/tokenRepository.js';
-import { deleteCache, getCache, setCache } from '../helpers/redisFunctions.js';
+import { deleteCache, getHash, setHash } from '../helpers/redisFunctions.js';
 import { catchAsync } from '../utils/catchAsync.js';
 
 dayjs.extend(utc);
@@ -51,14 +51,14 @@ export const registerUser = async (userData) => {
     throw new Error(INVALID_TIMEZONE);
   }
 
-  const cachedUser = await getCache('user', ['email', emailAddress]);
+  const cachedUser = await getHash('user', ['email', emailAddress]);
   if (cachedUser) {
     throw new Error(ALREADY_EXIST('user', emailAddress));
   }
 
   const user = await authRepository.findUserByEmailAddress(emailAddress);
   if (user) {
-    await setCache('user', ['email', emailAddress], user.toObject(), 3600);
+    await setHash('user', ['email', emailAddress], user.toObject(), 3600);
     throw new Error(ALREADY_EXIST('user', emailAddress));
   }
 
@@ -131,8 +131,8 @@ export const confirmAccount = async (emailAddress, code, req, next) => {
   // user.accountConfirmation.code = null;
   await user.save();
 
-  await setCache('user', ['id', user._id], user.toObject(), 1800);
-  await setCache('user', ['email', user.emailAddress], user.toObject(), 1800);
+  await setHash('user', ['id', user._id], user.toObject(), 1800);
+  await setHash('user', ['email', user.emailAddress], user.toObject(), 1800);
 
   const info = {
     to: [user.emailAddress],
@@ -150,12 +150,12 @@ export const loginUser = async (credentials, req, next) => {
   const { emailAddress, password } = credentials;
   const userIp = req.ip;
 
-  let user = await getCache('user', ['email', emailAddress]);
+  let user = await getHash('user', ['email', emailAddress]);
   if (!user) {
     user = await authRepository.findUserByEmailAddress(emailAddress, `+password`);
     const userForCache = { ...user.toObject() };
-    await setCache('user', ['email', emailAddress], userForCache, 1800);
-    await setCache('user', ['id', user._id], userForCache, 1800);
+    await setHash('user', ['email', emailAddress], userForCache, 1800);
+    await setHash('user', ['id', user._id], userForCache, 1800);
   }
 
   if (!user) {
@@ -191,8 +191,8 @@ export const loginUser = async (credentials, req, next) => {
 
   await authRepository.updateUserLastLogin(user._id);
   user.lastLoginAt = dayjs().utc().toDate();
-  await setCache('user', ['email', emailAddress], user, 1800);
-  await setCache('user', ['id', user._id], user, 1800);
+  await setHash('user', ['email', emailAddress], user, 1800);
+  await setHash('user', ['id', user._id], user, 1800);
 
   const refreshTokenPayload = {
     token: refreshToken

@@ -52,7 +52,7 @@ const consoleTransport = () => {
   if (process.env.NODE_ENV === EApplicationEnvironment.DEVELOPMENT) {
     return [
       new transports.Console({
-        level: 'info', // Changed from 'info' to 'debug' to allow debug level logs
+        level: 'debug', // Changed from 'info' to 'debug' to allow debug level logs
         format: format.combine(format.timestamp(), consoleLogFormat)
       })
     ];

@@ -1,3 +1,8 @@
+export const NOT_LOGGED_IN = 'You are not logged in! Please log in to get access.';
+export const TOKEN_INVALID_FOR_IP = 'Token is not valid for this IP address.';
+export const USER_NO_LONGER_EXISTS = 'The user belonging to this token no longer exists.';
+export const USER_CHANGED_PASSWORD = 'User recently changed password! Please log in again.';
+export const NO_PERMISSION = 'You do not have permission to perform this action';
 export const GOOGLE_OAUTH_SIGNUP_SUCCESS = 'Google OAuth signup successful';
 export const GOOGLE_OAUTH_LOGIN_SUCCESS = 'Google OAuth login successful';
 export const SUCCESS = 'The operation has been successful';

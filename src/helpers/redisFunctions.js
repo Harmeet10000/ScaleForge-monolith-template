@@ -24,16 +24,12 @@ export const UserKeyByEmail = (email) => getKeyName('user', 'email', email);
 export const UserKeyByUsername = (username) => getKeyName('user', 'username', username);
 export const UserKeyByToken = (token) => getKeyName('user', 'token', token);
 
-export const setCache = catchAsync(async (objectType, key, value, expireSeconds = null) => {
+export const setCache = catchAsync(async (objectType, key, value, expireSeconds = 1800) => {
   const cacheKey = getCacheKey(objectType, key);
 
   const stringValue = typeof value === 'object' ? JSON.stringify(value) : value;
 
-  if (expireSeconds) {
-    await redisClient.set(cacheKey, stringValue, 'EX', expireSeconds);
-  } else {
-    await redisClient.set(cacheKey, stringValue);
-  }
+  await redisClient.set(cacheKey, stringValue, 'EX', expireSeconds);
 
   logger.debug(`Cache set: ${cacheKey}`);
   return true;
@@ -52,7 +48,8 @@ export const getCache = catchAsync(async (objectType, key, parseJson = true) => 
     try {
       return JSON.parse(result);
     } catch (e) {
-      return result;
+      logger.error('Error parsing cache JSON', { meta: { cacheKey, error: e } });
+      return;
     }
   }
 
@@ -70,7 +67,8 @@ export const deleteCache = catchAsync(async (objectType, key) => {
 
 // Redis Hash CRUD Operations
 
-export const setHash = catchAsync(async (objectType, key, data, expireSeconds = null) => {
+export const setHash = catchAsync(async (objectType, key, data, expireSeconds = 1800) => {
+  logger.debug(`Setting hash: ${objectType}:${key}:${data} for ${expireSeconds} seconds`);
   const cacheKey = getCacheKey(objectType, key);
   await redisClient.hset(cacheKey, data);
   if (expireSeconds) {
@@ -151,6 +149,7 @@ export const getListItems = catchAsync(
         try {
           return JSON.parse(item);
         } catch (e) {
+          logger.error('Error parsing list item JSON', { meta: { cacheKey, error: e } });
           return item;
         }
       });
