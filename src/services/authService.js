@@ -153,17 +153,9 @@ export const loginUser = async (credentials, req, next) => {
   let user = await getCache('user', ['email', emailAddress]);
   if (!user) {
     user = await authRepository.findUserByEmailAddress(emailAddress, `+password`);
-    if (user) {
-      const userForCache = { ...user.toObject() };
-      delete userForCache.password;
-      await setCache('user', ['email', emailAddress], userForCache, 1800);
-      await setCache('user', ['id', user._id], userForCache, 1800);
-    }
-  } else {
-    const userWithPassword = await authRepository.findUserByEmailAddress(emailAddress, `+password`);
-    if (userWithPassword) {
-      user.password = userWithPassword.password;
-    }
+    const userForCache = { ...user.toObject() };
+    await setCache('user', ['email', emailAddress], userForCache, 1800);
+    await setCache('user', ['id', user._id], userForCache, 1800);
   }
 
   if (!user) {
@@ -181,6 +173,7 @@ export const loginUser = async (credentials, req, next) => {
   const accessToken = generateToken(
     {
       userId: user.id || user._id,
+      role: user.role,
       userIp
     },
     process.env.ACCESS_TOKEN_SECRET,
@@ -189,27 +182,17 @@ export const loginUser = async (credentials, req, next) => {
   const refreshToken = generateToken(
     {
       userId: user.id || user._id,
+      role: user.role,
       userIp
     },
     process.env.REFRESH_TOKEN_SECRET,
     3600
   );
 
-  if (typeof user.save === 'function') {
-    user.lastLoginAt = dayjs().utc().toDate();
-    await user.save();
-
-    const userForCache = { ...user.toObject() };
-    delete userForCache.password;
-    await setCache('user', ['email', emailAddress], userForCache, 1800);
-    await setCache('user', ['id', user._id], userForCache, 1800);
-  } else {
-    await authRepository.updateUserLastLogin(user._id);
-
-    user.lastLoginAt = dayjs().utc().toDate();
-    await setCache('user', ['email', emailAddress], user, 1800);
-    await setCache('user', ['id', user._id], user, 1800);
-  }
+  await authRepository.updateUserLastLogin(user._id);
+  user.lastLoginAt = dayjs().utc().toDate();
+  await setCache('user', ['email', emailAddress], user, 1800);
+  await setCache('user', ['id', user._id], user, 1800);
 
   const refreshTokenPayload = {
     token: refreshToken
@@ -218,10 +201,20 @@ export const loginUser = async (credentials, req, next) => {
   await tokenRepository.createRefreshToken(refreshTokenPayload);
 
   const domain = getDomainFromUrl(process.env.SERVER_URL);
+  const userForResponse = user.toObject();
+  delete userForResponse.password;
+  delete userForResponse.passwordReset;
+  delete userForResponse.accountConfirmation;
+  delete userForResponse.consent;
+  delete userForResponse.__v;
+  delete userForResponse.createdAt;
+  delete userForResponse.updatedAt;
+  delete userForResponse.lastLoginAt;
 
   return {
     accessToken,
     refreshToken,
+    userForResponse,
     domain
   };
 };
@@ -414,7 +407,7 @@ export const googleOAuthSignup = async (payload, req, next) => {
   // Check if user already exists
   let user = await authRepository.findUserByEmailAddress(email);
   if (user) {
-    logger.warn('Google OAuth signup attempted for existing user', { meta: { email } });
+    // logger.warn('Google OAuth signup attempted for existing user', { meta: { email } });
     return httpError(next, new Error('User already exists'), req, 409);
   }
   // Register new user

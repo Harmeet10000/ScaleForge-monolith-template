@@ -1,4 +1,3 @@
-import { logger } from '../utils/logger.js';
 import { httpResponse } from '../utils/httpResponse.js';
 import { httpError } from '../utils/httpError.js';
 import { catchAsync } from '../utils/catchAsync.js';
@@ -41,7 +40,11 @@ export const login = catchAsync(async (req, res, next) => {
     return httpError(next, error, req, 422);
   }
 
-  const { accessToken, refreshToken, domain } = await authService.loginUser(value, req, next);
+  const { accessToken, refreshToken, userForResponse, domain } = await authService.loginUser(
+    value,
+    req,
+    next
+  );
   res
     .cookie('accessToken', accessToken, {
       path: '/api/v1',
@@ -62,7 +65,8 @@ export const login = catchAsync(async (req, res, next) => {
 
   httpResponse(req, res, 200, SUCCESS, {
     accessToken,
-    refreshToken
+    refreshToken,
+    user: userForResponse
   });
 });
 

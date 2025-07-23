@@ -9,10 +9,6 @@ export default {
   externals: [webpackNodeExternals()],
   output: {
     filename: 'index.cjs',
-    clean: true,
-    library: {
-      type: 'commonjs2'
-    },
     path: path.resolve(process.cwd(), 'dist')
   },
   module: {

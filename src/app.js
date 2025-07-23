@@ -76,7 +76,6 @@ app.use(cors(corsOptions));
 // Apply Prometheus metrics middleware - must be before routes
 app.use(metricsMiddleware);
 
-
 // 3) ROUTES
 // Swagger setup
 app.use(
@@ -94,7 +93,7 @@ app.use(
 );
 
 // Prometheus metrics endpoint
-// app.get('/metrics', async (req, res) => {
+// app.get('/metrics', async (req, res) => {u
 //   res.set('Content-Type', register.contentType);
 //   res.end(await register.metrics());
 // });
