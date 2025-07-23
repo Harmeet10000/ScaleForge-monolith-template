@@ -9,6 +9,7 @@ const RedisStore = RedisStoreImport.default || RedisStoreImport;
 import rateLimit from 'express-rate-limit';
 import { redisClient } from '../db/connectRedis.js';
 import promBundle from 'express-prom-bundle';
+import helmet from 'helmet';
 // import { register } from 'prom-client';
 
 export const correlationIdMiddleware = (req, res, next) => {
@@ -61,7 +62,36 @@ export const limiter = rateLimit({
   message: 'Too many requests from this IP, please try again in 15 minutes!',
   standardHeaders: true,
   legacyHeaders: false,
+  // skipSuccessfulRequests: skipSuccessful,
   handler: rateLimitHandler
+});
+
+// Enhanced helmet configuration
+export const securityHeaders = helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
+      scriptSrc: ["'self'"],
+      fontSrc: ["'self'", 'https://fonts.gstatic.com'],
+      imgSrc: ["'self'", 'data:', 'https:'],
+      connectSrc: ["'self'"],
+      frameSrc: ["'none'"],
+      objectSrc: ["'none'"],
+      mediaSrc: ["'self'"],
+      manifestSrc: ["'self'"]
+    }
+  },
+  crossOriginEmbedderPolicy: false,
+  // hsts: {
+  //   maxAge: 31536000,
+  //   includeSubDomains: true,
+  //   preload: true
+  // },
+  noSniff: true,
+  frameguard: { action: 'deny' },
+  xssFilter: true,
+  referrerPolicy: { policy: 'same-origin' }
 });
 
 export const metricsMiddleware = promBundle({

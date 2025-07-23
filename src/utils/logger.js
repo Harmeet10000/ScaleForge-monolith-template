@@ -111,13 +111,13 @@ const FileTransport = () => [
 
 //     return [
 //         new transports.MongoDB({
-//             level: 'info',
+//             level: 'debug',
 //             db: String(config.DATABASE),
 //             metaKey: 'meta',
 //             expireAfterSeconds: 3600 * 24 * 30,
-//             options: {
-//                 useUnifiedTopology: true
-//             },
+//             capped: true,
+//             cappedSize: 10000000, // 10MB
+//             cappedMax: 1000
 //             collection: 'application-logs'
 //         })
 //     ]

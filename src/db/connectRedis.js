@@ -5,7 +5,16 @@ export const redisClient = new Redis({
   host: process.env.REDIS_HOST,
   port: process.env.REDIS_PORT,
   username: process.env.REDIS_USERNAME,
-  password: process.env.REDIS_PASSWORD
+  password: process.env.REDIS_PASSWORD,
+  maxRetriesPerRequest: 3,
+  retryDelayOnFailover: 100,
+  lazyConnect: true,
+  keepAlive: 30000,
+  family: 4,
+  db: 0,
+  connectTimeout: 10000,
+  commandTimeout: 5000,
+  maxmemoryPolicy: 'allkeys-lru'
 });
 
 export const connectRedis = async () =>

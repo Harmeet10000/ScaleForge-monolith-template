@@ -13,17 +13,17 @@ import {
   correlationIdMiddleware,
   limiter,
   metricsMiddleware,
+  securityHeaders,
   swaggerDocument
 } from './middlewares/serverMiddleware.js';
 import authRoutes from './routes/authRoutes.js';
 import healthRoutes from './routes/healthRoutes.js';
-import rabbitmqRoutes from './routes/rabbitmqRoutes.js';
 
 const app = express();
 
 // 1) GLOBAL MIDDLEWARES
 // Set security HTTP headers
-app.use(helmet());
+app.use(securityHeaders);
 
 // Add compression middleware
 app.use(
@@ -110,7 +110,7 @@ app.get('/', (req, res) => {
 });
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/health', healthRoutes);
-app.use('/api/v1/rabbitmq', rabbitmqRoutes);
+// app.use('/api/v1/rabbitmq', rabbitmqRoutes);
 
 // 4) CATCHES ALL ROUTES THAT ARE NOT DEFINED
 app.all('*', (req, res, next) => {
