@@ -17,6 +17,7 @@ FROM node:22-alpine AS development
 # Setting Up Working Directory
 WORKDIR /usr/src/backend-app
 
+RUN npm install -g nodemon
 # Copy dependencies from deps stage
 COPY --from=deps /usr/src/backend-app/node_modules ./node_modules
 COPY package*.json ./

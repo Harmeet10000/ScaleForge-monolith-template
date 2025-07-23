@@ -37,9 +37,9 @@ services:
       - .env.dev
     restart: unless-stopped
     volumes:
-      - ./src:/app/src
-      - ./package.json:/app/package.json
-      - ./package-lock.json:/app/package-lock.json
+      - ./src:/usr/src/backend-app/src
+      - ./package.json:/usr/src/backend-app/package.json
+      - ./package-lock.json:/usr/src/backend-app/package-lock.json
 
   # redis:
   #   image: redis:7.2-alpine

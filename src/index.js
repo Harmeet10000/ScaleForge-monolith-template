@@ -7,7 +7,7 @@ import { connectRedis, redisClient } from './db/connectRedis.js';
 // import { connectKafkaProducer, consumer, producer } from './db/connectKafka.js';
 import { logger } from './utils/logger.js';
 import { catchAsync } from './utils/catchAsync.js';
-// logger.info('Starting application...hfghfghfghfhiuhiuhiuhihiuhiursg');
+
 Promise.all([connectDB(), connectRedis()])
   .then(() => {
     const server = app.listen(process.env.PORT, () => {
