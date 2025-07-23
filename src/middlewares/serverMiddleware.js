@@ -7,7 +7,7 @@ import { httpResponse } from '../utils/httpResponse.js';
 import RedisStoreImport from 'rate-limit-redis';
 const RedisStore = RedisStoreImport.default || RedisStoreImport;
 import rateLimit from 'express-rate-limit';
-import { redisClient } from '../db/connectRedis.js';
+import { redisClient } from '../connections/connectRedis.js';
 import promBundle from 'express-prom-bundle';
 import helmet from 'helmet';
 // import { register } from 'prom-client';

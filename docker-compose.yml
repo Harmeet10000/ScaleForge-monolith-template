@@ -1,36 +1,13 @@
 services:
-  mongodb:
-    image: mongo:7.0
-    container_name: mongodb
-    restart: unless-stopped
-    ports:
-      - '27017:27017'
-    volumes:
-      - mongo_data:/data/db
-
-  rabbitmq:
-    image: rabbitmq:3-management
-    container_name: rabbitmq
-    restart: unless-stopped
-    ports:
-      - '5672:5672'
-      - '15672:15672'
-    environment:
-      RABBITMQ_DEFAULT_USER: myuser
-      RABBITMQ_DEFAULT_PASS: mypassword
-    volumes:
-      - rabbitmq_data:/var/lib/rabbitmq # For persistent data
-      - rabbitmq_logs:/var/log/rabbitmq # For persistent logs
-
   auth-service:
     image: auth-service:latest
     container_name: auth-service-container
     build:
       context: .
       dockerfile: docker/dev.Dockerfile
-    depends_on:
-      - mongodb
-      - rabbitmq
+    # depends_on:
+    #   - mongodb
+    #   - rabbitmq
     ports:
       - '8000:8000'
     env_file:
@@ -40,6 +17,29 @@ services:
       - ./src:/usr/src/backend-app/src
       - ./package.json:/usr/src/backend-app/package.json
       - ./package-lock.json:/usr/src/backend-app/package-lock.json
+  # mongodb:
+  #   image: mongo:7.0
+  #   container_name: mongodb
+  #   restart: unless-stopped
+  #   ports:
+  #     - '27017:27017'
+  #   volumes:
+  #     - mongo_data:/data/db
+
+  # rabbitmq:
+  #   image: rabbitmq:3-management
+  #   container_name: rabbitmq
+  #   restart: unless-stopped
+  #   ports:
+  #     - '5672:5672'
+  #     - '15672:15672'
+  #   environment:
+  #     RABBITMQ_DEFAULT_USER: myuser
+  #     RABBITMQ_DEFAULT_PASS: mypassword
+  #   volumes:
+  #     - rabbitmq_data:/var/lib/rabbitmq # For persistent data
+  #     - rabbitmq_logs:/var/log/rabbitmq # For persistent logs
+
 
   # redis:
   #   image: redis:7.2-alpine

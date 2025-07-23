@@ -1,5 +1,5 @@
 import os from 'os';
-import { redisClient } from '../db/connectRedis.js';
+import { redisClient } from '../connections/connectRedis.js';
 import mongoose from 'mongoose';
 
 export const getSystemHealth = () => ({

@@ -16,8 +16,8 @@ import {
   GOOGLE_OAUTH_LOGIN_SUCCESS,
   GOOGLE_OAUTH_SIGNUP_SUCCESS,
   SUCCESS
-} from '../constant/responseMessage.js';
-import { EApplicationEnvironment } from '../constant/application.js';
+} from '../constants/responseMessage.js';
+import { EApplicationEnvironment } from '../constants/application.js';
 import { getDomainFromUrl } from '../helpers/generalHelper.js';
 
 export const register = catchAsync(async (req, res, next) => {

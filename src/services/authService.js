@@ -15,7 +15,7 @@ import {
 import { Resendmail } from '../helpers/email.js';
 import { logger } from '../utils/logger.js';
 import { httpError } from '../utils/httpError.js';
-import { EUserRole } from '../constant/application.js';
+import { EUserRole } from '../constants/application.js';
 import {
   ACCOUNT_ALREADY_CONFIRMED,
   ACCOUNT_CONFIRMATION_REQUIRED,
@@ -30,7 +30,7 @@ import {
   NOT_FOUND,
   PASSWORD_MATCHING_WITH_OLD_PASSWORD,
   UNAUTHORIZED
-} from '../constant/responseMessage.js';
+} from '../constants/responseMessage.js';
 import * as authRepository from '../repository/authRepository.js';
 import * as tokenRepository from '../repository/tokenRepository.js';
 import { deleteCache, getHash, setHash } from '../helpers/redisFunctions.js';

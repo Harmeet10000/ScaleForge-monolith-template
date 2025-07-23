@@ -3,6 +3,7 @@ node_modules
 .npm
 .cache
 .eslintcache
+.github/prompts
 
 # Package-lock files
 # package-lock.json

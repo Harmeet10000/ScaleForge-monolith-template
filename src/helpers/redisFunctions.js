@@ -1,6 +1,6 @@
 import { logger } from '../utils/logger.js';
 import { catchAsync } from '../utils/catchAsync.js';
-import { redisClient } from '../db/connectRedis.js';
+import { redisClient } from '../connections/connectRedis.js';
 
 // Use Case | Recommended Redis Type
 // Caching a JWT token or simple API response | String

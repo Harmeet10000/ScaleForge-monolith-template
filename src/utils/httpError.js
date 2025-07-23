@@ -1,5 +1,5 @@
-import { EApplicationEnvironment } from '../constant/application.js';
-import { SOMETHING_WENT_WRONG } from '../constant/responseMessage.js';
+import { EApplicationEnvironment } from '../constants/application.js';
+import { SOMETHING_WENT_WRONG } from '../constants/responseMessage.js';
 import { logger } from './logger.js';
 
 export const httpError = (nextFunc, err, req, errorStatusCode = 500) => {

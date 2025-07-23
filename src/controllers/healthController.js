@@ -7,7 +7,7 @@ import {
   getApplicationHealth,
   getSystemHealth
 } from '../utils/quicker.js';
-import { SUCCESS } from '../constant/responseMessage.js';
+import { SUCCESS } from '../constants/responseMessage.js';
 import { catchAsync } from '../utils/catchAsync.js';
 
 export const self = (req, res) => {

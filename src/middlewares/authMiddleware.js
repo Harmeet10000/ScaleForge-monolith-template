@@ -11,7 +11,7 @@ import {
   TOKEN_INVALID_FOR_IP,
   USER_CHANGED_PASSWORD,
   USER_NO_LONGER_EXISTS
-} from '../constant/responseMessage.js';
+} from '../constants/responseMessage.js';
 
 export const protect = catchAsync(async (req, res, next) => {
   let token;

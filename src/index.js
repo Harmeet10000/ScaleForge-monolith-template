@@ -1,14 +1,14 @@
 import './config/dotenvConfig.js';
 import app from './app.js';
 import mongoose from 'mongoose';
-import connectDB from './db/connectDB.js';
-import { connectRedis, redisClient } from './db/connectRedis.js';
-// import { createConnection, closeConnection } from './db/rabbitMQConnection.js';
-// import { connectKafkaProducer, consumer, producer } from './db/connectKafka.js';
+import connectDB from './connections/connectDB.js';
+import { connectRedis, redisClient } from './connections/connectRedis.js';
+import { createConnection, closeConnection } from './connections/rabbitMQConnection.js';
+// import { connectKafkaProducer, consumer, producer } from './connections/connectKafka.js';
 import { logger } from './utils/logger.js';
 import { catchAsync } from './utils/catchAsync.js';
 
-Promise.all([connectDB(), connectRedis()])
+Promise.all([connectDB(), connectRedis(), createConnection()])
   .then(() => {
     const server = app.listen(process.env.PORT, () => {
       logger.info(
@@ -30,10 +30,10 @@ Promise.all([connectDB(), connectRedis()])
       logger.info('MongoDB disconnected gracefully.');
     });
 
-    // const disconnectRabbitMQ = catchAsync(async () => {
-    //   await closeConnection();
-    //   logger.info('RabbitMQ disconnected gracefully.');
-    // });
+    const disconnectRabbitMQ = catchAsync(async () => {
+      await closeConnection();
+      logger.info('RabbitMQ disconnected gracefully.');
+    });
 
     // const disconnectKafka = catchAsync(async () => {
     //   await producer.disconnect();
@@ -52,8 +52,8 @@ Promise.all([connectDB(), connectRedis()])
 
         await Promise.all([
           disconnectRedis(),
-          disconnectMongo()
-          // disconnectRabbitMQ()
+          disconnectMongo(),
+          disconnectRabbitMQ()
           // disconnectKafka()
         ]);
 
@@ -82,8 +82,8 @@ Promise.all([connectDB(), connectRedis()])
       redisClient.status === 'ready' || redisClient.status === 'connect'
         ? redisClient.quit()
         : Promise.resolve(),
-      mongoose.connection.readyState === 1 ? mongoose.disconnect() : Promise.resolve()
-      // closeConnection().catch(() => Promise.resolve())
+      mongoose.connection.readyState === 1 ? mongoose.disconnect() : Promise.resolve(),
+      closeConnection().catch(() => Promise.resolve())
       // disconnectKafka().catch(() => Promise.resolve())
     ]).finally(() => {
       process.exit(1);

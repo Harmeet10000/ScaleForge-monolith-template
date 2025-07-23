@@ -1,7 +1,7 @@
 import util from 'util';
 import 'winston-mongodb';
 import { createLogger, format, transports } from 'winston';
-import { EApplicationEnvironment } from '../constant/application.js';
+import { EApplicationEnvironment } from '../constants/application.js';
 import { red, blue, yellow, green, magenta, cyan } from 'colorette';
 // import { ConsoleTransportInstance, FileTransportInstance } from 'winston/lib/winston/transports'
 // import { MongoDBTransportInstance } from 'winston-mongodb'

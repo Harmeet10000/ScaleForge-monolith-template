@@ -1,4 +1,4 @@
-import { EApplicationEnvironment } from '../constant/application.js';
+import { EApplicationEnvironment } from '../constants/application.js';
 import { logger } from './logger.js';
 
 export const httpResponse = (req, res, responseStatusCode, responseMessage, data = null) => {
