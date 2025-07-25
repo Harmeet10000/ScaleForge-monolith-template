@@ -1,5 +1,4 @@
 import express from 'express';
-import helmet from 'helmet';
 import mongoSanitize from 'express-mongo-sanitize';
 import compression from 'compression';
 import xss from 'xss-clean';

@@ -22,8 +22,10 @@ const connectDB = async () => {
     const conn = await mongoose.connect(process.env.DATABASE, mongoOptions);
 
     logger.info(`MongoDB Connected: ${conn.connection.host}`, {
-      readyState: conn.connection.readyState,
-      poolSize: mongoOptions.maxPoolSize
+      meta: {
+        readyState: conn.connection.readyState,
+        poolSize: mongoOptions.maxPoolSize
+      }
     });
 
     // Enhanced connection event handling

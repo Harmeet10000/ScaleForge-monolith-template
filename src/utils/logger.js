@@ -52,7 +52,7 @@ const consoleTransport = () => {
   if (process.env.NODE_ENV === EApplicationEnvironment.DEVELOPMENT) {
     return [
       new transports.Console({
-        level: 'debug', // Changed from 'info' to 'debug' to allow debug level logs
+        level: process.env.LOG_LEVEL || 'debug',
         format: format.combine(format.timestamp(), consoleLogFormat)
       })
     ];
@@ -138,10 +138,3 @@ export const logger = createLogger({
   },
   transports: [...FileTransport(), ...consoleTransport()]
 });
-
-// Add explicit debug method to logger if not already present
-if (!logger.debug) {
-  logger.debug = (message, meta = {}) => {
-    logger.log('debug', message, { meta });
-  };
-}
