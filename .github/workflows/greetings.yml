@@ -33,9 +33,9 @@ jobs:
           Our maintainers will review your issue soon. Feel free to join our discussions and contribute to making this project better! 🚀
 
           **Useful Resources:**
-          - 📖 [Documentation](https://github.com/harmeet10000/auth-service#readme)
-          - 🐛 [Bug Report Template](.github/ISSUE_TEMPLATE/bug_report.yml)
-          - ✨ [Feature Request Template](.github/ISSUE_TEMPLATE/feature_request.yml)
+          - 📖 [Documentation](https://github.com/harmeet10000/ts-backend-production-template#readme)
+          - 🐛 [Bug Report Template](https://github.com/Harmeet10000/ts-backend-production-template/tree/js-mongoDB/.github/ISSUE_TEMPLATE/bug_report.yml)
+          - ✨ [Feature Request Template](https://github.com/Harmeet10000/ts-backend-production-template/tree/js-mongoDB/.github/ISSUE_TEMPLATE/feature_request.yml)
 
         pr-message: |
           🎉 **Congratulations on your first Pull Request!**
@@ -43,7 +43,7 @@ jobs:
           Thank you for contributing to the Production-Grade Auth Template! Your contribution is valuable to our community.
 
           **Please ensure your PR:**
-          - [ ] Follows our [coding guidelines](.amazonq/rules/Q_instructions.md)
+          - [ ] Follows our [coding guidelines](.github/copilot-instructions.md)
           - [ ] Includes appropriate tests
           - [ ] Updates documentation if needed
           - [ ] Has a clear, descriptive title
