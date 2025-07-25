@@ -5,12 +5,12 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { httpResponse } from '../utils/httpResponse.js';
 import RedisStoreImport from 'rate-limit-redis';
-const RedisStore = RedisStoreImport.default || RedisStoreImport;
 import rateLimit from 'express-rate-limit';
 import { redisClient } from '../connections/connectRedis.js';
 import promBundle from 'express-prom-bundle';
 import helmet from 'helmet';
 // import { register } from 'prom-client';
+const RedisStore = RedisStoreImport.default || RedisStoreImport;
 
 export const correlationIdMiddleware = (req, res, next) => {
   req.correlationId = nanoid();
@@ -106,3 +106,10 @@ export const metricsMiddleware = promBundle({
     }
   }
 });
+
+export const corsOptions = {
+  origin: [process.env.FRONTEND_URL],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Authorization', 'Content-Type', 'X-Requested-With', 'Accept', 'Origin'],
+  credentials: true
+};

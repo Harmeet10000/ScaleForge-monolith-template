@@ -10,6 +10,7 @@ import { httpError } from './utils/httpError.js';
 import globalErrorHandler from './middlewares/globalErrorHandler.js';
 import {
   correlationIdMiddleware,
+  corsOptions,
   limiter,
   metricsMiddleware,
   securityHeaders,
@@ -59,16 +60,19 @@ app.use(xss());
 // Prevent parameter pollution
 app.use(
   hpp({
-    whitelist: []
+    whitelist: [
+      // 'sort',
+      // 'fields',
+      // 'page',
+      // 'limit',
+      // 'filter',
+      // 'search',
+      // 'category',
+      // 'tags',
+      // 'status'
+    ]
   })
 );
-
-const corsOptions = {
-  origin: [process.env.FRONTEND_URL],
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Authorization', 'Content-Type'],
-  credentials: true
-};
 
 app.use(cors(corsOptions));
 
