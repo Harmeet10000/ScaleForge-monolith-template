@@ -18,6 +18,7 @@ import {
 } from './middlewares/serverMiddleware.js';
 import authRoutes from './routes/authRoutes.js';
 import healthRoutes from './routes/healthRoutes.js';
+import permissionsRoutes from './routes/permissionsRoutes.js';
 
 const app = express();
 
@@ -113,6 +114,7 @@ app.get('/', (req, res) => {
 });
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/health', healthRoutes);
+app.use('/api/v1/permissions', permissionsRoutes);
 // app.use('/api/v1/rabbitmq', rabbitmqRoutes);
 
 // 4) CATCHES ALL ROUTES THAT ARE NOT DEFINED

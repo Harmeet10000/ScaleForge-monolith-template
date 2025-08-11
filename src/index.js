@@ -1,48 +1,21 @@
 import './config/dotenvConfig.js';
 import app from './app.js';
 import mongoose from 'mongoose';
-import connectDB from './connections/connectDB.js';
+import { connectDB } from './connections/connectDB.js';
 import { connectRedis, redisClient } from './connections/connectRedis.js';
 import { createConnection, closeConnection } from './connections/rabbitMQConnection.js';
+import { connectOFGA } from './connections/connectOpenFGA.js';
 // import { connectKafkaProducer, consumer, producer } from './connections/connectKafka.js';
 import { logger } from './utils/logger.js';
 import { catchAsync } from './utils/catchAsync.js';
 
-Promise.all([connectDB(), connectRedis(), createConnection()])
+Promise.all([connectDB(), connectRedis(), createConnection(), connectOFGA()])
   .then(() => {
     const server = app.listen(process.env.PORT, () => {
       logger.info(
         `Server is running at port: ${process.env.PORT}, in ${process.env.NODE_ENV} mode`
       );
     });
-
-    const disconnectRedis = catchAsync(async () => {
-      if (redisClient.status === 'ready' || redisClient.status === 'connect') {
-        await redisClient.quit();
-        logger.info('Redis client disconnected gracefully.');
-      } else {
-        logger.warn('Redis client not connected or already disconnected.');
-      }
-    });
-
-    const disconnectMongo = catchAsync(async () => {
-      await mongoose.disconnect();
-      logger.info('MongoDB disconnected gracefully.');
-    });
-
-    const disconnectRabbitMQ = catchAsync(async () => {
-      await closeConnection();
-      logger.info('RabbitMQ disconnected gracefully.');
-    });
-
-    // const disconnectKafka = catchAsync(async () => {
-    //   await producer.disconnect();
-    //   logger.info('Kafka producer disconnected');
-    //   await consumer.destroy();
-    //   logger.info('Kafka consumer destroyed');
-    //   // await disconnectAdmin();
-    //   // logger.info('Kafka Admin client disconnected');
-    // });
 
     // Graceful shutdown function
     const gracefulShutdown = async (signal) => {
@@ -89,3 +62,36 @@ Promise.all([connectDB(), connectRedis(), createConnection()])
       process.exit(1);
     });
   });
+
+const disconnectRedis = catchAsync(async () => {
+  if (redisClient.status === 'ready' || redisClient.status === 'connect') {
+    await redisClient.quit();
+    logger.info('Redis client disconnected gracefully.');
+  } else {
+    logger.warn('Redis client not connected or already disconnected.');
+  }
+});
+
+const disconnectMongo = catchAsync(async () => {
+  await mongoose.disconnect();
+  logger.info('MongoDB disconnected gracefully.');
+});
+
+const disconnectRabbitMQ = catchAsync(async () => {
+  await closeConnection();
+  logger.info('RabbitMQ disconnected gracefully.');
+});
+
+const initializeOpenFGA = catchAsync(async () => {
+  await openFGAService.initialize();
+  logger.info('OpenFGA initialized successfully.');
+});
+
+// const disconnectKafka = catchAsync(async () => {
+//   await producer.disconnect();
+//   logger.info('Kafka producer disconnected');
+//   await consumer.destroy();
+//   logger.info('Kafka consumer destroyed');
+//   // await disconnectAdmin();
+//   // logger.info('Kafka Admin client disconnected');
+// });

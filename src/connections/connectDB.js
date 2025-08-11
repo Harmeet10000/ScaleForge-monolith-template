@@ -2,7 +2,7 @@ import mongoose from 'mongoose';
 import { logger } from '../utils/logger.js';
 import { catchAsync } from '../utils/catchAsync.js';
 
-const connectDB = catchAsync(async () => {
+export const connectDB = catchAsync(async () => {
   const mongoOptions = {
     maxPoolSize: process.env.DB_POOL_SIZE || 10,
     minPoolSize: 2,
@@ -47,5 +47,3 @@ const connectDB = catchAsync(async () => {
 
   return true;
 });
-
-export default connectDB;

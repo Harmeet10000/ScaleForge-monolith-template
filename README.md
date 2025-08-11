@@ -155,7 +155,7 @@
 
 ```bash
 git clone https://github.com/yourusername/production-grade-auth-template.git
-cd production-grade-auth-template/backend
+cd production-grade-auth-template
 ```
 
 2. **Install dependencies**
@@ -166,7 +166,7 @@ npm install
 
 3. **Set up environment variables**
 
-Create a `.env.development` file in the root directory with the following variables:
+Create a `.env.dev` file in the root directory with the following variables:
 
 ```env
 # Server
@@ -217,7 +217,7 @@ npm run dev
 
 ```bash
 npm run build
-npm start
+npm run start
 ```
 
 </details>
@@ -230,14 +230,14 @@ npm start
 
 ```bash
 docker build -t auth-service-dev -f docker/dev/Dockerfile .
-docker run -p 3000:3000 --env-file .env.development auth-service-dev
+docker run -p 3000:3000 --env-file .env.dev auth-service-dev
 ```
 
 #### Production
 
 ```bash
 docker build -t auth-service-prod -f docker/prod/Dockerfile .
-docker run -p 3000:3000 --env-file .env.production auth-service-prod
+docker run -p 3000:3000 --env-file .env.prod auth-service-prod
 ```
 
 </details>

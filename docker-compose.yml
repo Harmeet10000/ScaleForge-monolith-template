@@ -7,6 +7,8 @@ services:
       dockerfile: docker/dev.Dockerfile
     # depends_on:
     #   - mongodb
+    #   - redis
+    #   - openfga
     #   - rabbitmq
     ports:
       - '8000:8000'
@@ -17,14 +19,63 @@ services:
       - ./src:/usr/src/backend-app/src
       - ./package.json:/usr/src/backend-app/package.json
       - ./package-lock.json:/usr/src/backend-app/package-lock.json
+
+
   # mongodb:
   #   image: mongo:7.0
   #   container_name: mongodb
   #   restart: unless-stopped
   #   ports:
   #     - '27017:27017'
+  #   environment:
+  #     MONGO_INITDB_ROOT_USERNAME: admin
+  #     MONGO_INITDB_ROOT_PASSWORD: password123
   #   volumes:
   #     - mongo_data:/data/db
+
+
+  # redis:
+  #   image: redis:7.2-alpine
+  #   container_name: redis
+  #   restart: unless-stopped
+  #   ports:
+  #     - '6379:6379'
+  #   command: redis-server --requirepass redis123
+  #   volumes:
+  #     - redis_data:/data
+
+
+  # openfga:
+  #   image: openfga/openfga:latest
+  #   container_name: openfga
+  #   restart: unless-stopped
+  #   ports:
+  #     - '8080:8080'
+  #   environment:
+  #     - OPENFGA_DATASTORE_ENGINE=postgres
+  #     - OPENFGA_DATASTORE_URI=postgres://openfga:openfga123@postgres:5432/openfga?sslmode=disable
+  #     - OPENFGA_LOG_LEVEL=info
+  #     - OPENFGA_PLAYGROUND_ENABLED=true
+  #     - OPENFGA_PLAYGROUND_PORT=3000
+  #     - OPENFGA_HTTP_ADDR=0.0.0.0:8080
+  #     - OPENFGA_GRPC_ADDR=0.0.0.0:8081
+  #   depends_on:
+  #     - postgres
+
+
+  # postgres:
+  #   image: postgres:15-alpine
+  #   container_name: postgres
+  #   restart: unless-stopped
+  #   ports:
+  #     - '5432:5432'
+  #   environment:
+  #     POSTGRES_USER: openfga
+  #     POSTGRES_PASSWORD: openfga123
+  #     POSTGRES_DB: openfga
+  #   volumes:
+  #     - postgres_data:/var/lib/postgresql/data
+
 
   # rabbitmq:
   #   image: rabbitmq:3-management
@@ -37,28 +88,20 @@ services:
   #     RABBITMQ_DEFAULT_USER: myuser
   #     RABBITMQ_DEFAULT_PASS: mypassword
   #   volumes:
-  #     - rabbitmq_data:/var/lib/rabbitmq # For persistent data
-  #     - rabbitmq_logs:/var/log/rabbitmq # For persistent logs
+  #     - rabbitmq_data:/var/lib/rabbitmq
+  #     - rabbitmq_logs:/var/log/rabbitmq
 
-
-  # redis:
-  #   image: redis:7.2-alpine
-  #   container_name: redis
-  #   restart: unless-stopped
-  #   ports:
-  #     - '6379:6379'
-  #   volumes:
-  #     - redis_data:/data
 
   # prometheus:
   #   image: prom/prometheus
   #   container_name: prometheus
   #   volumes:
-  #     - ./prometheus.yml:/etc/prometheus/prometheus.yml
+  #     - ./src/config/prometheus.yml:/etc/prometheus/prometheus.yml
   #   ports:
   #     - '9091:9090'
   #   depends_on:
   #     - auth-service
+
 
   # grafana:
   #   image: grafana/grafana
@@ -68,8 +111,14 @@ services:
   #   depends_on:
   #     - prometheus
 
+
 volumes:
   mongo_data:
   redis_data:
+  postgres_data:
   rabbitmq_data:
   rabbitmq_logs:
+
+networks:
+  auth-network:
+    driver: bridge
