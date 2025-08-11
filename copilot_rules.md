@@ -297,38 +297,6 @@ if (!user) {
 await deleteCache('user', ['id', userId]);
 ```
 
-## 🔄 API Response Standards
-
-### Successful Response
-```javascript
-{
-  "success": true,
-  "statusCode": 200,
-  "message": "The operation has been successful",
-  "data": { /* response data */ },
-  "request": {
-    "method": "GET",
-    "url": "/api/v1/users",
-    "correlationId": "uuid-here"
-  }
-}
-```
-
-### Error Response
-```javascript
-{
-  "success": false,
-  "statusCode": 400,
-  "message": "Validation error message",
-  "data": null,
-  "request": {
-    "method": "POST",
-    "url": "/api/v1/auth/login"
-  },
-  "trace": { /* stack trace in development only */ }
-}
-```
-
 ## 🧪 Testing Guidelines
 
 ### Test Structure
@@ -358,63 +326,6 @@ describe('AuthController', () => {
 4. Error handling tests
 5. Security tests (auth, rate limiting)
 
-## 📝 Environment Variables
-
-### Required Variables
-```env
-# Server Configuration
-NODE_ENV=development|production
-PORT=3000
-SERVER_URL=http://localhost:3000
-
-# Database
-DATABASE_URL=mongodb://localhost:27017/auth-service
-REDIS_URL=redis://localhost:6379
-
-# JWT Secrets
-ACCESS_TOKEN_SECRET=your-access-token-secret
-REFRESH_TOKEN_SECRET=your-refresh-token-secret
-ACCESS_TOKEN_EXPIRY=900    # 15 minutes
-REFRESH_TOKEN_EXPIRY=604800 # 7 days
-
-# Email Service
-EMAIL_HOST=smtp.example.com
-EMAIL_PORT=587
-EMAIL_USER=your-email@example.com
-EMAIL_PASSWORD=your-password
-EMAIL_FROM=noreply@yourservice.com
-
-# Frontend
-FRONTEND_URL=http://localhost:5173
-
-# AWS S3 (Optional)
-S3_BACKUP_ENABLED=true
-S3_BUCKET_NAME=your-bucket
-AWS_REGION=us-east-1
-S3_PREFIX=mongodb-backups/
-```
-
-## 🚀 Deployment Checklist
-
-### Pre-deployment
-- [ ] Run linting: `npm run lint`
-- [ ] Run tests: `npm test`
-- [ ] Build production bundle: `npm run build`
-- [ ] Update environment variables
-- [ ] Check security headers
-- [ ] Verify rate limiting
-- [ ] Test error handling
-
-### Docker Deployment
-```bash
-# Development
-docker build -t auth-service-dev -f docker/dev.Dockerfile .
-docker run -p 3000:3000 --env-file .env.dev auth-service-dev
-
-# Production
-docker build -t auth-service-prod -f docker/prod.Dockerfile .
-docker run -p 3000:3000 --env-file .env.prod auth-service-prod
-```
 
 ## 🤖 Agentic Coding Best Practices
 
@@ -425,7 +336,7 @@ docker run -p 3000:3000 --env-file .env.prod auth-service-prod
 4. **Implement error handling** with catchAsync
 5. **Add logging** for debugging
 6. **Update tests** for new functionality
-7. **Document API changes** in Swagger
+7. **Document API changes** in Swagger or Postman
 
 ### Code Generation Guidelines
 ```javascript
@@ -454,30 +365,6 @@ export const badExample = async (req, res) => {
 3. **Keep commits atomic** - one logical change per commit
 4. **Update documentation** inline with code changes
 5. **Run full test suite** before committing
-
-### Performance Considerations
-```javascript
-// ✅ Use caching for frequently accessed data
-const cachedData = await getFromCache(key);
-if (cachedData) return cachedData;
-
-// ✅ Use database indexing
-schema.index({ email: 1, createdAt: -1 });
-
-// ✅ Use lean() for read-only queries
-const users = await User.find().lean();
-
-// ✅ Implement pagination
-const page = parseInt(req.query.page) || 1;
-const limit = parseInt(req.query.limit) || 10;
-const skip = (page - 1) * limit;
-
-// ✅ Use Promise.all for parallel operations
-const [users, posts] = await Promise.all([
-  User.find(),
-  Post.find()
-]);
-```
 
 ### Logging Standards
 ```javascript

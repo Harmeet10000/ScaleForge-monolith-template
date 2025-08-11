@@ -1,4 +1,4 @@
-import * as policyManager from '../services/policyManager.js';
+import * as policyManager from '../services/permissionService.js';
 import { httpError } from '../utils/httpError.js';
 import { logger } from '../utils/logger.js';
 

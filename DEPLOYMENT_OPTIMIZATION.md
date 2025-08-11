@@ -18,6 +18,7 @@
 12. also add a search engine like Algolia or Elasticsearch/Postgres Extensions for better search capabilities
 13. check performance/stress testing
 14. add SAGA pattern for managing complex workflows and state transitions
+15. make AI-driven features for enhanced user experience and personalization using Gemini API
 
 **Current Architecture:**
 ```

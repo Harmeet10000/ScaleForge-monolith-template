@@ -1,4 +1,4 @@
-import * as policyManager from '../services/policyManager.js';
+import * as policyManager from '../services/permissionService.js';
 import { httpResponse } from '../utils/httpResponse.js';
 import { httpError } from '../utils/httpError.js';
 import { catchAsync } from '../utils/catchAsync.js';

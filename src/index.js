@@ -82,11 +82,6 @@ const disconnectRabbitMQ = catchAsync(async () => {
   logger.info('RabbitMQ disconnected gracefully.');
 });
 
-const initializeOpenFGA = catchAsync(async () => {
-  await openFGAService.initialize();
-  logger.info('OpenFGA initialized successfully.');
-});
-
 // const disconnectKafka = catchAsync(async () => {
 //   await producer.disconnect();
 //   logger.info('Kafka producer disconnected');

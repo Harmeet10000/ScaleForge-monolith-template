@@ -1,13 +1,7 @@
-import { connectOFGA } from '../connections/connectOpenFGA.js';
 import { logger } from '../utils/logger.js';
+import { catchAsync } from '../utils/catchAsync.js';
 
-let client = null;
-let authorizationModelId = null;
-
-export const initialize = async () => {
-  client = await connectOFGA();
-  await setupAuthorizationModel();
-};
+const client = null;
 
 // Define the authorization model schema
 // eslint-disable-next-line arrow-body-style
@@ -154,165 +148,92 @@ export const getAuthorizationModel = () => {
   };
 };
 
-export const setupAuthorizationModel = async () => {
-  try {
-    const model = getAuthorizationModel();
-    const response = await client.writeAuthorizationModel(model);
-    authorizationModelId = response.authorization_model_id;
-    logger.info(`Authorization model created: ${authorizationModelId}`);
-    return authorizationModelId;
-  } catch (error) {
-    logger.error('Failed to setup authorization model:', error);
-    throw error;
-  }
-};
-
 // Generic method to write relationship tuples
-export const writeRelationship = async (user, relation, object, objectType) => {
-  try {
-    const tuple = {
-      user: `user:${user}`,
-      relation,
-      object: `${objectType}:${object}`
-    };
-
-    await client.write({
-      writes: [tuple]
-    });
-
-    logger.info(`Relationship written: ${tuple.user} ${relation} ${tuple.object}`);
-    return true;
-  } catch (error) {
-    logger.error('Failed to write relationship:', error);
-    throw error;
-  }
-};
+export const writeRelationship = catchAsync(async (user, relation, object, objectType) => {
+  const tuple = {
+    user: `user:${user}`,
+    relation,
+    object: `${objectType}:${object}`
+  };
+  await client.write({ writes: [tuple] });
+  logger.info(`Relationship written: ${tuple.user} ${relation} ${tuple.object}`);
+  return true;
+});
 
 // Generic method to delete relationship tuples
-export const deleteRelationship = async (user, relation, object, objectType) => {
-  try {
-    const tuple = {
-      user: `user:${user}`,
-      relation,
-      object: `${objectType}:${object}`
-    };
-
-    await client.write({
-      deletes: [tuple]
-    });
-
-    logger.info(`Relationship deleted: ${tuple.user} ${relation} ${tuple.object}`);
-    return true;
-  } catch (error) {
-    logger.error('Failed to delete relationship:', error);
-    throw error;
-  }
-};
+export const deleteRelationship = catchAsync(async (user, relation, object, objectType) => {
+  const tuple = {
+    user: `user:${user}`,
+    relation,
+    object: `${objectType}:${object}`
+  };
+  await client.write({ deletes: [tuple] });
+  logger.info(`Relationship deleted: ${tuple.user} ${relation} ${tuple.object}`);
+  return true;
+});
 
 // Generic method to check authorization
-export const check = async (user, relation, object, objectType) => {
-  try {
-    const response = await client.check({
-      tuple_key: {
-        user: `user:${user}`,
-        relation,
-        object: `${objectType}:${object}`
-      }
-    });
-
-    return response.allowed;
-  } catch (error) {
-    logger.error('Failed to check authorization:', error);
-    throw error;
-  }
-};
+export const check = catchAsync(async (user, relation, object, objectType) => {
+  const response = await client.check({
+    tuple_key: {
+      user: `user:${user}`,
+      relation,
+      object: `${objectType}:${object}`
+    }
+  });
+  return response.allowed;
+});
 
 // Batch operations for better performance
-export const batchWriteRelationships = async (relationships) => {
-  try {
-    const tuples = relationships.map(({ user, relation, object, objectType }) => ({
-      user: `user:${user}`,
-      relation,
-      object: `${objectType}:${object}`
-    }));
+export const batchWriteRelationships = catchAsync(async (relationships) => {
+  const tuples = relationships.map(({ user, relation, object, objectType }) => ({
+    user: `user:${user}`,
+    relation,
+    object: `${objectType}:${object}`
+  }));
+  await client.write({ writes: tuples });
+  logger.info(`Batch relationships written: ${tuples.length} tuples`);
+  return true;
+});
 
-    await client.write({
-      writes: tuples
-    });
-
-    logger.info(`Batch relationships written: ${tuples.length} tuples`);
-    return true;
-  } catch (error) {
-    logger.error('Failed to batch write relationships:', error);
-    throw error;
-  }
-};
-
-export const batchDeleteRelationships = async (relationships) => {
-  try {
-    const tuples = relationships.map(({ user, relation, object, objectType }) => ({
-      user: `user:${user}`,
-      relation,
-      object: `${objectType}:${object}`
-    }));
-
-    await client.write({
-      deletes: tuples
-    });
-
-    logger.info(`Batch relationships deleted: ${tuples.length} tuples`);
-    return true;
-  } catch (error) {
-    logger.error('Failed to batch delete relationships:', error);
-    throw error;
-  }
-};
+export const batchDeleteRelationships = catchAsync(async (relationships) => {
+  const tuples = relationships.map(({ user, relation, object, objectType }) => ({
+    user: `user:${user}`,
+    relation,
+    object: `${objectType}:${object}`
+  }));
+  await client.write({ deletes: tuples });
+  logger.info(`Batch relationships deleted: ${tuples.length} tuples`);
+  return true;
+});
 
 // List objects a user has access to
-export const listObjects = async (user, relation, objectType) => {
-  try {
-    const response = await client.listObjects({
-      user: `user:${user}`,
-      relation,
-      type: objectType
-    });
-
-    return response.objects || [];
-  } catch (error) {
-    logger.error('Failed to list objects:', error);
-    throw error;
-  }
-};
+export const listObjects = catchAsync(async (user, relation, objectType) => {
+  const response = await client.listObjects({
+    user: `user:${user}`,
+    relation,
+    type: objectType
+  });
+  return response.objects || [];
+});
 
 // List users who have access to an object
-export const listUsers = async (relation, object, objectType) => {
-  try {
-    const response = await client.listUsers({
-      object: {
-        type: objectType,
-        id: object
-      },
-      relation,
-      user_filters: [{ type: 'user' }]
-    });
-
-    return response.users || [];
-  } catch (error) {
-    logger.error('Failed to list users:', error);
-    throw error;
-  }
-};
+export const listUsers = catchAsync(async (relation, object, objectType) => {
+  const response = await client.listUsers({
+    object: {
+      type: objectType,
+      id: object
+    },
+    relation,
+    user_filters: [{ type: 'user' }]
+  });
+  return response.users || [];
+});
 
 // Read all relationships for debugging
-export const readRelationships = async (
-  user = null,
-  relation = null,
-  object = null,
-  objectType = null
-) => {
-  try {
+export const readRelationships = catchAsync(
+  async (user = null, relation = null, object = null, objectType = null) => {
     const filter = {};
-
     if (user) {
       filter.user = `user:${user}`;
     }
@@ -322,26 +243,7 @@ export const readRelationships = async (
     if (object && objectType) {
       filter.object = `${objectType}:${object}`;
     }
-
     const response = await client.read(filter);
     return response.tuples || [];
-  } catch (error) {
-    logger.error('Failed to read relationships:', error);
-    throw error;
   }
-};
-
-// Backward compatibility object
-export const openFGAService = {
-  initialize,
-  getAuthorizationModel,
-  setupAuthorizationModel,
-  writeRelationship,
-  deleteRelationship,
-  check,
-  batchWriteRelationships,
-  batchDeleteRelationships,
-  listObjects,
-  listUsers,
-  readRelationships
-};
+);
