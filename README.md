@@ -154,7 +154,7 @@
 1. **Clone the repository**
 
 ```bash
-git clone https://github.com/yourusername/production-grade-auth-template.git
+git clone https://github.com/Harmeet10000/production-grade-auth-template.git
 cd production-grade-auth-template
 ```
 
@@ -172,7 +172,7 @@ Create a `.env.dev` file in the root directory with the following variables:
 # Server
 NODE_ENV=development
 PORT=3000
-SERVER_URL=http://localhost:3000
+SERVER_URL=http://localhost:8000
 
 # Database
 DATABASE_URL=mongodb://localhost:27017/auth-service
@@ -229,15 +229,25 @@ npm run start
 #### Development
 
 ```bash
-docker build -t auth-service-dev -f docker/dev/Dockerfile .
-docker run -p 3000:3000 --env-file .env.dev auth-service-dev
+docker build -t auth-service-dev -f docker/dev.Dockerfile .
+docker run -p 8000:8000 --env-file .env.dev auth-service-dev
 ```
 
 #### Production
 
 ```bash
+docker build -t auth-service-prod -f docker/prod.Dockerfile .
+docker run -p 8000:8000 --env-file .env.prod auth-service-prod
+```
+
+</details>
+
+<details>
+<summary><b>📝 API Documentation</b></summary>
+<br/>
+```bash
 docker build -t auth-service-prod -f docker/prod/Dockerfile .
-docker run -p 3000:3000 --env-file .env.prod auth-service-prod
+docker run -p 8000:8000 --env-file .env.prod auth-service-prod
 ```
 
 </details>
@@ -249,7 +259,7 @@ docker run -p 3000:3000 --env-file .env.prod auth-service-prod
 Once the server is running, access the Swagger documentation at:
 
 ```
-http://localhost:3000/api-docs
+http://localhost:8000/api-docs
 ```
 
 </details>
@@ -279,7 +289,7 @@ backend/
 │   ├── config/            # Configuration files
 │   ├── constant/          # Constants and enums
 │   ├── controllers/       # Request handlers
-│   ├── db/                # Database connection modules
+│   ├── connections/       # Database and more connection modules
 │   ├── helpers/           # Helper utilities
 │   ├── middlewares/       # Express middlewares
 │   ├── models/            # Mongoose models
@@ -433,7 +443,7 @@ This project is licensed under the ISC License - see the LICENSE file for detail
 
 ### ⭐ Star this repository if you find it useful! ⭐
 
-Created with ❤️ by [Harmeet Singh](https://github.com/yourusername)
+Created with ❤️ by [Harmeet Singh](https://github.com/Harmeet10000)
 
 <a href="#top">⬆️ Back to top ⬆️</a>
 

@@ -6,8 +6,8 @@ import {
   authorizeProject,
   authorizeDocument,
   requireOwnership
-} from '../middlewares/authorizationMiddleware.js';
-// import { protect } from '../middlewares/authMiddleware.js';
+} from '../middlewares/authRMiddleware.js';
+// import { protect } from '../middlewares/authNMiddleware.js';
 
 const router = Router();
 

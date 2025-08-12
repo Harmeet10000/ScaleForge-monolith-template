@@ -487,7 +487,3 @@ export const customMiddleware = (options = {}) => {
 - [JWT Best Practices](https://tools.ietf.org/html/rfc8725)
 
 ---
-
-**Last Updated**: January 2025
-**Maintained By**: Development Team
-**Version**: 1.0.0

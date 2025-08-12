@@ -26,9 +26,9 @@ services:
     container_name: loki
     ports:
       - "3100:3100"
-    command: -config.file=/etc/loki/local-config.yaml
+    command: -config.file=/etc/loki/config.yaml
     volumes:
-      - ./src/config/loki-config.yaml:/etc/loki/local-config.yaml
+      - ./src/config/loki-config.yaml:/etc/loki/config.yaml 
     restart: unless-stopped
 
   promtail:
