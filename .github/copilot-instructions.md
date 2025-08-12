@@ -9,7 +9,7 @@
     <directory-organization>
     ```
     src/
-    ├── connections/     # Database and external service connections (e.g., Redis, Mongoose)
+    ├── connections/     # Database and external service connections (e.g., Redis, Mongoose, OpenFGA)
     ├── constants/       # Application constants and enums
     ├── controllers/     # Request handlers (thin layer)
     ├── helpers/         # Utility functions for specific services
@@ -107,20 +107,46 @@
     </database>
 
     <caching>
-        - Use Redis for caching frequently accessed data.
-        - The pattern should be:
-            1. Check for data in the Redis cache first.
+        - **General Pattern**:
+            1. Check for data in the Redis cache first using `getCache` or `getHash`.
             2. If cache miss, fetch data from the database (via repository).
-            3. Store the result in Redis with a reasonable expiry time (TTL).
-            4. When data is updated or deleted, invalidate/clear the corresponding Redis cache key.
+            3. Store the result in Redis using `setCache` or `setHash` with a reasonable expiry time (TTL).
+            4. When data is updated or deleted, invalidate/clear the corresponding Redis cache key(s) using `deleteCache` or `deleteHash`.
+        - **Redis Data Types and Use Cases**: Use the appropriate Redis data type for the task at hand. The functions in `src/helpers/redisFunctions.js` are designed for these specific use cases.
+            - **String (`setCache`, `getCache`)**:
+                - **When to Use**: Most basic and common. Use for caching single values, simple objects (as JSON), or JWT tokens.
+            - **Hash (`setHash`, `getHash`)**:
+                - **When to Use**: Caching objects with multiple fields, like a user profile (`id`, `name`, `email`). Great for partial reads/updates.
+            - **List (`pushToList`, `getListItems`)**:
+                - **When to Use**: Caching ordered sequences of items, like a list of recent notifications or an activity feed.
+            - **Set (e.g., `addToSet`, `getSetMembers`)**:
+                - **When to Use**: Caching unique, unordered items (no duplicates), like online user IDs or a user's permissions.
+            - **Sorted Set (e.g., `addToSortedSet`, `getSortedSetRange`)**:
+                - **When to Use**: Caching items with a score for ranking, like leaderboards or trending topics.
     </caching>
 
     <security>
-        - Use the `authMiddleware` for protecting routes that require authentication and authorization.
+        - Use the `authNMiddleware` for protecting routes that require authentication.
+        - Use the `authRMiddleware` for fine-grained authorization checks.
         - Never store secrets or sensitive data directly in the code. Use environment variables.
         - Always validate and sanitize user input to prevent injection attacks.
         - Follow OWASP Top 10 best practices.
     </security>
+
+    <authorization-openfga>
+        - **Overview**: OpenFGA is used for all fine-grained authorization checks. It manages relationships between users and objects.
+        - **Setup**: The OpenFGA service runs in Docker and is accessible via the `OPENFGA_API_URL` environment variable (e.g., `http://openfga:8080`).
+        - **Authorization Model**: The authorization model, defining types and relations, is located at `src/config/openfga/model.json`.
+        - **Client**: The OpenFGA client is initialized in `src/connections/connectOpenFGA.js` and should be used for all interactions.
+        - **Tuples**: Permissions are represented as tuples: `{ user, relation, object }`.
+            - `user`: Must be in the format `type:id` (e.g., `user:60c7c...`).
+            - `relation`: The permission being granted (e.g., `reader`, `writer`, `owner`).
+            - `object`: The resource being accessed, in the format `type:id` (e.g., `document:abc...`).
+        - **Core Operations**:
+            - **Checking Permissions**: Use `checkPolicy({ user, relation, object })` before allowing a user to perform an action on a resource. This should be done in the service layer.
+            - **Granting Permissions**: Use `writePolicy({ user, relation, object })` to create a relationship when a user is granted access.
+            - **Revoking Permissions**: Use `removePolicy({ user, relation, object })` to delete a relationship when access is revoked.
+    </authorization-openfga>
 
     <environment>
         - Use the `dotenv` package to manage environment variables.
