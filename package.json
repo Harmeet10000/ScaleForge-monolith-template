@@ -31,12 +31,12 @@
 	"license": "ISC",
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/Harmeet10000/ts-backend-production-template.git"
+		"url": "git+https://github.com/Harmeet10000/production-grade-auth-template.git"
 	},
 	"bugs": {
-		"url": "https://github.com/Harmeet10000/ts-backend-production-template/issues"
+		"url": "https://github.com/Harmeet10000/production-grade-auth-template/issues"
 	},
-	"homepage": "https://github.com/Harmeet10000/ts-backend-production-template#readme",
+	"homepage": "https://github.com/Harmeet10000/production-grade-auth-template#readme",
 	"lint-staged": {
 		"*.js": [
 			"npm run lint:fix",

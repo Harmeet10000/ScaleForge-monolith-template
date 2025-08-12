@@ -96,12 +96,6 @@ app.use(
   })
 );
 
-// Prometheus metrics endpoint
-// app.get('/metrics', async (req, res) => {u
-//   res.set('Content-Type', register.contentType);
-//   res.end(await register.metrics());
-// });
-
 app.use(correlationIdMiddleware);
 
 // Endpoint to serve the swagger.json file
@@ -112,6 +106,7 @@ app.get('/swagger.json', (req, res) => {
 app.get('/', (req, res) => {
   res.status(200).json({ message: 'Welcome to the Auth Service API 🚀.' });
 });
+
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/health', healthRoutes);
 app.use('/api/v1/permissions', permissionsRoutes);
