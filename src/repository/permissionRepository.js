@@ -1,164 +1,21 @@
 import { logger } from '../utils/logger.js';
 import { catchAsync } from '../utils/catchAsync.js';
-
-const client = null;
-
-// Define the authorization model schema
-// eslint-disable-next-line arrow-body-style
-export const getAuthorizationModel = () => {
-  return {
-    schema_version: '1.1',
-    type_definitions: [
-      {
-        type: 'user',
-        relations: {},
-        metadata: {
-          relations: {}
-        }
-      },
-      {
-        type: 'organization',
-        relations: {
-          owner: {
-            this: {}
-          },
-          admin: {
-            this: {}
-          },
-          member: {
-            this: {}
-          },
-          viewer: {
-            union: {
-              child: [
-                {
-                  this: {}
-                },
-                {
-                  computedUserset: {
-                    relation: 'member'
-                  }
-                }
-              ]
-            }
-          }
-        },
-        metadata: {
-          relations: {
-            owner: { directly_related_user_types: [{ type: 'user' }] },
-            admin: { directly_related_user_types: [{ type: 'user' }] },
-            member: { directly_related_user_types: [{ type: 'user' }] },
-            viewer: { directly_related_user_types: [{ type: 'user' }] }
-          }
-        }
-      },
-      {
-        type: 'project',
-        relations: {
-          owner: {
-            this: {}
-          },
-          editor: {
-            this: {}
-          },
-          viewer: {
-            union: {
-              child: [
-                {
-                  this: {}
-                },
-                {
-                  computedUserset: {
-                    relation: 'editor'
-                  }
-                }
-              ]
-            }
-          },
-          org_viewer: {
-            tupleToUserset: {
-              tupleset: {
-                relation: 'organization'
-              },
-              computedUserset: {
-                relation: 'viewer'
-              }
-            }
-          },
-          organization: {
-            this: {}
-          }
-        },
-        metadata: {
-          relations: {
-            owner: { directly_related_user_types: [{ type: 'user' }] },
-            editor: { directly_related_user_types: [{ type: 'user' }] },
-            viewer: { directly_related_user_types: [{ type: 'user' }] },
-            organization: { directly_related_user_types: [{ type: 'organization' }] }
-          }
-        }
-      },
-      {
-        type: 'document',
-        relations: {
-          owner: {
-            this: {}
-          },
-          editor: {
-            this: {}
-          },
-          viewer: {
-            union: {
-              child: [
-                {
-                  this: {}
-                },
-                {
-                  computedUserset: {
-                    relation: 'editor'
-                  }
-                }
-              ]
-            }
-          },
-          project_viewer: {
-            tupleToUserset: {
-              tupleset: {
-                relation: 'project'
-              },
-              computedUserset: {
-                relation: 'viewer'
-              }
-            }
-          },
-          project: {
-            this: {}
-          }
-        },
-        metadata: {
-          relations: {
-            owner: { directly_related_user_types: [{ type: 'user' }] },
-            editor: { directly_related_user_types: [{ type: 'user' }] },
-            viewer: { directly_related_user_types: [{ type: 'user' }] },
-            project: { directly_related_user_types: [{ type: 'project' }] }
-          }
-        }
-      }
-    ]
-  };
-};
+import { fgaClient } from '../connections/connectOpenFGA.js';
 
 // Generic method to write relationship tuples
-export const writeRelationship = catchAsync(async (user, relation, object, objectType) => {
-  const tuple = {
-    user: `user:${user}`,
-    relation,
-    object: `${objectType}:${object}`
-  };
-  await client.write({ writes: [tuple] });
-  logger.info(`Relationship written: ${tuple.user} ${relation} ${tuple.object}`);
-  return true;
-});
+export const writeRelationship = catchAsync(
+  async (user, relation, object, objectType = 'organization') => {
+    const tuple = {
+      user: `user:${user}`,
+      relation,
+      object: `${objectType}:${object}`
+    };
+    await fgaClient.write({ writes: { tuple_keys: [tuple] } });
+
+    logger.info(`Relationship written: ${tuple.user} ${relation} ${tuple.object}`);
+    return true;
+  }
+);
 
 // Generic method to delete relationship tuples
 export const deleteRelationship = catchAsync(async (user, relation, object, objectType) => {
@@ -167,14 +24,14 @@ export const deleteRelationship = catchAsync(async (user, relation, object, obje
     relation,
     object: `${objectType}:${object}`
   };
-  await client.write({ deletes: [tuple] });
+  await fgaClient.write({ deletes: [tuple] });
   logger.info(`Relationship deleted: ${tuple.user} ${relation} ${tuple.object}`);
   return true;
 });
 
 // Generic method to check authorization
 export const check = catchAsync(async (user, relation, object, objectType) => {
-  const response = await client.check({
+  const response = await fgaClient.check({
     tuple_key: {
       user: `user:${user}`,
       relation,
@@ -191,7 +48,7 @@ export const batchWriteRelationships = catchAsync(async (relationships) => {
     relation,
     object: `${objectType}:${object}`
   }));
-  await client.write({ writes: tuples });
+  await fgaClient.write({ writes: { tuple_keys: tuples } });
   logger.info(`Batch relationships written: ${tuples.length} tuples`);
   return true;
 });
@@ -202,14 +59,14 @@ export const batchDeleteRelationships = catchAsync(async (relationships) => {
     relation,
     object: `${objectType}:${object}`
   }));
-  await client.write({ deletes: tuples });
+  await fgaClient.write({ deletes: tuples });
   logger.info(`Batch relationships deleted: ${tuples.length} tuples`);
   return true;
 });
 
 // List objects a user has access to
 export const listObjects = catchAsync(async (user, relation, objectType) => {
-  const response = await client.listObjects({
+  const response = await fgaClient.listObjects({
     user: `user:${user}`,
     relation,
     type: objectType
@@ -219,7 +76,7 @@ export const listObjects = catchAsync(async (user, relation, objectType) => {
 
 // List users who have access to an object
 export const listUsers = catchAsync(async (relation, object, objectType) => {
-  const response = await client.listUsers({
+  const response = await fgaClient.listUsers({
     object: {
       type: objectType,
       id: object
@@ -243,7 +100,7 @@ export const readRelationships = catchAsync(
     if (object && objectType) {
       filter.object = `${objectType}:${object}`;
     }
-    const response = await client.read(filter);
+    const response = await fgaClient.read(filter);
     return response.tuples || [];
   }
 );

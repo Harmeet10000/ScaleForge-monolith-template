@@ -10,7 +10,7 @@ import {
   validateChangePasswordBody,
   validateGoogleLogin,
   validateGoogleSignup
-} from '../validations/authValidation.js';
+} from '../validations/authNValidation.js';
 import * as authService from '../services/authService.js';
 import {
   GOOGLE_OAUTH_LOGIN_SUCCESS,

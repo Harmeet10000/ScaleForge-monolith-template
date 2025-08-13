@@ -3,32 +3,29 @@ import { logger } from '../utils/logger.js';
 import { catchAsync } from '../utils/catchAsync.js';
 
 // Organization policies
-export const addUserToOrganization = catchAsync(async (userId, organizationId, role = 'member') => {
-  const validRoles = ['owner', 'admin', 'member', 'viewer'];
-  if (!validRoles.includes(role)) {
-    throw new Error(`Invalid role: ${role}. Valid roles: ${validRoles.join(', ')}`);
-  }
-  return await openFGARepository.writeRelationship(userId, role, organizationId, 'organization');
+export const addUserToOrganization = catchAsync(async (userId, organizationId, role) => {
+  const objectType = 'organization';
+  return await openFGARepository.writeRelationship(userId, role, organizationId, objectType);
 });
 
-export const removeUserFromOrganization = catchAsync(
-  async (userId, organizationId, role = 'member') => {
-    await openFGARepository.deleteRelationship(userId, role, organizationId, 'organization');
-  }
-);
-
-export const checkOrganizationAccess = catchAsync(
-  async (userId, organizationId, permission = 'viewer') => {
-    await openFGARepository.check(userId, permission, organizationId, 'organization');
-  }
-);
-
-export const getUserOrganizations = catchAsync(async (userId, permission = 'viewer') => {
-  await openFGARepository.listObjects(userId, permission, 'organization');
+export const removeUserFromOrganization = catchAsync(async (userId, organizationId, role) => {
+  const objectType = 'organization';
+  return await openFGARepository.deleteRelationship(userId, role, organizationId, objectType);
 });
 
-export const getOrganizationUsers = catchAsync(async (organizationId, role = 'member') => {
-  await openFGARepository.listUsers(role, organizationId, 'organization');
+export const checkOrganizationAccess = catchAsync(async (userId, organizationId, permission) => {
+  const objectType = 'organization';
+  return await openFGARepository.check(userId, permission, organizationId, objectType);
+});
+
+export const getUserOrganizations = catchAsync(async (userId, permission) => {
+  const objectType = 'organization';
+  return await openFGARepository.listObjects(userId, permission, objectType);
+});
+
+export const getOrganizationUsers = catchAsync(async (organizationId, role) => {
+  const objectType = 'organization';
+  return await openFGARepository.listUsers(role, organizationId, objectType);
 });
 
 // Project policies
@@ -49,28 +46,29 @@ export const createProject = catchAsync(async (userId, projectId, organizationId
   return await openFGARepository.batchWriteRelationships(relationships);
 });
 
-export const addUserToProject = catchAsync(async (userId, projectId, role = 'viewer') => {
-  const validRoles = ['owner', 'editor', 'viewer'];
-  if (!validRoles.includes(role)) {
-    throw new Error(`Invalid role: ${role}. Valid roles: ${validRoles.join(', ')}`);
-  }
-  return await openFGARepository.writeRelationship(userId, role, projectId, 'project');
+export const addUserToProject = catchAsync(async (userId, projectId, role) => {
+  const objectType = 'project';
+  return await openFGARepository.writeRelationship(userId, role, projectId, objectType);
 });
 
-export const removeUserFromProject = catchAsync(async (userId, projectId, role = 'viewer') => {
-  await openFGARepository.deleteRelationship(userId, role, projectId, 'project');
+export const removeUserFromProject = catchAsync(async (userId, projectId, role) => {
+  const objectType = 'project';
+  return await openFGARepository.deleteRelationship(userId, role, projectId, objectType);
 });
 
-export const checkProjectAccess = catchAsync(async (userId, projectId, permission = 'viewer') => {
-  await openFGARepository.check(userId, permission, projectId, 'project');
+export const checkProjectAccess = catchAsync(async (userId, projectId, permission) => {
+  const objectType = 'project';
+  return await openFGARepository.check(userId, permission, projectId, objectType);
 });
 
-export const getUserProjects = catchAsync(async (userId, permission = 'viewer') => {
-  await openFGARepository.listObjects(userId, permission, 'project');
+export const getUserProjects = catchAsync(async (userId, permission) => {
+  const objectType = 'project';
+  return await openFGARepository.listObjects(userId, permission, objectType);
 });
 
-export const getProjectUsers = catchAsync(async (projectId, role = 'viewer') => {
-  await openFGARepository.listUsers(role, projectId, 'project');
+export const getProjectUsers = catchAsync(async (projectId, role) => {
+  const objectType = 'project';
+  return await openFGARepository.listUsers(role, projectId, objectType);
 });
 
 // Document policies
@@ -91,54 +89,51 @@ export const createDocument = catchAsync(async (userId, documentId, projectId = 
   return await openFGARepository.batchWriteRelationships(relationships);
 });
 
-export const shareDocument = catchAsync(async (userId, documentId, role = 'viewer') => {
-  const validRoles = ['owner', 'editor', 'viewer'];
-  if (!validRoles.includes(role)) {
-    throw new Error(`Invalid role: ${role}. Valid roles: ${validRoles.join(', ')}`);
-  }
-  return await openFGARepository.writeRelationship(userId, role, documentId, 'document');
+export const shareDocument = catchAsync(async (userId, documentId, role) => {
+  const objectType = 'document';
+  return await openFGARepository.writeRelationship(userId, role, documentId, objectType);
 });
 
-export const unshareDocument = catchAsync(async (userId, documentId, role = 'viewer') => {
-  await openFGARepository.deleteRelationship(userId, role, documentId, 'document');
+export const unshareDocument = catchAsync(async (userId, documentId, role) => {
+  const objectType = 'document';
+  return await openFGARepository.deleteRelationship(userId, role, documentId, objectType);
 });
 
-export const checkDocumentAccess = catchAsync(async (userId, documentId, permission = 'viewer') => {
-  await openFGARepository.check(userId, permission, documentId, 'document');
+export const checkDocumentAccess = catchAsync(async (userId, documentId, permission) => {
+  const objectType = 'document';
+  return await openFGARepository.check(userId, permission, documentId, objectType);
 });
 
-export const getUserDocuments = catchAsync(async (userId, permission = 'viewer') => {
-  await openFGARepository.listObjects(userId, permission, 'document');
+export const getUserDocuments = catchAsync(async (userId, permission) => {
+  const objectType = 'document';
+  return await openFGARepository.listObjects(userId, permission, objectType);
 });
 
-export const getDocumentUsers = catchAsync(async (documentId, role = 'viewer') => {
-  await openFGARepository.listUsers(role, documentId, 'document');
+export const getDocumentUsers = catchAsync(async (documentId, role) => {
+  const objectType = 'document';
+  return await openFGARepository.listUsers(role, documentId, objectType);
 });
 
 // Bulk operations
-export const bulkAddUsersToOrganization = catchAsync(
-  async (userIds, organizationId, role = 'member') => {
-    const relationships = userIds.map((userId) => ({
-      user: userId,
-      relation: role,
-      object: organizationId,
-      objectType: 'organization'
-    }));
-    return await openFGARepository.batchWriteRelationships(relationships);
-  }
-);
+export const bulkAddUsersToOrganization = catchAsync(async (userIds, organizationId, role) => {
+  const relationships = userIds.map((userId) => ({
+    user: userId,
+    relation: role,
+    object: organizationId,
+    objectType: 'organization'
+  }));
+  return await openFGARepository.batchWriteRelationships(relationships);
+});
 
-export const bulkRemoveUsersFromOrganization = catchAsync(
-  async (userIds, organizationId, role = 'member') => {
-    const relationships = userIds.map((userId) => ({
-      user: userId,
-      relation: role,
-      object: organizationId,
-      objectType: 'organization'
-    }));
-    return await openFGARepository.batchDeleteRelationships(relationships);
-  }
-);
+export const bulkRemoveUsersFromOrganization = catchAsync(async (userIds, organizationId, role) => {
+  const relationships = userIds.map((userId) => ({
+    user: userId,
+    relation: role,
+    object: organizationId,
+    objectType: 'organization'
+  }));
+  return await openFGARepository.batchDeleteRelationships(relationships);
+});
 
 export const transferOwnership = catchAsync(async (fromUserId, toUserId, objectId, objectType) => {
   await openFGARepository.deleteRelationship(fromUserId, 'owner', objectId, objectType);

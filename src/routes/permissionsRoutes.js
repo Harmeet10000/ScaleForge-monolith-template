@@ -1,5 +1,28 @@
 import { Router } from 'express';
-import { addUserToOrganization, addUserToProject, bulkAddUsersToOrganization, bulkRemoveUsersFromOrganization, checkAccess, createDocument, createProject, getDocumentUsers, getOrganizationUsers, getProjectUsers, getResourcePermissions, getUserDocuments, getUserOrganizations, getUserPermissions, getUserProjects, removeAllResourcePermissions, removeAllUserPermissions, removeUserFromOrganization, removeUserFromProject, shareDocument, transferOwnership, unshareDocument } from '../controllers/permissionsController.js';
+import {
+  addUserToOrganization,
+  addUserToProject,
+  bulkAddUsersToOrganization,
+  bulkRemoveUsersFromOrganization,
+  checkAccess,
+  createDocument,
+  createProject,
+  getDocumentUsers,
+  getOrganizationUsers,
+  getProjectUsers,
+  getResourcePermissions,
+  getUserDocuments,
+  getUserOrganizations,
+  getUserPermissions,
+  getUserProjects,
+  removeAllResourcePermissions,
+  removeAllUserPermissions,
+  removeUserFromOrganization,
+  removeUserFromProject,
+  shareDocument,
+  transferOwnership,
+  unshareDocument
+} from '../controllers/permissionsController.js';
 import {
   authorize,
   authorizeOrganization,
@@ -127,9 +150,6 @@ router.post('/check-access', checkAccess);
 // Cleanup routes (admin only)
 router.delete('/users/:userId/permissions', removeAllUserPermissions);
 
-router.delete(
-  '/resources/:resourceType/:resourceId/permissions',
-  removeAllResourcePermissions
-);
+router.delete('/resources/:resourceType/:resourceId/permissions', removeAllResourcePermissions);
 
 export default router;

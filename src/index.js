@@ -3,13 +3,12 @@ import app from './app.js';
 import mongoose from 'mongoose';
 import { connectDB } from './connections/connectDB.js';
 import { connectRedis, redisClient } from './connections/connectRedis.js';
-import { createConnection, closeConnection } from './connections/rabbitMQConnection.js';
-import { connectOFGA } from './connections/connectOpenFGA.js';
+import { createConnection, closeConnection } from './connections/connectRabbitMQ.js';
 // import { connectKafkaProducer, consumer, producer } from './connections/connectKafka.js';
 import { logger } from './utils/logger.js';
 import { catchAsync } from './utils/catchAsync.js';
 
-Promise.all([connectDB(), connectRedis(), createConnection(), connectOFGA()])
+Promise.all([connectDB(), connectRedis(), createConnection()])
   .then(() => {
     const server = app.listen(process.env.PORT, () => {
       logger.info(

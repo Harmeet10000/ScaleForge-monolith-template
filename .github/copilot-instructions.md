@@ -9,7 +9,7 @@
     <directory-organization>
     ```
     src/
-    ├── connections/     # Database and external service connections (e.g., Redis, Mongoose, OpenFGA)
+    ├── connections/     # Database and external service connections (e.g., Redis, Mongoose, )
     ├── constants/       # Application constants and enums
     ├── controllers/     # Request handlers (thin layer)
     ├── helpers/         # Utility functions for specific services
