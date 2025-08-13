@@ -1,0 +1,77 @@
+# Node.js
+node_modules
+.npm
+.cache
+.eslintcache
+.github/prompts
+.amazonq/*
+
+# Package-lock files
+# package-lock.json
+yarn.lock
+
+# Editor and IDE files
+.idea/
+.vscode/
+*.swp
+*~
+.DS_Store
+
+# OS generated files
+.AppleDouble
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+amazon-q.deb
+
+# Logs and temporary files
+*.log
+*.tmp
+tmp/
+temp/
+*.bak
+*.swp
+*.lock
+
+# Compiled output
+dist/
+
+# Testing
+coverage/
+.nyc_output/
+
+# Secrets - NEVER commit these!
+*.key
+*.pem
+*.pfx
+*.cert
+# certs/
+
+# Uploads
+uploads/
+
+# Optional - If you don't want these in your repo
+# .env.local
+.env.*
+.env
+
+# Other
+.history
+*.orig
+*.rej
+*.swo
+
+# For Windows thumbnail cache
+[Dd]esktop.ini
+
+# For macOS Finder
+.DS_Store
+
+# For Vim swap files
+*.swp
+
+# For Emacs auto-save files
+*~
+
+# if you are using pnpm
+.pnpm-store/

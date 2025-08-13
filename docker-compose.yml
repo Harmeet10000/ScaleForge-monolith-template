@@ -1,0 +1,147 @@
+services:
+  auth-service:
+    image: auth-service:latest
+    container_name: auth-service-container
+    build:
+      context: .
+      dockerfile: docker/dev.Dockerfile
+    # depends_on:
+    #   - mongodb
+    #   - loki
+    #   - redis
+    #   - openfga
+    #   - rabbitmq
+    ports:
+      - '8000:8000'
+    env_file:
+      - .env.dev
+    restart: unless-stopped
+    volumes:
+      - ./src:/usr/src/backend-app/src
+      - ./package.json:/usr/src/backend-app/package.json
+      - ./package-lock.json:/usr/src/backend-app/package-lock.json
+
+  loki:
+    image: grafana/loki:2.8.2
+    container_name: loki
+    ports:
+      - "3100:3100"
+    command: -config.file=/etc/loki/config.yaml
+    volumes:
+      - ./src/config/loki-config.yaml:/etc/loki/config.yaml 
+    restart: unless-stopped
+
+  promtail:
+    image: grafana/promtail:2.8.2
+    container_name: promtail
+    volumes:
+      - /var/log:/var/log # Mount host logs
+      - ./src/config/promtail-config.yaml:/etc/promtail/config.yaml
+    command: -config.file=/etc/promtail/config.yml
+    restart: unless-stopped
+
+
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+    volumes:
+      - ./src/config/prometheus.yaml:/etc/prometheus/prometheus.yaml
+    ports:
+      - '9090:9090'
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yaml'
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana
+    container_name: grafana
+    ports:
+      - '3000:3000'
+  #   depends_on:
+  #     - prometheus
+  #     - loki
+
+
+  # mongodb:
+  #   image: mongo:7.0
+  #   container_name: mongodb
+  #   restart: unless-stopped
+  #   ports:
+  #     - '27017:27017'
+  #   volumes:
+  #     - mongo_data:/data/db
+
+
+  # redis:
+  #   image: redis:7.2-alpine
+  #   container_name: redis
+  #   restart: unless-stopped
+  #   ports:
+  #     - '6379:6379'
+  #   command: redis-server --requirepass redis123
+  #   volumes:
+  #     - redis_data:/data
+
+
+
+
+  # postgres:
+  #   image: postgres:15-alpine
+  #   container_name: postgres
+  #   restart: unless-stopped
+  #   ports:
+  #     - '5432:5432'
+  #   environment:
+  #     POSTGRES_USER: openfga
+  #     POSTGRES_PASSWORD: openfga123
+  #     POSTGRES_DB: openfga
+  #   volumes:
+  #     - postgres_data:/var/lib/postgresql/data
+
+
+  # rabbitmq:
+  #   image: rabbitmq:3-management
+  #   container_name: rabbitmq
+  #   restart: unless-stopped
+  #   ports:
+  #     - '5672:5672'
+  #     - '15672:15672'
+  #   environment:
+  #     RABBITMQ_DEFAULT_USER: myuser
+  #     RABBITMQ_DEFAULT_PASS: mypassword
+  #   volumes:
+  #     - rabbitmq_data:/var/lib/rabbitmq
+  #     - rabbitmq_logs:/var/log/rabbitmq
+
+
+
+
+
+  # openfga:
+  #   image: openfga/openfga:latest
+  #   container_name: openfga
+  #   restart: unless-stopped
+  #   ports:
+  #     - '8080:8080'
+  #   environment:
+  #     - OPENFGA_DATASTORE_ENGINE=postgres
+  #     - OPENFGA_DATASTORE_URI=postgres://openfga:openfga123@postgres:5432/openfga?sslmode=disable
+  #     - OPENFGA_LOG_LEVEL=info
+  #     - OPENFGA_PLAYGROUND_ENABLED=true
+  #     - OPENFGA_PLAYGROUND_PORT=3000
+  #     - OPENFGA_HTTP_ADDR=0.0.0.0:8080
+  #     - OPENFGA_GRPC_ADDR=0.0.0.0:8081
+  #   depends_on:
+  #     - postgres
+
+volumes:
+  mongo_data:
+  redis_data:
+  postgres_data:
+  rabbitmq_data:
+  rabbitmq_logs:
+  loki_data:
+
+networks:
+  auth-network:
+    driver: bridge
