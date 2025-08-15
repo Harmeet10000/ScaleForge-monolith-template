@@ -30,12 +30,12 @@ import {
   authorizeDocument,
   requireOwnership
 } from '../middlewares/authRMiddleware.js';
-// import { protect } from '../middlewares/authNMiddleware.js';
+import { protect } from '../middlewares/authNMiddleware.js';
 
 const router = Router();
 
 // Apply authentication to all routes
-// router.use(protect);
+router.use(protect);
 
 // Organization routes
 router.post(

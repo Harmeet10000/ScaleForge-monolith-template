@@ -1,26 +1,24 @@
-import { OpenFgaApi } from '@openfga/sdk';
+import { CredentialsMethod, OpenFgaClient } from '@openfga/sdk';
+import 'dotenv/config';
 
-export const fgaClient = new OpenFgaApi({
-  apiScheme: 'https',
-  apiHost: process.env.OPENFGA_API_HOST,
-  apiUrl: process.env.OPENFGA_API_URL,
-  storeId: process.env.OPENFGA_STORE_ID,
-  authorizationModelId: process.env.OPENFGA_MODEL_ID
+export const fgaClient = new OpenFgaClient({
+  apiUrl: 'https://api.au1.fga.dev',
+  storeId: '01K2CQ74ZEC8BXT52N5QJ3D7MJ',
+  authorizationModelId: '01K2M2XK88QZ9H6797FM5QYVVZ',
+  credentials: {
+    method: CredentialsMethod.ClientCredentials,
+    config: {
+      apiTokenIssuer: 'auth.fga.dev',
+      apiAudience: 'https://api.au1.fga.dev/',
+      clientId: 'vXQcPdX3rvQtxujk9ycc2GjvtNjWkdQA',
+      clientSecret: 'umXePzM94gAsZctE0lZvjoA15xbSYVcoqUum6yQGOAJfv0XKPWL8ynp8Ncd95thu'
+    }
+  }
 });
 
-// const createStore = catchAsync(async () => {
-//   const response = await client.createStore({
-//     name: process.env.OPENFGA_STORE_NAME || 'auth-service-store'
-//   });
-
-//   storeId = response.id;
-//   logger.info(`OpenFGA store created: ${storeId}`);
-
-//   // Update client with store ID
-//   client = new OpenFgaApi({
-//     apiUrl: process.env.OPENFGA_API_URL,
-//     storeId
-//   });
-
-//   return storeId;
+// const { allowed } = await fgaClient.check({
+//   user: 'user:harmeet',
+//   relation: 'owner',
+//   object: 'organization:org123'
 // });
+// console.log(allowed); // true or false based on the relationship

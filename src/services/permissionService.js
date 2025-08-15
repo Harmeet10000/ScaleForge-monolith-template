@@ -1,31 +1,50 @@
-import * as openFGARepository from '../repository/permissionRepository.js';
+import * as permissionRepository from '../repository/permissionRepository.js';
 import { logger } from '../utils/logger.js';
 import { catchAsync } from '../utils/catchAsync.js';
+
+const buildTuple = (user, relation, object, objectType) => ({
+  user: `user:${user}`,
+  relation,
+  object: `${objectType}:${object}`
+});
+
+export const buildTuples = (relationships) =>
+  relationships.map(({ user, relation, object, objectType = 'organization' }) =>
+    buildTuple(user, relation, object, objectType)
+  );
+
+export const check = catchAsync(async (user, relation, object, objectType) => {
+  const tuple = buildTuple(user, relation, object, objectType);
+  return await permissionRepository.check(tuple);
+});
 
 // Organization policies
 export const addUserToOrganization = catchAsync(async (userId, organizationId, role) => {
   const objectType = 'organization';
-  return await openFGARepository.writeRelationship(userId, role, organizationId, objectType);
+  const tuple = buildTuple(userId, role, organizationId, objectType);
+  return await permissionRepository.writeRelationship(tuple);
 });
 
 export const removeUserFromOrganization = catchAsync(async (userId, organizationId, role) => {
   const objectType = 'organization';
-  return await openFGARepository.deleteRelationship(userId, role, organizationId, objectType);
+  const tuple = buildTuple(userId, role, organizationId, objectType);
+  return await permissionRepository.deleteRelationship(tuple);
 });
 
 export const checkOrganizationAccess = catchAsync(async (userId, organizationId, permission) => {
   const objectType = 'organization';
-  return await openFGARepository.check(userId, permission, organizationId, objectType);
+  const tuple = buildTuple(userId, permission, organizationId, objectType);
+  return await permissionRepository.check(tuple);
 });
 
 export const getUserOrganizations = catchAsync(async (userId, permission) => {
   const objectType = 'organization';
-  return await openFGARepository.listObjects(userId, permission, objectType);
+  return await permissionRepository.listObjects(userId, permission, objectType);
 });
 
 export const getOrganizationUsers = catchAsync(async (organizationId, role) => {
   const objectType = 'organization';
-  return await openFGARepository.listUsers(role, organizationId, objectType);
+  return await permissionRepository.listUsers(role, organizationId, objectType);
 });
 
 // Project policies
@@ -43,32 +62,36 @@ export const createProject = catchAsync(async (userId, projectId, organizationId
     });
   }
 
-  return await openFGARepository.batchWriteRelationships(relationships);
+  const tuples = buildTuples(relationships);
+  return await permissionRepository.batchWriteRelationships(tuples);
 });
 
 export const addUserToProject = catchAsync(async (userId, projectId, role) => {
   const objectType = 'project';
-  return await openFGARepository.writeRelationship(userId, role, projectId, objectType);
+  const tuple = buildTuple(userId, role, projectId, objectType);
+  return await permissionRepository.writeRelationship(tuple);
 });
 
 export const removeUserFromProject = catchAsync(async (userId, projectId, role) => {
   const objectType = 'project';
-  return await openFGARepository.deleteRelationship(userId, role, projectId, objectType);
+  const tuple = buildTuple(userId, role, projectId, objectType);
+  return await permissionRepository.deleteRelationship(tuple);
 });
 
 export const checkProjectAccess = catchAsync(async (userId, projectId, permission) => {
   const objectType = 'project';
-  return await openFGARepository.check(userId, permission, projectId, objectType);
+  const tuple = buildTuple(userId, permission, projectId, objectType);
+  return await permissionRepository.check(tuple);
 });
 
 export const getUserProjects = catchAsync(async (userId, permission) => {
   const objectType = 'project';
-  return await openFGARepository.listObjects(userId, permission, objectType);
+  return await permissionRepository.listObjects(userId, permission, objectType);
 });
 
 export const getProjectUsers = catchAsync(async (projectId, role) => {
   const objectType = 'project';
-  return await openFGARepository.listUsers(role, projectId, objectType);
+  return await permissionRepository.listUsers(role, projectId, objectType);
 });
 
 // Document policies
@@ -86,32 +109,36 @@ export const createDocument = catchAsync(async (userId, documentId, projectId = 
     });
   }
 
-  return await openFGARepository.batchWriteRelationships(relationships);
+  const tuples = buildTuples(relationships);
+  return await permissionRepository.batchWriteRelationships(tuples);
 });
 
 export const shareDocument = catchAsync(async (userId, documentId, role) => {
   const objectType = 'document';
-  return await openFGARepository.writeRelationship(userId, role, documentId, objectType);
+  const tuple = buildTuple(userId, role, documentId, objectType);
+  return await permissionRepository.writeRelationship(tuple);
 });
 
 export const unshareDocument = catchAsync(async (userId, documentId, role) => {
   const objectType = 'document';
-  return await openFGARepository.deleteRelationship(userId, role, documentId, objectType);
+  const tuple = buildTuple(userId, role, documentId, objectType);
+  return await permissionRepository.deleteRelationship(tuple);
 });
 
 export const checkDocumentAccess = catchAsync(async (userId, documentId, permission) => {
   const objectType = 'document';
-  return await openFGARepository.check(userId, permission, documentId, objectType);
+  const tuple = buildTuple(userId, permission, documentId, objectType);
+  return await permissionRepository.check(tuple);
 });
 
 export const getUserDocuments = catchAsync(async (userId, permission) => {
   const objectType = 'document';
-  return await openFGARepository.listObjects(userId, permission, objectType);
+  return await permissionRepository.listObjects(userId, permission, objectType);
 });
 
 export const getDocumentUsers = catchAsync(async (documentId, role) => {
   const objectType = 'document';
-  return await openFGARepository.listUsers(role, documentId, objectType);
+  return await permissionRepository.listUsers(role, documentId, objectType);
 });
 
 // Bulk operations
@@ -122,7 +149,8 @@ export const bulkAddUsersToOrganization = catchAsync(async (userIds, organizatio
     object: organizationId,
     objectType: 'organization'
   }));
-  return await openFGARepository.batchWriteRelationships(relationships);
+  const tuples = buildTuples(relationships);
+  return await permissionRepository.batchWriteRelationships(tuples);
 });
 
 export const bulkRemoveUsersFromOrganization = catchAsync(async (userIds, organizationId, role) => {
@@ -132,12 +160,15 @@ export const bulkRemoveUsersFromOrganization = catchAsync(async (userIds, organi
     object: organizationId,
     objectType: 'organization'
   }));
-  return await openFGARepository.batchDeleteRelationships(relationships);
+  const tuples = buildTuples(relationships);
+  return await permissionRepository.batchDeleteRelationships(tuples);
 });
 
 export const transferOwnership = catchAsync(async (fromUserId, toUserId, objectId, objectType) => {
-  await openFGARepository.deleteRelationship(fromUserId, 'owner', objectId, objectType);
-  await openFGARepository.writeRelationship(toUserId, 'owner', objectId, objectType);
+  const fromTuple = buildTuple(fromUserId, 'owner', objectId, objectType);
+  const toTuple = buildTuple(toUserId, 'owner', objectId, objectType);
+  await permissionRepository.deleteRelationship(fromTuple);
+  await permissionRepository.writeRelationship(toTuple);
   logger.info(
     `Ownership transferred from ${fromUserId} to ${toUserId} for ${objectType}:${objectId}`
   );
@@ -155,16 +186,16 @@ export const getUserPermissions = catchAsync(async (userId) => {
   return {
     organizations,
     projects,
-    documents,
-    total: organizations.length + projects.length + documents.length
+    documents
+    // total: organizations.length + projects.length + documents.length
   };
 });
 
 export const getResourcePermissions = catchAsync(async (resourceId, resourceType) => {
   const [owners, editors, viewers] = await Promise.all([
-    openFGARepository.listUsers('owner', resourceId, resourceType),
-    openFGARepository.listUsers('editor', resourceId, resourceType),
-    openFGARepository.listUsers('viewer', resourceId, resourceType)
+    permissionRepository.listUsers('owner', resourceId, resourceType),
+    permissionRepository.listUsers('editor', resourceId, resourceType),
+    permissionRepository.listUsers('viewer', resourceId, resourceType)
   ]);
 
   return {
@@ -177,7 +208,7 @@ export const getResourcePermissions = catchAsync(async (resourceId, resourceType
 
 // Cleanup operations
 export const removeAllUserPermissions = catchAsync(async (userId) => {
-  const relationships = await openFGARepository.readRelationships(userId);
+  const relationships = await permissionRepository.readRelationships(userId);
 
   if (relationships.length > 0) {
     const deleteRelationships = relationships.map((tuple) => ({
@@ -187,7 +218,8 @@ export const removeAllUserPermissions = catchAsync(async (userId) => {
       objectType: tuple.key.object.split(':')[0]
     }));
 
-    await openFGARepository.batchDeleteRelationships(deleteRelationships);
+    const tuples = buildTuples(deleteRelationships);
+    await permissionRepository.batchDeleteRelationships(tuples);
     logger.info(`Removed ${relationships.length} permissions for user ${userId}`);
   }
 
@@ -195,7 +227,7 @@ export const removeAllUserPermissions = catchAsync(async (userId) => {
 });
 
 export const removeAllResourcePermissions = catchAsync(async (resourceId, resourceType) => {
-  const relationships = await openFGARepository.readRelationships(
+  const relationships = await permissionRepository.readRelationships(
     null,
     null,
     resourceId,
@@ -210,7 +242,8 @@ export const removeAllResourcePermissions = catchAsync(async (resourceId, resour
       objectType: tuple.key.object.split(':')[0]
     }));
 
-    await openFGARepository.batchDeleteRelationships(deleteRelationships);
+    const tuples = buildTuples(deleteRelationships);
+    await permissionRepository.batchDeleteRelationships(tuples);
     logger.info(`Removed ${relationships.length} permissions for ${resourceType}:${resourceId}`);
   }
 

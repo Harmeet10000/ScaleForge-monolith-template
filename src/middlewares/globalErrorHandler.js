@@ -34,33 +34,33 @@ const handleJWTExpiredError = (err, next, req) => {
 const sendErrorDev = (err, res) => {
   logger.error(`🛑 Dev Error: ${err.message}\nStack: ${err.stack}`);
 
-  // res.status(err.statusCode || 500).json({
-  //   success: false,
-  //   status: err.status,
-  //   error: err,
-  //   message: err.message,
-  //   stack: err.stack,
-  //   request: err.request
-  // });
+  res.status(err.statusCode || 500).json({
+    success: false,
+    status: err.status,
+    error: err,
+    message: err.message,
+    stack: err.stack,
+    request: err.request
+  });
 };
 
 const sendErrorProd = (err, res) => {
   if (err.isOperational) {
     logger.warn(`⚠️ Operational Error: ${err.message}`);
-    // res.status(err.statusCode || 500).json({
-    //   success: false,
-    //   status: err.status,
-    //   message: err.message,
-    //   request: err.request
-    // });
+    res.status(err.statusCode || 500).json({
+      success: false,
+      status: err.status,
+      message: err.message,
+      request: err.request
+    });
   } else {
     logger.error(`💥 Unknown Error: ${err.message}\nStack: ${err.stack}`);
-    // res.status(500).json({
-    //   success: false,
-    //   status: 'error',
-    //   message: 'Something went very wrong!',
-    //   request: err.request
-    // });
+    res.status(500).json({
+      success: false,
+      status: 'error',
+      message: 'Something went very wrong!',
+      request: err.request
+    });
   }
 };
 

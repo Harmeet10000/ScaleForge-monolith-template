@@ -113,7 +113,7 @@ export const checkAccessValidation = Joi.object({
   userId: Joi.string().required(),
   resourceId: Joi.string().required(),
   resourceType: Joi.string().valid('organization', 'project', 'document').required(),
-  permission: Joi.string().valid('owner', 'admin', 'editor', 'member', 'viewer').default('viewer')
+  relation: Joi.string().valid('owner', 'admin', 'editor', 'member', 'viewer').default('viewer')
 });
 
 // Cleanup validations

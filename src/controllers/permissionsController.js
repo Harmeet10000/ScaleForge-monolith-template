@@ -1,4 +1,4 @@
-import * as policyManager from '../services/permissionService.js';
+import * as permissionService from '../services/permissionService.js';
 import { httpResponse } from '../utils/httpResponse.js';
 import { httpError } from '../utils/httpError.js';
 import { catchAsync } from '../utils/catchAsync.js';
@@ -27,6 +27,30 @@ import {
   unshareDocumentValidation,
   validateJoiSchema
 } from '../validations/authRValidation.js';
+import {
+  ACCESS_CHECK_COMPLETED,
+  ALL_RESOURCE_PERMISSIONS_REMOVED,
+  ALL_USER_PERMISSIONS_REMOVED,
+  DOCUMENT_CREATED,
+  DOCUMENT_SHARED,
+  DOCUMENT_UNSHARED,
+  DOCUMENT_USERS_RETRIEVED,
+  ORGANIZATION_USERS_RETRIEVED,
+  OWNERSHIP_TRANSFERRED,
+  PROJECT_CREATED,
+  PROJECT_USERS_RETRIEVED,
+  RESOURCE_PERMISSIONS_RETRIEVED,
+  USER_ADDED_TO_ORGANIZATION,
+  USER_ADDED_TO_PROJECT,
+  USER_DOCUMENTS_RETRIEVED,
+  USER_ORGANIZATIONS_RETRIEVED,
+  USER_PERMISSIONS_RETRIEVED,
+  USER_PROJECTS_RETRIEVED,
+  USER_REMOVED_FROM_ORGANIZATION,
+  USER_REMOVED_FROM_PROJECT,
+  USERS_ADDED_TO_ORGANIZATION,
+  USERS_REMOVED_FROM_ORGANIZATION
+} from '../constants/responseMessage.js';
 
 // Organization permissions
 export const addUserToOrganization = catchAsync(async (req, res, next) => {
@@ -36,12 +60,9 @@ export const addUserToOrganization = catchAsync(async (req, res, next) => {
     return httpError(next, error, req, 422);
   }
 
-  const { userId, organizationId, role } = value;
-  // console.log(`Adding user ${userId} to organization ${organizationId} with role ${role}`);
+  await permissionService.addUserToOrganization(value.userId, value.organizationId, value.role);
 
-  await policyManager.addUserToOrganization(userId, organizationId, role);
-
-  httpResponse(req, res, 201, 'User added to organization successfully');
+  httpResponse(req, res, 201, USER_ADDED_TO_ORGANIZATION);
 });
 
 export const removeUserFromOrganization = catchAsync(async (req, res, next) => {
@@ -51,11 +72,9 @@ export const removeUserFromOrganization = catchAsync(async (req, res, next) => {
     return httpError(next, error, req, 422);
   }
 
-  const { userId, organizationId, role } = value;
+  await permissionService.removeUserFromOrganization(value.userId, value.organizationId, value.role);
 
-  await policyManager.removeUserFromOrganization(userId, organizationId, role);
-
-  httpResponse(req, res, 200, 'User removed from organization successfully');
+  httpResponse(req, res, 200, USER_REMOVED_FROM_ORGANIZATION);
 });
 
 export const getOrganizationUsers = catchAsync(async (req, res, next) => {
@@ -65,11 +84,9 @@ export const getOrganizationUsers = catchAsync(async (req, res, next) => {
     return httpError(next, error, req, 422);
   }
 
-  const { organizationId, role } = value;
+  const users = await permissionService.getOrganizationUsers(value.organizationId, value.role);
 
-  const users = await policyManager.getOrganizationUsers(organizationId, role);
-
-  httpResponse(req, res, 200, 'Organization users retrieved successfully', { users });
+  httpResponse(req, res, 200, ORGANIZATION_USERS_RETRIEVED, { users });
 });
 
 export const getUserOrganizations = catchAsync(async (req, res, next) => {
@@ -79,11 +96,9 @@ export const getUserOrganizations = catchAsync(async (req, res, next) => {
     return httpError(next, error, req, 422);
   }
 
-  const { userId, permission } = value;
+  const organizations = await permissionService.getUserOrganizations(value.userId, value.permission);
 
-  const organizations = await policyManager.getUserOrganizations(userId, permission);
-
-  httpResponse(req, res, 200, 'User organizations retrieved successfully', { organizations });
+  httpResponse(req, res, 200, USER_ORGANIZATIONS_RETRIEVED, { organizations });
 });
 
 // Project permissions
@@ -93,12 +108,9 @@ export const createProject = catchAsync(async (req, res, next) => {
     return httpError(next, error, req, 422);
   }
 
-  const { projectId, organizationId } = value;
-  const userId = req.user.id;
+  await permissionService.createProject(req.user.id, value.projectId, value.organizationId);
 
-  await policyManager.createProject(userId, projectId, organizationId);
-
-  httpResponse(req, res, 201, 'Project created with permissions successfully');
+  httpResponse(req, res, 201, PROJECT_CREATED);
 });
 
 export const addUserToProject = catchAsync(async (req, res, next) => {
@@ -108,11 +120,9 @@ export const addUserToProject = catchAsync(async (req, res, next) => {
     return httpError(next, error, req, 422);
   }
 
-  const { userId, projectId, role } = value;
+  await permissionService.addUserToProject(value.userId, value.projectId, value.role);
 
-  await policyManager.addUserToProject(userId, projectId, role);
-
-  httpResponse(req, res, 201, 'User added to project successfully');
+  httpResponse(req, res, 201, USER_ADDED_TO_PROJECT);
 });
 
 export const removeUserFromProject = catchAsync(async (req, res, next) => {
@@ -122,11 +132,9 @@ export const removeUserFromProject = catchAsync(async (req, res, next) => {
     return httpError(next, error, req, 422);
   }
 
-  const { userId, projectId, role } = value;
+  await permissionService.removeUserFromProject(value.userId, value.projectId, value.role);
 
-  await policyManager.removeUserFromProject(userId, projectId, role);
-
-  httpResponse(req, res, 200, 'User removed from project successfully');
+  httpResponse(req, res, 200, USER_REMOVED_FROM_PROJECT);
 });
 
 export const getProjectUsers = catchAsync(async (req, res, next) => {
@@ -136,11 +144,9 @@ export const getProjectUsers = catchAsync(async (req, res, next) => {
     return httpError(next, error, req, 422);
   }
 
-  const { projectId, role } = value;
+  const users = await permissionService.getProjectUsers(value.projectId, value.role);
 
-  const users = await policyManager.getProjectUsers(projectId, role);
-
-  httpResponse(req, res, 200, 'Project users retrieved successfully', { users });
+  httpResponse(req, res, 200, PROJECT_USERS_RETRIEVED, { users });
 });
 
 export const getUserProjects = catchAsync(async (req, res, next) => {
@@ -150,11 +156,9 @@ export const getUserProjects = catchAsync(async (req, res, next) => {
     return httpError(next, error, req, 422);
   }
 
-  const { userId, permission } = value;
+  const projects = await permissionService.getUserProjects(value.userId, value.permission);
 
-  const projects = await policyManager.getUserProjects(userId, permission);
-
-  httpResponse(req, res, 200, 'User projects retrieved successfully', { projects });
+  httpResponse(req, res, 200, USER_PROJECTS_RETRIEVED, { projects });
 });
 
 // Document permissions
@@ -164,12 +168,9 @@ export const createDocument = catchAsync(async (req, res, next) => {
     return httpError(next, error, req, 422);
   }
 
-  const { documentId, projectId } = value;
-  const userId = req.user.id;
+  await permissionService.createDocument(req.user.id, value.documentId, value.projectId);
 
-  await policyManager.createDocument(userId, documentId, projectId);
-
-  httpResponse(req, res, 201, 'Document created with permissions successfully');
+  httpResponse(req, res, 201, DOCUMENT_CREATED);
 });
 
 export const shareDocument = catchAsync(async (req, res, next) => {
@@ -179,11 +180,9 @@ export const shareDocument = catchAsync(async (req, res, next) => {
     return httpError(next, error, req, 422);
   }
 
-  const { userId, documentId, role } = value;
+  await permissionService.shareDocument(req.user.id, value.documentId, value.role);
 
-  await policyManager.shareDocument(userId, documentId, role);
-
-  httpResponse(req, res, 201, 'Document shared successfully');
+  httpResponse(req, res, 201, DOCUMENT_SHARED);
 });
 
 export const unshareDocument = catchAsync(async (req, res, next) => {
@@ -193,11 +192,9 @@ export const unshareDocument = catchAsync(async (req, res, next) => {
     return httpError(next, error, req, 422);
   }
 
-  const { userId, documentId, role } = value;
+  await permissionService.unshareDocument(req.user.id, value.documentId, value.role);
 
-  await policyManager.unshareDocument(userId, documentId, role);
-
-  httpResponse(req, res, 200, 'Document unshared successfully');
+  httpResponse(req, res, 200, DOCUMENT_UNSHARED);
 });
 
 export const getDocumentUsers = catchAsync(async (req, res, next) => {
@@ -207,11 +204,9 @@ export const getDocumentUsers = catchAsync(async (req, res, next) => {
     return httpError(next, error, req, 422);
   }
 
-  const { documentId, role } = value;
+  const users = await permissionService.getDocumentUsers(value.documentId, value.role);
 
-  const users = await policyManager.getDocumentUsers(documentId, role);
-
-  httpResponse(req, res, 200, 'Document users retrieved successfully', { users });
+  httpResponse(req, res, 200, DOCUMENT_USERS_RETRIEVED, { users });
 });
 
 export const getUserDocuments = catchAsync(async (req, res, next) => {
@@ -221,11 +216,9 @@ export const getUserDocuments = catchAsync(async (req, res, next) => {
     return httpError(next, error, req, 422);
   }
 
-  const { userId, permission } = value;
+  const documents = await permissionService.getUserDocuments(value.userId, value.permission);
 
-  const documents = await policyManager.getUserDocuments(userId, permission);
-
-  httpResponse(req, res, 200, 'User documents retrieved successfully', { documents });
+  httpResponse(req, res, 200, USER_DOCUMENTS_RETRIEVED, { documents });
 });
 
 // Bulk operations
@@ -236,11 +229,9 @@ export const bulkAddUsersToOrganization = catchAsync(async (req, res, next) => {
     return httpError(next, error, req, 422);
   }
 
-  const { userIds, organizationId, role } = value;
+  await permissionService.bulkAddUsersToOrganization(value.userIds, value.organizationId, value.role);
 
-  await policyManager.bulkAddUsersToOrganization(userIds, organizationId, role);
-
-  httpResponse(req, res, 201, `${userIds.length} users added to organization successfully`);
+  httpResponse(req, res, 201, `${value.userIds.length} ${USERS_ADDED_TO_ORGANIZATION}`);
 });
 
 export const bulkRemoveUsersFromOrganization = catchAsync(async (req, res, next) => {
@@ -250,94 +241,96 @@ export const bulkRemoveUsersFromOrganization = catchAsync(async (req, res, next)
     return httpError(next, error, req, 422);
   }
 
-  const { userIds, organizationId, role } = value;
-
-  await policyManager.bulkRemoveUsersFromOrganization(userIds, organizationId, role);
-
-  httpResponse(req, res, 200, `${userIds.length} users removed from organization successfully`);
+  await permissionService.bulkRemoveUsersFromOrganization(
+    value.userIds,
+    value.organizationId,
+    value.role
+  );
+  httpResponse(req, res, 200, `${value.userIds.length} ${USERS_REMOVED_FROM_ORGANIZATION}`);
 });
 
 // Transfer ownership
 export const transferOwnership = catchAsync(async (req, res, next) => {
   const data = { ...req.body, ...req.params };
-  const { error } = validateJoiSchema(transferOwnershipValidation, data);
+  const { error, value } = validateJoiSchema(transferOwnershipValidation, data);
   if (error) {
     return httpError(next, error, req, 422);
   }
 
-  const { resourceId, resourceType } = req.params;
-  const { toUserId } = req.body;
   const fromUserId = req.user.id;
 
-  await policyManager.transferOwnership(fromUserId, toUserId, resourceId, resourceType);
+  await permissionService.transferOwnership(
+    fromUserId,
+    value.toUserId,
+    value.resourceId,
+    value.resourceType
+  );
 
-  httpResponse(req, res, 200, 'Ownership transferred successfully');
+  httpResponse(req, res, 200, OWNERSHIP_TRANSFERRED);
 });
 
 // Advanced queries
 export const getUserPermissions = catchAsync(async (req, res, next) => {
-  const { error } = validateJoiSchema(getUserPermissionsValidation, req.params);
+  const { error, value } = validateJoiSchema(getUserPermissionsValidation, req.params);
   if (error) {
     return httpError(next, error, req, 422);
   }
 
-  const { userId } = req.params;
+  const permissions = await permissionService.getUserPermissions(value.userId);
 
-  const permissions = await policyManager.getUserPermissions(userId);
-
-  httpResponse(req, res, 200, 'User permissions retrieved successfully', permissions);
+  httpResponse(req, res, 200, USER_PERMISSIONS_RETRIEVED, permissions);
 });
 
 export const getResourcePermissions = catchAsync(async (req, res, next) => {
-  const { error } = validateJoiSchema(getResourcePermissionsValidation, req.params);
+  const { error, value } = validateJoiSchema(getResourcePermissionsValidation, req.params);
   if (error) {
     return httpError(next, error, req, 422);
   }
 
-  const { resourceId, resourceType } = req.params;
+  const permissions = await permissionService.getResourcePermissions(
+    value.resourceId,
+    value.resourceType
+  );
 
-  const permissions = await policyManager.getResourcePermissions(resourceId, resourceType);
-
-  httpResponse(req, res, 200, 'Resource permissions retrieved successfully', permissions);
+  httpResponse(req, res, 200, RESOURCE_PERMISSIONS_RETRIEVED, permissions);
 });
 
 // Check access
 export const checkAccess = catchAsync(async (req, res, next) => {
-  const { error } = validateJoiSchema(checkAccessValidation, req.body);
+  const { error, value } = validateJoiSchema(checkAccessValidation, req.body);
   if (error) {
     return httpError(next, error, req, 422);
   }
 
-  const { userId, resourceId, resourceType, permission } = req.body;
+  const hasAccess = await permissionService.check(
+    value.userId,
+    value.relation,
+    value.resourceId,
+    value.resourceType
+  );
 
-  const hasAccess = await policyManager.fga.check(userId, permission, resourceId, resourceType);
-
-  httpResponse(req, res, 200, 'Access check completed', { hasAccess });
+  httpResponse(req, res, 200, ACCESS_CHECK_COMPLETED, { hasAccess });
 });
 
 // Cleanup operations
 export const removeAllUserPermissions = catchAsync(async (req, res, next) => {
-  const { error } = validateJoiSchema(removeAllUserPermissionsValidation, req.params);
+  const { error, value } = validateJoiSchema(removeAllUserPermissionsValidation, req.params);
   if (error) {
     return httpError(next, error, req, 422);
   }
 
-  // const { userId } = req.params;
+  await permissionService.removeAllUserPermissions(value.userId);
 
-  await policyManager.removeAllUserPermissions(req.params.userId);
-
-  httpResponse(req, res, 200, 'All user permissions removed successfully');
+  httpResponse(req, res, 200, ALL_USER_PERMISSIONS_REMOVED);
 });
 
 export const removeAllResourcePermissions = catchAsync(async (req, res, next) => {
-  const { error } = validateJoiSchema(removeAllResourcePermissionsValidation, req.params);
+  const { error, value } = validateJoiSchema(removeAllResourcePermissionsValidation, req.params);
   if (error) {
     return httpError(next, error, req, 422);
   }
 
-  // const { resourceId, resourceType } = req.params;
+  await permissionService.removeAllResourcePermissions(value.resourceId, value.resourceType);
 
-  await policyManager.removeAllResourcePermissions(req.params.resourceId, req.params.resourceType);
-
-  httpResponse(req, res, 200, 'All resource permissions removed successfully');
+  httpResponse(req, res, 200, ALL_RESOURCE_PERMISSIONS_REMOVED);
 });

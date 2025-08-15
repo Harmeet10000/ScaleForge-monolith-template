@@ -34,7 +34,7 @@ export const protect = catchAsync(async (req, res, next) => {
 
   // 4) Verification token
   const decoded = await promisify(jwt.verify)(token, process.env.ACCESS_TOKEN_SECRET);
-  logger.debug(`Decoded token: ${JSON.stringify(decoded)}, Current IP: ${currentIp}`);
+  // logger.debug(`Decoded token: ${JSON.stringify(decoded)}, Current IP: ${currentIp}`);
 
   // Check if IP in token doesn't match the current request IP
   if (decoded.userIp !== currentIp) {
@@ -43,20 +43,21 @@ export const protect = catchAsync(async (req, res, next) => {
   }
 
   // 5) Check if user exists in cache first
-  const cachedUser = await getHash('user', ['id', decoded.userId]);
+  const cachedUser = await getHash('user', `id:${decoded.userId}`);
   let currentUser;
 
   if (cachedUser) {
-    logger.debug(`User found in cache: ${decoded.userId}`);
+    // logger.debug(`User found in cache: ${decoded.userId}`);
     currentUser = cachedUser;
   } else {
     // If not in cache, fetch from database
-    currentUser = await User.findById(decoded.userId);
+    const dbUser = await User.findById(decoded.userId);
+    currentUser = dbUser;
 
     // If user exists, cache it for future requests (30 min expiry)
-    if (currentUser) {
-      await setHash('user', ['id', decoded.userId], currentUser.toObject(), 1800);
-      logger.debug(`User cached: ${decoded.userId}`);
+    if (dbUser) {
+      await setHash('user', ['id', decoded.userId], dbUser.toObject(), 1800);
+      // logger.debug(`User cached: ${decoded.userId}`);
     }
   }
 

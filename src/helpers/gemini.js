@@ -10,7 +10,7 @@ export const main = async () => {
     contents: 'Explain how AI works in a few words',
     config: {
       thinkingConfig: {
-        thinkingBudget: 0 // Disables thinking
+        // thinkingBudget: 0 // Disables thinking
       }
     }
   });

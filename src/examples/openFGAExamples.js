@@ -222,16 +222,12 @@ export const lowLevelExample = async () => {
     const resourceId = 'resource456';
 
     // Write a custom relationship
-    await openFGAService.writeRelationship(userId, 'custom_relation', resourceId, 'custom_type');
+    const tuple = policyManager.buildTuple(userId, 'custom_relation', resourceId, 'custom_type');
+    await openFGAService.writeRelationship(tuple);
     logger.info(`✅ Created custom relationship`);
 
     // Check the custom relationship
-    const hasCustomAccess = await openFGAService.check(
-      userId,
-      'custom_relation',
-      resourceId,
-      'custom_type'
-    );
+    const hasCustomAccess = await openFGAService.check(tuple);
     logger.info(`✅ User has custom access: ${hasCustomAccess}`);
 
     // Read all relationships for debugging
@@ -239,7 +235,7 @@ export const lowLevelExample = async () => {
     logger.info(`✅ User has ${allRelationships.length} total relationships`);
 
     // Clean up custom relationship
-    await openFGAService.deleteRelationship(userId, 'custom_relation', resourceId, 'custom_type');
+    await openFGAService.deleteRelationship(tuple);
     logger.info(`✅ Deleted custom relationship`);
   } catch (error) {
     logger.error('Low-level example failed:', error);

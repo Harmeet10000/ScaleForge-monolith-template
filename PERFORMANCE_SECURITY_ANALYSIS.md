@@ -1,19 +1,19 @@
 
-1. Implement a OpenFGA (Open Federated Gateway Architecture) to enhance scalability,    reliability, and security of your authentication service. with permissions
-2. make a branch for drizzle + JS for AI features and Postgres extensions
-3. add ELK stack for logging and monitoring
-4. properly implement RabbitMQ for message queuing for modularity and decoupling
-5. add recommendation system using convex or something else
-6. add prometheus, loki and grafana for monitoring and alerting                            - DONE
-7. add SAGA pattern for managing complex workflows and state transitions 
-8. make AI-driven features for enhanced user experience and personalization using Gemini API
-9. check if I can deploy it on AWS Lambda or Google Cloud Functions for serverless architecture and also check about cloudflare WAF 
-10. make a fucking awesome documentation for the same in Postman or Swagger
-11. add tests in CI before deploying to production
+6. add prometheus, loki and grafana for monitoring and alerting                           - DONE
+1. Implement a OpenFGA to enhance scalability, reliability, and security of your authentication service. with permissions                                                                 - DONE
+3. add ELK stack for logging and monitoring                                           - ABANDONED
 12. also add a search engine like Algolia or Elasticsearch/Postgres Extensions for better search capabilities
+5. add recommendation system using convex or something else
+4. properly implement RabbitMQ for message queuing for modularity and decoupling
 13. check performance/stress testing using grafana k6
-14. lastly make a fastify version
+10. make a fucking awesome documentation for the same in Postman or Swagger
+8. make AI-driven features for enhanced user experience and personalization using Gemini API
+2. make a branch for drizzle + JS for AI features and Postgres extensions
+9. check if I can deploy it on AWS Lambda or Google Cloud Functions for serverless architecture and also check about cloudflare WAF 
+11. add tests in CI before deploying to production
 15. make a Golang version of the same
+14. lastly make a fastify version
+7. add SAGA pattern for managing complex workflows and state transitions 
 
 **Current Architecture:**
 ```

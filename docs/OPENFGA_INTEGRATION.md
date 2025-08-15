@@ -55,48 +55,7 @@ User
    - CRUD operations for permissions
    - Bulk operations support
 
-## 🚀 Setup
 
-### 1. Docker Compose Configuration
-
-The OpenFGA service is already configured in `docker-compose.yml`:
-
-```yaml
-openfga:
-  image: openfga/openfga:latest
-  ports:
-    - '8080:8080'  # HTTP API
-    - '8081:8081'  # gRPC API
-    - '3000:3000'  # Playground UI
-  environment:
-    - OPENFGA_DATASTORE_ENGINE=postgres
-    - OPENFGA_PLAYGROUND_ENABLED=true
-```
-
-### 2. Environment Variables
-
-Add to your `.env.dev` file:
-
-```env
-# OpenFGA Configuration
-OPENFGA_API_URL=http://localhost:8080
-OPENFGA_STORE_ID=
-OPENFGA_STORE_NAME=auth-service-store
-OPENFGA_MODEL_ID=
-```
-
-### 3. Install Dependencies
-
-```bash
-npm install @openfga/sdk
-```
-
-### 4. Start Services
-
-```bash
-docker-compose up -d
-npm run dev
-```
 
 ## 📊 Authorization Model
 

@@ -1,0 +1,69 @@
+model
+  schema 1.1
+
+type user
+
+type organization
+  relations
+    define owner: [user]
+    define admin: [user]
+    define member: [user]
+    define viewer: [user] or member
+
+type project
+  relations
+    define owner: [user]
+    define editor: [user]
+    define organization: [organization]
+    define viewer: [user] or editor
+    define org_viewer: viewer from organization
+
+type document
+  relations
+    define owner: [user]
+    define editor: [user]
+    define project: [project]
+    define viewer: [user] or editor
+    define project_viewer: viewer from project
+
+  # bulk/non-bulk add skip user that already exists
+  # bulk/non-bulk delete skip user that does not exists
+  # "FGA Error: Hostname/IP does not match certificate's altnames: Host: api.au1.fga.dev. is not in the cert's altnames: DNS:*.ap-southeast-4.es.amazonaws.com",
+  # FGA API Validation Error: post write : Error Invalid tuple &#39;project:project789#organization@user:org123&#39;. Reason: type &#39;user&#39; is not an allowed type restriction for &#39;project#organization&#39
+  # FGA API Validation Error: post write : Error Invalid tuple &#39;document:doc789#project@user:project123&#39;. Reason: type &#39;user&#39; is not an allowed type restriction for &#39;document#project&#39
+  # FGA API Validation Error: post check : Error type &#39;undefined&#39; not found',
+  # error: "Cannot read properties of undefined (reading 'length')",
+  # 
+
+# name: auth-service-store
+# description: 'Store ID: 01K2G1S42TBKRDWZC65MKYW940'
+# model: |
+#   model
+#     schema 1.1
+
+#   type user
+
+#   type group
+#     relations
+#       define member: [user]
+
+#   type folder
+#     relations
+#       define can_create_file: owner
+#       define owner: [user]
+#       define parent: [folder]
+#       define viewer: [user, user:*, group#member] or owner or viewer from parent
+
+#   type doc
+#     relations
+#       define can_change_owner: owner
+#       define owner: [user]
+#       define parent: [folder]
+#       define can_read: viewer or owner or viewer from parent
+#       define can_share: owner or owner from parent
+#       define viewer: [user, user:*, group#member]
+#       define can_write: owner or owner from parent
+# tuples: []
+# tests:
+#   - name: Tests
+#     check: []

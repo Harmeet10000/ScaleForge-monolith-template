@@ -170,35 +170,94 @@ Create a `.env.dev` file in the root directory with the following variables:
 
 ```env
 # Server
+# Server Configuration
 NODE_ENV=development
-PORT=3000
-SERVER_URL=http://localhost:8000
-
-# Database
-DATABASE_URL=mongodb://localhost:27017/auth-service
-REDIS_URL=redis://localhost:6379
-
-# JWT
-ACCESS_TOKEN_SECRET=your_access_token_secret
-REFRESH_TOKEN_SECRET=your_refresh_token_secret
-ACCESS_TOKEN_EXPIRY=900
-REFRESH_TOKEN_EXPIRY=604800
-
-# Email
-EMAIL_HOST=smtp.example.com
-EMAIL_PORT=587
-EMAIL_USER=your_email@example.com
-EMAIL_PASSWORD=your_email_password
-EMAIL_FROM=noreply@yourservice.com
-
-# Frontend
+PORT=8000
+SERVER_URL=
 FRONTEND_URL=http://localhost:5173
 
-# Backup Configuration
-S3_BACKUP_ENABLED=true
-S3_BUCKET_NAME=your-backup-bucket
+# Database Configuration
+DATABASE=
+DB_POOL_SIZE=
+
+# Migration
+MIGRATE_MONGO_URI=
+MIGRATE_AUTOSYNC=true
+
+# Redis Configuration
+REDIS_HOST=
+REDIS_PORT=
+REDIS_USERNAME=
+REDIS_PASSWORD=
+
+# RabbitMQ Configuration
+RABBITMQ_URL=
+RABBITMQ_PRIVATE_URL=
+RABBITMQ_NODENAME=
+RABBITMQ_DEFAULT_USER=
+RABBITMQ_DEFAULT_PASS=
+
+# Kafka Configuration
+KAFKA_BROKER=
+KAFKA_USERNAME=
+KAFKA_PASSWORD=
+KAFKA_TOPIC=
+KAFKA_SERVICE_URI=
+KAFKA_HOST=
+KAFKA_PORT=
+KAFKA_SSL_CA_CERT=
+KAFKA_SSL_CERT=
+KAFKA_SSL_KEY=
+KAFKA_SSL_ENABLED=true
+
+# JWT Configuration
+ACCESS_TOKEN_SECRET=
+REFRESH_TOKEN_SECRET=
+ACCESS_TOKEN_EXPIRY=
+REFRESH_TOKEN_EXPIRY=
+
+# Email Configuration
+RESEND_KEY=
+
+# Log Configuration
+LOG_LEVEL=debug
+
+# S3 Backup Configuration
+S3_BACKUP_ENABLED=false
+S3_BUCKET_NAME=db-backups
 AWS_REGION=us-east-1
 S3_PREFIX=mongodb-backups/
+BUCKET_NAME=""
+BUCKET_REGION="ap-south-1"
+ACCESS_KEY=""
+SECRET_ACCESS_KEY=""
+
+
+
+# Backup Configuration
+RUN_BACKUP_ONCE=false
+
+
+
+# Google OAuth Configuration
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=GOCSPX-
+GOOGLE_REDIRECT_URIS=
+
+# Gemini
+GEMINI_API_KEY=
+
+
+# OpenFGA Configuration
+OPENFGA_API_URL=
+OPENFGA_API_HOST=
+OPENFGA_STORE_ID=
+OPENFGA_STORE_NAME=
+OPENFGA_MODEL_ID=
+
+# Loki Configuration
+LOKI_HOST=http://loki:3100
+
 ```
 
 </details>
@@ -245,16 +304,6 @@ docker run -p 8000:8000 --env-file .env.prod auth-service-prod
 <details>
 <summary><b>📝 API Documentation</b></summary>
 <br/>
-```bash
-docker build -t auth-service-prod -f docker/prod/Dockerfile .
-docker run -p 8000:8000 --env-file .env.prod auth-service-prod
-```
-
-</details>
-
-<details>
-<summary><b>📝 API Documentation</b></summary>
-<br/>
 
 Once the server is running, access the Swagger documentation at:
 
@@ -272,8 +321,8 @@ http://localhost:8000/api-docs
 ```
 backend/
 ├── docker/                # Docker configuration files
-│   ├── dev/               # Development Docker setup
-│   └── prod/              # Production Docker setup
+│   ├── dev.Dockerfile
+│   └── prod.Dockerfile
 ├── docs/                  # API documentation
 │   ├── swagger-output.json
 │   └── swagger.js
@@ -302,10 +351,10 @@ backend/
 │   ├── app.js             # Express application setup
 │   └── index.js           # Application entry point
 └── test/                  # Test files
-    ├── mockData/          # Mock data for tests
-    ├── routes/            # API route tests
-    ├── utils/             # Test utilities
-    └── validations/       # Validation tests
+    ├── e2e/               # End-to-end tests
+    ├── unit/              # Unit tests
+    ├── integration/       # Integration tests
+    └── performance/       # Performance   tests
 ```
 
 </details>
