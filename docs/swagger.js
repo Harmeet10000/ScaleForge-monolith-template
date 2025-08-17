@@ -1,211 +1,117 @@
-import swaggerAutogen from 'swagger-autogen';
+import swaggerJSDoc from 'swagger-jsdoc';
+import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const outputFile = path.join(__dirname, './swagger-output.json');
-const endpointsFiles = [
-  path.join(__dirname, '../src/routes/authRoutes.js'),
-  path.join(__dirname, '../src/routes/healthRoutes.js'),
-  path.join(__dirname, '../src/routes/permissionsRoutes.js')
-];
-
-const doc = {
-  info: {
-    title: 'Auth Template API',
-    description: 'API documentation for Auth Template Backend',
-    version: '1.0.0',
-    contact: {
-      name: 'API Support',
-      email: 'support@example.com'
+const options = {
+  definition: {
+    openapi: '3.0.0',
+    info: {
+      title: 'Auth Template API',
+      description: `
+        **Production Grade Authentication & Authorization Service**
+      `,
+      version: '1.0.0',
+      contact: {
+        name: 'Harmeet Singh',
+        email: 'harmeetsinghfbd@gmail.com',
+        url: 'https://github.com/Harmeet10000'
+      },
+      license: {
+        name: 'ISC License',
+        url: 'https://github.com/Harmeet10000/production-grade-auth-template?tab=ISC-1-ov-file'
+      },
+      termsOfService: 'https://github.com/Harmeet10000/production-grade-auth-template'
     },
-    license: {
-      name: 'MIT',
-      url: 'https://opensource.org/licenses/MIT'
-    }
+    servers: [
+      {
+        url: 'http://localhost:8000/api/v1',
+        description: 'Development server (Local)'
+      },
+      {
+        url: 'http://auth-service/api/v1',
+        description: 'Dockerized server (Container)'
+      },
+      {
+        url: 'https://reasonable-amazement-production.up.railway.app/api/v1',
+        description: 'Production server (Railway)'
+      }
+    ],
+    components: {
+      securitySchemes: {
+        bearerAuth: {
+          type: 'http',
+          scheme: 'bearer',
+          bearerFormat: 'JWT',
+          description: 'JWT Bearer token authentication. Format: Bearer <token>'
+        },
+        cookieAuth: {
+          type: 'accessToken',
+          in: 'cookie',
+          name: 'accessToken',
+          description: 'Authentication via HTTP-only cookie'
+        }
+      },
+      schemas: {
+        SuccessResponse: {
+          type: 'object',
+          properties: {
+            success: { type: 'boolean', example: true },
+            message: { type: 'string', example: 'Operation completed successfully' },
+            data: { type: 'object', description: 'Response data (varies by endpoint)' }
+          }
+        },
+        ErrorResponse: {
+          type: 'object',
+          properties: {
+            success: { type: 'boolean', example: false },
+            message: { type: 'string', example: 'Error message description' },
+            error: { type: 'string', example: 'Detailed error information' },
+            statusCode: { type: 'integer', example: 400 }
+          }
+        },
+        // User: {
+        //   type: 'object',
+        //   properties: {
+        //     id: { type: 'string', example: '507f1f77bcf86cd799439011' },
+        //     email: { type: 'string', format: 'email', example: 'user@example.com' },
+        //     username: { type: 'string', example: 'john_doe' },
+        //     firstName: { type: 'string', example: 'John' },
+        //     lastName: { type: 'string', example: 'Doe' },
+        //     role: { type: 'string', enum: ['user', 'admin', 'moderator'], example: 'user' },
+        //     isVerified: { type: 'boolean', example: true },
+        //     isActive: { type: 'boolean', example: true },
+        //     createdAt: { type: 'string', format: 'date-time', example: '2024-01-01T00:00:00.000Z' },
+        //     updatedAt: { type: 'string', format: 'date-time', example: '2024-01-01T00:00:00.000Z' }
+        //   }
+        // },
+      }
+    },
+    tags: [
+      { name: 'Authentication', description: 'User authentication and authorization endpoints including login, registration, password reset, and token management' },
+      { name: 'Health', description: 'System health check and status monitoring endpoints' },
+      { name: 'Permissions', description: 'Role-based access control and permission management endpoints' },
+      { name: 'Users', description: 'User profile management and administration endpoints' }
+    ],
+    security: [
+      { bearerAuth: [] },
+      { cookieAuth: [] }
+    ]
   },
-  servers: [
-    {
-      url: 'http://localhost:8000/api/v1',
-      description: 'Development server'
-    },
-    {
-      url: 'https://reasonable-amazement-production.up.railway.app/api/v1',
-      description: 'Production server'
-    }
-  ],
-  basePath: '/api/v1',
-  schemes: ['http', 'https'],
-  consumes: ['application/json'],
-  produces: ['application/json'],
-  tags: [
-    { name: 'Authentication', description: 'Authentication endpoints' },
-    { name: 'Health', description: 'Health check endpoints' }
-  ],
-  securityDefinitions: {
-    bearerAuth: {
-      type: 'http',
-      scheme: 'bearer',
-      bearerFormat: 'JWT'
-    },
-    cookieAuth: {
-      type: 'apiKey',
-      in: 'cookie',
-      name: 'jwt'
-    }
-  },
-  // definitions: {
-  //   // User Model
-  //   User: {
-  //     type: 'object',
-  //     properties: {
-  //       _id: { type: 'string', example: '60d0fe4f5311236168a109ca' },
-  //       name: { type: 'string', example: 'John Doe' },
-  //       email: { type: 'string', example: 'john@example.com' },
-  //       password: { type: 'string', example: 'hashedpassword123' },
-  //       photo: { type: 'string', example: 'default.jpg' },
-  //       role: { type: 'string', example: 'user', enum: ['user', 'admin'] },
-  //       isVerified: { type: 'boolean', example: true },
-  //       isActive: { type: 'boolean', example: true },
-  //       passwordChangedAt: { type: 'string', format: 'date-time' },
-  //       passwordResetToken: { type: 'string' },
-  //       passwordResetExpires: { type: 'string', format: 'date-time' },
-  //       emailVerificationToken: { type: 'string' },
-  //       emailVerificationExpires: { type: 'string', format: 'date-time' },
-  //       createdAt: {
-  //         type: 'string',
-  //         format: 'date-time',
-  //         example: '2023-01-01T00:00:00.000Z'
-  //       },
-  //       updatedAt: { type: 'string', format: 'date-time' }
-  //     },
-  //     required: ['name', 'email', 'password']
-  //   },
-  //   RegisterRequest: {
-  //     type: 'object',
-  //     properties: {
-  //       name: { type: 'string', example: 'John Doe' },
-  //       email: { type: 'string', example: 'john@example.com' },
-  //       password: { type: 'string', example: 'Password123!' }
-  //     },
-  //     required: ['name', 'email', 'password']
-  //   },
-  //   RegisterResponse: {
-  //     type: 'object',
-  //     properties: {
-  //       message: { type: 'string', example: 'Registration successful. Please verify your email.' },
-  //       user: { $ref: '#/definitions/User' }
-  //     }
-  //   },
-  //   LoginRequest: {
-  //     type: 'object',
-  //     properties: {
-  //       email: { type: 'string', example: 'john@example.com' },
-  //       password: { type: 'string', example: 'Password123!' }
-  //     },
-  //     required: ['email', 'password']
-  //   },
-  //   LoginResponse: {
-  //     type: 'object',
-  //     properties: {
-  //       message: { type: 'string', example: 'Login successful.' },
-  //       accessToken: { type: 'string', example: 'jwt.token.here' },
-  //       refreshToken: { type: 'string', example: 'refresh.token.here' },
-  //       user: { $ref: '#/definitions/User' }
-  //     }
-  //   },
-  //   RefreshTokenRequest: {
-  //     type: 'object',
-  //     properties: {
-  //       refreshToken: { type: 'string', example: 'refresh.token.here' }
-  //     },
-  //     required: ['refreshToken']
-  //   },
-  //   RefreshTokenResponse: {
-  //     type: 'object',
-  //     properties: {
-  //       accessToken: { type: 'string', example: 'jwt.token.here' }
-  //     }
-  //   },
-  //   ForgotPasswordRequest: {
-  //     type: 'object',
-  //     properties: {
-  //       email: { type: 'string', example: 'john@example.com' }
-  //     },
-  //     required: ['email']
-  //   },
-  //   ForgotPasswordResponse: {
-  //     type: 'object',
-  //     properties: {
-  //       message: { type: 'string', example: 'Password reset email sent.' }
-  //     }
-  //   },
-  //   ResetPasswordRequest: {
-  //     type: 'object',
-  //     properties: {
-  //       password: { type: 'string', example: 'NewPassword123!' }
-  //     },
-  //     required: ['password']
-  //   },
-  //   ResetPasswordResponse: {
-  //     type: 'object',
-  //     properties: {
-  //       message: { type: 'string', example: 'Password reset successful.' }
-  //     }
-  //   },
-  //   ChangePasswordRequest: {
-  //     type: 'object',
-  //     properties: {
-  //       currentPassword: { type: 'string', example: 'OldPassword123!' },
-  //       newPassword: { type: 'string', example: 'NewPassword123!' }
-  //     },
-  //     required: ['currentPassword', 'newPassword']
-  //   },
-  //   ChangePasswordResponse: {
-  //     type: 'object',
-  //     properties: {
-  //       message: { type: 'string', example: 'Password changed successfully.' }
-  //     }
-  //   },
-  //   ConfirmationResponse: {
-  //     type: 'object',
-  //     properties: {
-  //       message: { type: 'string', example: 'Email confirmed successfully.' }
-  //     }
-  //   },
-  //   LogoutResponse: {
-  //     type: 'object',
-  //     properties: {
-  //       message: { type: 'string', example: 'Logout successful.' }
-  //     }
-  //   },
-  //   HealthResponse: {
-  //     type: 'object',
-  //     properties: {
-  //       status: { type: 'string', example: 'ok' }
-  //     }
-  //   },
-  //   SelfResponse: {
-  //     type: 'object',
-  //     properties: {
-  //       app: { type: 'string', example: 'API' }
-  //     }
-  //   }
-  // }
+  apis: [
+    path.join(__dirname, '../src/routes/*.js')
+  ]
 };
 
-swaggerAutogen()(outputFile, endpointsFiles, doc);
+// Generate swagger specification
+export const swaggerSpec = swaggerJSDoc(options);
 
-// // Generate swagger.json
-// const generateSwagger = async () => {
-//   try {
-//     await swaggerAutogen()(outputFile, endpointsFiles, doc);
-//     console.log("Swagger documentation generated successfully");
-//   } catch (error) {
-//     console.error("Error generating Swagger documentation:", error);
-//   }
-// };
+// Write swagger specification to file when executed
+// const outputFile = path.join(__dirname, 'swagger-output.json');
+// fs.writeFileSync(outputFile, JSON.stringify(swaggerSpec, null, 2));
+// console.log('✅ Swagger documentation generated at:', outputFile);
 
-// export default generateSwagger;
+

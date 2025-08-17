@@ -92,9 +92,9 @@ export const getHash = catchAsync(async (objectType, key) => {
   const cacheKey = getCacheKey(objectType, key);
   // logger.debug(`Getting hash: ${cacheKey}`);
   const result = await redisClient.hgetall(cacheKey);
-  if (!result || Object.keys(result).length === 0) {
-    return null;
-  }
+  // if (!result || Object.keys(result).length === 0) {
+  //   return null;
+  // }
   // Deserialize each field if it's a JSON string
   Object.keys(result).forEach((field) => {
     try {

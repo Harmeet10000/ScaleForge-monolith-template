@@ -10,7 +10,6 @@
 	"scripts": {
 		"dev": "nodemon  src/index.js",
 		"build": "rm -rf dist && cross-env NODE_ENV=production npx webpack --config webpack.config.js",
-		"dev:prod": "nodemon dist/index.cjs",
 		"start": "node dist/index.cjs",
 		"swagger": "node ./docs/swagger.js",
 		"test": "node test-runner.js",
@@ -72,7 +71,9 @@
 	},
 	"dependencies": {
 		"@aws-sdk/client-s3": "3.797.0",
+		"@aws-sdk/client-sns": "3.864.0",
 		"@aws-sdk/s3-request-presigner": "3.797.0",
+		"@elastic/elasticsearch": "9.1.1",
 		"@google/genai": "1.11.0",
 		"@openfga/sdk": "0.9.0",
 		"amqplib": "0.10.7",
@@ -104,6 +105,8 @@
 		"resend": "^4.2.0",
 		"source-map-support": "^0.5.21",
 		"swagger-autogen": "^2.23.7",
+		"swagger-jsdoc": "6.2.8",
+		"swagger-model-validator": "3.0.21",
 		"swagger-ui-express": "^5.0.1",
 		"uuid": "^11.1.0",
 		"winston": "^3.17.0",

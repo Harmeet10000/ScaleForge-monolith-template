@@ -1,21 +1,72 @@
 services:
-  auth-service:
-    image: auth-service:latest
-    container_name: auth-service-container
+  nginx:
+    image: nginx:alpine
+    container_name: nginx
+    ports:
+      - "80:8000"
+    volumes:
+      - ./nginx/http.conf:/etc/nginx/nginx.conf:ro
+    # - ./certs:/etc/nginx/certs:ro  # Mount SSL certificates
+    depends_on:
+      auth-service-1:
+        condition: service_healthy
+      auth-service-2:
+        condition: service_healthy
+    networks:
+      - auth-network
+    restart: unless-stopped
+
+  # Auth Service Instance 1
+  auth-service-1:
     build:
       context: .
       dockerfile: docker/dev.Dockerfile
-    # depends_on:
-    #   - loki
+    container_name: auth-service-1
     ports:
       - '8000:8000'
     env_file:
       - .env.dev
+    environment:
+      - SERVER_ID=auth-service-1
     restart: unless-stopped
     volumes:
       - ./src:/usr/src/backend-app/src
       - ./package.json:/usr/src/backend-app/package.json
       - ./package-lock.json:/usr/src/backend-app/package-lock.json
+    networks:
+      - auth-network
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8000/api/v1/health/self || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Auth Service Instance 2
+  auth-service-2:
+    build:
+      context: .
+      dockerfile: docker/dev.Dockerfile
+    container_name: auth-service-2
+    ports:
+      - '8001:8000'
+    env_file:
+      - .env.dev
+    environment:
+      - SERVER_ID=auth-service-2
+    restart: unless-stopped
+    volumes:
+      - ./src:/usr/src/backend-app/src
+      - ./package.json:/usr/src/backend-app/package.json
+      - ./package-lock.json:/usr/src/backend-app/package-lock.json
+    networks:
+      - auth-network
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8000/api/v1/health/self || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
   loki:
     image: grafana/loki:2.8.2
@@ -36,24 +87,24 @@ services:
     command: -config.file=/etc/promtail/config.yml
     restart: unless-stopped
 
-  prometheus:
-    image: prom/prometheus
-    container_name: prometheus
-    volumes:
-      - ./src/config/prometheus.yaml:/etc/prometheus/prometheus.yaml
-    ports:
-      - '9090:9090'
-    command:
-      - '--config.file=/etc/prometheus/prometheus.yaml'
-    restart: unless-stopped
+  # prometheus:
+  #   image: prom/prometheus
+  #   container_name: prometheus
+  #   volumes:
+  #     - ./src/config/prometheus.yaml:/etc/prometheus/prometheus.yaml
+  #   ports:
+  #     - '9090:9090'
+  #   command:
+  #     - '--config.file=/etc/prometheus/prometheus.yaml'
+  #   restart: unless-stopped
 
-  grafana:
-    image: grafana/grafana
-    container_name: grafana
-    ports:
-      - '3000:3000'
-    volumes:
-      - grafana_data:/var/lib/grafana
+  # grafana:
+  #   image: grafana/grafana
+  #   container_name: grafana
+  #   ports:
+  #     - '3000:3000'
+  #   volumes:
+  #     - grafana_data:/var/lib/grafana
 
   # dragonfly:
   #   image: docker.dragonflydb.io/dragonflydb/dragonfly:v1.27.1

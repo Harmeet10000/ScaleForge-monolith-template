@@ -45,7 +45,7 @@ COPY --from=builder /usr/src/backend-app/dist ./dist
 
 COPY --chown=appuser:appgroup ./scripts ./scripts
 COPY --chown=appuser:appgroup ./swagger.json ./swagger.json
-COPY --chown=appuser:appgroup ./.env.production ./.env.production
+COPY --chown=appuser:appgroup ./.env.prod ./.env.prod
 
 EXPOSE 8000
 

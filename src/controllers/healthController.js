@@ -11,7 +11,12 @@ import { SUCCESS } from '../constants/responseMessage.js';
 import { catchAsync } from '../utils/catchAsync.js';
 
 export const self = (req, res) => {
-  httpResponse(req, res, 200, SUCCESS);
+  const serverInfo = {
+    server: process.env.SERVER_ID || 'unknown',
+    container: process.env.HOSTNAME || 'unknown',
+    timestamp: new Date().toISOString()
+  };
+  httpResponse(req, res, 200, SUCCESS, serverInfo);
 };
 
 export const health = catchAsync(async (req, res) => {

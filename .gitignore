@@ -45,6 +45,7 @@ coverage/
 *.pem
 *.pfx
 *.cert
+*.crt
 # certs/
 
 # Uploads

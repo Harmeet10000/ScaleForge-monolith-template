@@ -3,9 +3,10 @@
 1. Implement a OpenFGA to enhance scalability, reliability, and security of your authentication service. with permissions                                                                 - DONE
 3. add ELK stack for logging and monitoring                                           - ABANDONED
 12. also add a search engine like Algolia or Elasticsearch/Postgres Extensions for better search capabilities
-5. add recommendation system using convex or something else
+5. add recommendation system using Convex or AWS personalise/GCP equivalent
 4. properly implement RabbitMQ for message queuing for modularity and decoupling
 13. check performance/stress testing using grafana k6
+16. add AWS SNS for push notifications
 10. make a fucking awesome documentation for the same in Postman or Swagger
 8. make AI-driven features for enhanced user experience and personalization using Gemini API
 2. make a branch for drizzle + JS for AI features and Postgres extensions
@@ -51,12 +52,6 @@
 - **Implement request/response compression** for API responses
 
 
-
-
-
-- **Service layer** could be more modular
-- **Repository pattern** implementation needs enhancement
-- **Dependency injection** for better testability
 
 #### 2. Testing Strategy
 - **Unit test coverage** appears limited
@@ -177,5 +172,3 @@ export default function() {
   });
 }
 ```
-
-This analysis provides a comprehensive roadmap for optimizing your authentication service. Would you like me to dive deeper into any specific area or help implement any of these recommendations?

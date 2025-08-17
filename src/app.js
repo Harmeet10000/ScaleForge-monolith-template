@@ -6,6 +6,7 @@ import hpp from 'hpp';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import swaggerUi from 'swagger-ui-express';
+import { swaggerSpec } from '../docs/swagger.js';
 import { httpError } from './utils/httpError.js';
 import globalErrorHandler from './middlewares/globalErrorHandler.js';
 import {
@@ -13,8 +14,7 @@ import {
   corsOptions,
   limiter,
   metricsMiddleware,
-  securityHeaders,
-  swaggerDocument
+  securityHeaders
 } from './middlewares/serverMiddleware.js';
 import authRoutes from './routes/authRoutes.js';
 import healthRoutes from './routes/healthRoutes.js';
@@ -85,11 +85,11 @@ app.use(metricsMiddleware);
 app.use(
   '/api-docs',
   swaggerUi.serve,
-  swaggerUi.setup(swaggerDocument, {
+  swaggerUi.setup(swaggerSpec, {
     explorer: true,
-    customCss: '.swagger-ui .topbar { display: none }',
+    // customCss: '.swagger-ui .topbar { display: none }',
     swaggerOptions: {
-      docExpansion: 'none',
+      // docExpansion: 'none',
       filter: true,
       showRequestDuration: true
     }
@@ -101,7 +101,7 @@ app.use(correlationIdMiddleware);
 // Endpoint to serve the swagger.json file
 app.get('/swagger.json', (req, res) => {
   res.setHeader('Content-Type', 'application/json');
-  res.send(swaggerDocument);
+  res.send(swaggerSpec);
 });
 app.get('/', (req, res) => {
   res.status(200).json({ message: 'Welcome to the Auth Service API 🚀.' });

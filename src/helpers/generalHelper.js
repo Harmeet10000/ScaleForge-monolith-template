@@ -7,28 +7,20 @@ import jwt from 'jsonwebtoken';
 import dayjs from 'dayjs';
 
 export const extractInfoPhoneNumber = (phoneNumber) => {
-  try {
-    const parsedContactNumber = parsePhoneNumber(phoneNumber);
-    if (parsedContactNumber) {
-      return {
-        countryCode: parsedContactNumber.countryCallingCode,
-        isoCode: parsedContactNumber.country || null,
-        internationalNumber: parsedContactNumber.formatInternational()
-      };
-    }
-
+  const parsedContactNumber = parsePhoneNumber(phoneNumber);
+  if (parsedContactNumber) {
     return {
-      countryCode: null,
-      isoCode: null,
-      internationalNumber: null
-    };
-  } catch (err) {
-    return {
-      countryCode: null,
-      isoCode: null,
-      internationalNumber: null
+      countryCode: parsedContactNumber.countryCallingCode,
+      isoCode: parsedContactNumber.country || null,
+      internationalNumber: parsedContactNumber.formatInternational()
     };
   }
+
+  return {
+    countryCode: null,
+    isoCode: null,
+    internationalNumber: null
+  };
 };
 
 export const hashPassword = (password) => bcrypt.hash(password, 10);
