@@ -43,30 +43,30 @@ services:
       start_period: 40s
 
   # Auth Service Instance 2
-  auth-service-2:
-    build:
-      context: .
-      dockerfile: docker/dev.Dockerfile
-    container_name: auth-service-2
-    ports:
-      - '8001:8000'
-    env_file:
-      - .env.dev
-    environment:
-      - SERVER_ID=auth-service-2
-    restart: unless-stopped
-    volumes:
-      - ./src:/usr/src/backend-app/src
-      - ./package.json:/usr/src/backend-app/package.json
-      - ./package-lock.json:/usr/src/backend-app/package-lock.json
-    networks:
-      - auth-network
-    healthcheck:
-      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8000/api/v1/health/self || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
+  # auth-service-2:
+  #   build:
+  #     context: .
+  #     dockerfile: docker/dev.Dockerfile
+  #   container_name: auth-service-2
+  #   ports:
+  #     - '8001:8000'
+  #   env_file:
+  #     - .env.dev
+  #   environment:
+  #     - SERVER_ID=auth-service-2
+  #   restart: unless-stopped
+  #   volumes:
+  #     - ./src:/usr/src/backend-app/src
+  #     - ./package.json:/usr/src/backend-app/package.json
+  #     - ./package-lock.json:/usr/src/backend-app/package-lock.json
+  #   networks:
+  #     - auth-network
+  #   healthcheck:
+  #     test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8000/api/v1/health/self || exit 1"]
+  #     interval: 30s
+  #     timeout: 10s
+  #     retries: 3
+  #     start_period: 40s
 
   loki:
     image: grafana/loki:2.8.2

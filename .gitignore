@@ -76,3 +76,4 @@ uploads/
 
 # if you are using pnpm
 .pnpm-store/
+node_modules
