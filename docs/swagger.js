@@ -72,7 +72,7 @@ const options = {
             error: { type: 'string', example: 'Detailed error information' },
             statusCode: { type: 'integer', example: 400 }
           }
-        },
+        }
         // User: {
         //   type: 'object',
         //   properties: {
@@ -91,19 +91,21 @@ const options = {
       }
     },
     tags: [
-      { name: 'Authentication', description: 'User authentication and authorization endpoints including login, registration, password reset, and token management' },
+      {
+        name: 'Authentication',
+        description:
+          'User authentication and authorization endpoints including login, registration, password reset, and token management'
+      },
       { name: 'Health', description: 'System health check and status monitoring endpoints' },
-      { name: 'Permissions', description: 'Role-based access control and permission management endpoints' },
+      {
+        name: 'Permissions',
+        description: 'Role-based access control and permission management endpoints'
+      },
       { name: 'Users', description: 'User profile management and administration endpoints' }
     ],
-    security: [
-      { bearerAuth: [] },
-      { cookieAuth: [] }
-    ]
+    security: [{ bearerAuth: [] }, { cookieAuth: [] }]
   },
-  apis: [
-    path.join(__dirname, '../src/routes/*.js')
-  ]
+  apis: [path.join(__dirname, '../src/routes/*.js')]
 };
 
 // Generate swagger specification
@@ -113,5 +115,3 @@ export const swaggerSpec = swaggerJSDoc(options);
 // const outputFile = path.join(__dirname, 'swagger-output.json');
 // fs.writeFileSync(outputFile, JSON.stringify(swaggerSpec, null, 2));
 // console.log('✅ Swagger documentation generated at:', outputFile);
-
-

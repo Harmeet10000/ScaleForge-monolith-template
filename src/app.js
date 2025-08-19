@@ -5,6 +5,7 @@ import xss from 'xss-clean';
 import hpp from 'hpp';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
+import timeout from 'express-timeout-handler';
 import swaggerUi from 'swagger-ui-express';
 import { swaggerSpec } from '../docs/swagger.js';
 import { httpError } from './utils/httpError.js';
@@ -23,6 +24,16 @@ import permissionsRoutes from './routes/permissionsRoutes.js';
 const app = express();
 
 // 1) GLOBAL MIDDLEWARES
+// Set request timeout to 10 seconds
+app.use(
+  timeout.handler({
+    timeout: 10000,
+    onTimeout: (req, res, next) => {
+      httpError(next, new Error('Request took too long to process'), req, 408);
+    }
+  })
+);
+
 // Set security HTTP headers
 app.use(securityHeaders);
 

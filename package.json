@@ -91,6 +91,7 @@
 		"express-mongo-sanitize": "^2.2.0",
 		"express-prom-bundle": "8.0.0",
 		"express-rate-limit": "^7.5.0",
+		"express-timeout-handler": "2.2.2",
 		"helmet": "^8.0.0",
 		"hpp": "0.2.3",
 		"ioredis": "5.6.1",
