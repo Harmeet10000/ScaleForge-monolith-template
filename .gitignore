@@ -53,8 +53,8 @@ uploads/
 
 # Optional - If you don't want these in your repo
 # .env.local
-.env.*
 .env
+.env.*
 
 # Other
 .history

@@ -16,7 +16,8 @@ export const httpResponse = (req, res, responseStatusCode, responseMessage, data
   };
 
   logger.info(`CONTROLLER_RESPONSE`, {
-    meta: response  });
+    meta: response
+  });
 
   // Production Env check
   if (process.env.NODE_ENV === EApplicationEnvironment.PRODUCTION) {

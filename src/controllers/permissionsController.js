@@ -72,7 +72,11 @@ export const removeUserFromOrganization = catchAsync(async (req, res, next) => {
     return httpError(next, error, req, 422);
   }
 
-  await permissionService.removeUserFromOrganization(value.userId, value.organizationId, value.role);
+  await permissionService.removeUserFromOrganization(
+    value.userId,
+    value.organizationId,
+    value.role
+  );
 
   httpResponse(req, res, 200, USER_REMOVED_FROM_ORGANIZATION);
 });
@@ -96,7 +100,10 @@ export const getUserOrganizations = catchAsync(async (req, res, next) => {
     return httpError(next, error, req, 422);
   }
 
-  const organizations = await permissionService.getUserOrganizations(value.userId, value.permission);
+  const organizations = await permissionService.getUserOrganizations(
+    value.userId,
+    value.permission
+  );
 
   httpResponse(req, res, 200, USER_ORGANIZATIONS_RETRIEVED, { organizations });
 });
@@ -229,7 +236,11 @@ export const bulkAddUsersToOrganization = catchAsync(async (req, res, next) => {
     return httpError(next, error, req, 422);
   }
 
-  await permissionService.bulkAddUsersToOrganization(value.userIds, value.organizationId, value.role);
+  await permissionService.bulkAddUsersToOrganization(
+    value.userIds,
+    value.organizationId,
+    value.role
+  );
 
   httpResponse(req, res, 201, `${value.userIds.length} ${USERS_ADDED_TO_ORGANIZATION}`);
 });

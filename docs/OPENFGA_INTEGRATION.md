@@ -36,16 +36,19 @@ User
 ### Key Components
 
 1. **OpenFGA Service** (`src/services/openFGAService.js`)
+
    - Low-level OpenFGA operations
    - Authorization model management
    - Batch operations for performance
 
 2. **Policy Manager** (`src/services/policyManager.js`)
+
    - High-level business logic
    - Common authorization patterns
    - DRY principle implementation
 
 3. **Authorization Middleware** (`src/middlewares/authorizationMiddleware.js`)
+
    - Express middleware for route protection
    - Multiple authorization strategies
    - Integration with existing auth system
@@ -55,41 +58,43 @@ User
    - CRUD operations for permissions
    - Bulk operations support
 
-
-
 ## 📊 Authorization Model
 
 ### Type Definitions
 
 #### User
+
 Basic user entity with no relations.
 
 #### Organization
+
 ```yaml
 relations:
-  owner: [user]           # Can do everything
-  admin: [user]           # Can manage members
-  member: [user]          # Can view and participate
-  viewer: [user, member]  # Can only view (inherited from member)
+  owner: [user] # Can do everything
+  admin: [user] # Can manage members
+  member: [user] # Can view and participate
+  viewer: [user, member] # Can only view (inherited from member)
 ```
 
 #### Project
+
 ```yaml
 relations:
-  owner: [user]                    # Project owner
-  editor: [user]                   # Can edit project
-  viewer: [user, editor]           # Can view (inherited from editor)
-  organization: [organization]     # Linked organization
+  owner: [user] # Project owner
+  editor: [user] # Can edit project
+  viewer: [user, editor] # Can view (inherited from editor)
+  organization: [organization] # Linked organization
   org_viewer: [organization#viewer] # Inherit from org viewers
 ```
 
 #### Document
+
 ```yaml
 relations:
-  owner: [user]                  # Document owner
-  editor: [user]                 # Can edit document
-  viewer: [user, editor]         # Can view (inherited from editor)
-  project: [project]             # Linked project
+  owner: [user] # Document owner
+  editor: [user] # Can edit document
+  viewer: [user, editor] # Can view (inherited from editor)
+  project: [project] # Linked project
   project_viewer: [project#viewer] # Inherit from project viewers
 ```
 
@@ -204,18 +209,10 @@ GET /api/v1/authorization/resources/{resourceType}/{resourceId}/permissions
 import { authorize, authorizeProject } from '../middlewares/authorizationMiddleware.js';
 
 // Protect route with specific permission
-app.get('/projects/:projectId', 
-  authMiddleware,
-  authorizeProject('viewer'),
-  getProject
-);
+app.get('/projects/:projectId', authMiddleware, authorizeProject('viewer'), getProject);
 
 // Require ownership
-app.delete('/projects/:projectId',
-  authMiddleware,
-  authorizeProject('owner'),
-  deleteProject
-);
+app.delete('/projects/:projectId', authMiddleware, authorizeProject('owner'), deleteProject);
 ```
 
 ### Policy Manager Usage
@@ -366,6 +363,7 @@ console.log('Resource permissions:', resourcePerms);
 #### 1. OpenFGA Playground
 
 Access the playground at `http://localhost:3000` to:
+
 - Visualize authorization model
 - Test authorization queries
 - Debug relationships

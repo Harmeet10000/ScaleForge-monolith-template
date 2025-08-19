@@ -50,7 +50,7 @@ const consoleLogFormat = format.printf((info) => {
 });
 
 const consoleTransport = () => {
-  if (process.env.NODE_ENV === EApplicationEnvironment.DEVELOPMENT ) {
+  if (process.env.NODE_ENV === EApplicationEnvironment.DEVELOPMENT) {
     return [
       new transports.Console({
         level: process.env.LOG_LEVEL || 'debug',
@@ -59,7 +59,7 @@ const consoleTransport = () => {
     ];
   }
 
-  if(process.env.NODE_ENV === EApplicationEnvironment.PRODUCTION) {
+  if (process.env.NODE_ENV === EApplicationEnvironment.PRODUCTION) {
     return [
       new transports.Console({
         level: process.env.LOG_LEVEL || 'info',

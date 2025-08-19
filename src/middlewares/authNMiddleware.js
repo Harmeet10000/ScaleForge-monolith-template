@@ -56,9 +56,9 @@ export const protect = catchAsync(async (req, res, next) => {
 
     // If user exists, cache it for future requests (30 min expiry)
     if (dbUser && !cachedUser) {
-        delete dbUser.passwordReset;
-        delete dbUser.accountConfirmation;
-        delete dbUser.__v;
+      delete dbUser.passwordReset;
+      delete dbUser.accountConfirmation;
+      delete dbUser.__v;
       await setHash('user', `id:${decoded.userId}`, dbUser.toObject(), 1800);
       // logger.debug(`User cached: ${decoded.userId}`);
     }

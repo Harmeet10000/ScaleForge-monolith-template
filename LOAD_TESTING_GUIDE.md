@@ -5,6 +5,7 @@
 ### 1. K6 Load Testing Scripts
 
 **Create: `tests/load/auth-load-test.js`**
+
 ```javascript
 import http from 'k6/http';
 import { check, sleep } from 'k6';
@@ -17,19 +18,19 @@ const registerTrend = new Trend('register_duration');
 
 export const options = {
   stages: [
-    { duration: '2m', target: 10 },   // Ramp up to 10 users
-    { duration: '5m', target: 10 },   // Stay at 10 users
-    { duration: '2m', target: 50 },   // Ramp up to 50 users
-    { duration: '5m', target: 50 },   // Stay at 50 users
-    { duration: '2m', target: 100 },  // Ramp up to 100 users
-    { duration: '5m', target: 100 },  // Stay at 100 users
-    { duration: '5m', target: 0 },    // Ramp down to 0 users
+    { duration: '2m', target: 10 }, // Ramp up to 10 users
+    { duration: '5m', target: 10 }, // Stay at 10 users
+    { duration: '2m', target: 50 }, // Ramp up to 50 users
+    { duration: '5m', target: 50 }, // Stay at 50 users
+    { duration: '2m', target: 100 }, // Ramp up to 100 users
+    { duration: '5m', target: 100 }, // Stay at 100 users
+    { duration: '5m', target: 0 } // Ramp down to 0 users
   ],
   thresholds: {
     http_req_duration: ['p(95)<500'], // 95% of requests must complete below 500ms
-    http_req_failed: ['rate<0.1'],    // Error rate must be below 10%
-    errors: ['rate<0.1'],
-  },
+    http_req_failed: ['rate<0.1'], // Error rate must be below 10%
+    errors: ['rate<0.1']
+  }
 };
 
 const BASE_URL = __ENV.BASE_URL || 'http://localhost:8000';
@@ -40,7 +41,7 @@ export function setup() {
   return { baseUrl: BASE_URL };
 }
 
-export default function(data) {
+export default function (data) {
   const testUser = {
     email: `test${Math.random().toString(36).substring(7)}@example.com`,
     password: 'TestPassword123!',
@@ -49,8 +50,9 @@ export default function(data) {
   };
 
   // Test user registration
-  const registerResponse = http.post(`${data.baseUrl}/api/v1/auth/register`, 
-    JSON.stringify(testUser), 
+  const registerResponse = http.post(
+    `${data.baseUrl}/api/v1/auth/register`,
+    JSON.stringify(testUser),
     {
       headers: { 'Content-Type': 'application/json' },
       timeout: '30s'
@@ -59,7 +61,7 @@ export default function(data) {
 
   const registerSuccess = check(registerResponse, {
     'register status is 201': (r) => r.status === 201,
-    'register response time < 1000ms': (r) => r.timings.duration < 1000,
+    'register response time < 1000ms': (r) => r.timings.duration < 1000
   });
 
   registerTrend.add(registerResponse.timings.duration);
@@ -68,11 +70,12 @@ export default function(data) {
   sleep(1);
 
   // Test user login
-  const loginResponse = http.post(`${data.baseUrl}/api/v1/auth/login`, 
+  const loginResponse = http.post(
+    `${data.baseUrl}/api/v1/auth/login`,
     JSON.stringify({
       email: testUser.email,
       password: testUser.password
-    }), 
+    }),
     {
       headers: { 'Content-Type': 'application/json' },
       timeout: '30s'
@@ -89,7 +92,7 @@ export default function(data) {
       } catch (e) {
         return false;
       }
-    },
+    }
   });
 
   loginTrend.add(loginResponse.timings.duration);
@@ -97,11 +100,11 @@ export default function(data) {
 
   if (loginSuccess) {
     const token = JSON.parse(loginResponse.body).data.accessToken;
-    
+
     // Test protected endpoint
     const profileResponse = http.get(`${data.baseUrl}/api/v1/auth/profile`, {
-      headers: { 
-        'Authorization': `Bearer ${token}`,
+      headers: {
+        Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json'
       },
       timeout: '30s'
@@ -109,7 +112,7 @@ export default function(data) {
 
     check(profileResponse, {
       'profile status is 200': (r) => r.status === 200,
-      'profile response time < 300ms': (r) => r.timings.duration < 300,
+      'profile response time < 300ms': (r) => r.timings.duration < 300
     });
   }
 
@@ -122,33 +125,34 @@ export function teardown(data) {
 ```
 
 **Create: `tests/load/stress-test.js`**
+
 ```javascript
 import http from 'k6/http';
 import { check } from 'k6';
 
 export const options = {
   stages: [
-    { duration: '1m', target: 100 },   // Ramp up
-    { duration: '5m', target: 200 },   // Stress level
-    { duration: '1m', target: 300 },   // Peak stress
-    { duration: '5m', target: 300 },   // Maintain peak
-    { duration: '2m', target: 0 },     // Ramp down
+    { duration: '1m', target: 100 }, // Ramp up
+    { duration: '5m', target: 200 }, // Stress level
+    { duration: '1m', target: 300 }, // Peak stress
+    { duration: '5m', target: 300 }, // Maintain peak
+    { duration: '2m', target: 0 } // Ramp down
   ],
   thresholds: {
     http_req_duration: ['p(95)<1000'], // Relaxed threshold for stress test
-    http_req_failed: ['rate<0.2'],     // Allow higher error rate
-  },
+    http_req_failed: ['rate<0.2'] // Allow higher error rate
+  }
 };
 
 const BASE_URL = __ENV.BASE_URL || 'http://localhost:8000';
 
-export default function() {
+export default function () {
   // Stress test with health check endpoint
   const response = http.get(`${BASE_URL}/api/v1/health`);
-  
+
   check(response, {
     'status is 200': (r) => r.status === 200,
-    'response time < 2000ms': (r) => r.timings.duration < 2000,
+    'response time < 2000ms': (r) => r.timings.duration < 2000
   });
 }
 ```
@@ -156,55 +160,57 @@ export default function() {
 ### 2. Artillery Load Testing (Alternative)
 
 **Create: `tests/load/artillery-config.yml`**
+
 ```yaml
 config:
   target: 'http://localhost:8000'
   phases:
     - duration: 60
       arrivalRate: 10
-      name: "Warm up"
+      name: 'Warm up'
     - duration: 300
       arrivalRate: 50
-      name: "Load test"
+      name: 'Load test'
     - duration: 120
       arrivalRate: 100
-      name: "Stress test"
+      name: 'Stress test'
   payload:
-    path: "test-users.csv"
+    path: 'test-users.csv'
     fields:
-      - "email"
-      - "password"
+      - 'email'
+      - 'password'
   defaults:
     headers:
-      Content-Type: "application/json"
+      Content-Type: 'application/json'
 
 scenarios:
-  - name: "Authentication Flow"
+  - name: 'Authentication Flow'
     weight: 70
     flow:
       - post:
-          url: "/api/v1/auth/login"
+          url: '/api/v1/auth/login'
           json:
-            email: "{{ email }}"
-            password: "{{ password }}"
+            email: '{{ email }}'
+            password: '{{ password }}'
           capture:
-            - json: "$.data.accessToken"
-              as: "token"
+            - json: '$.data.accessToken'
+              as: 'token'
       - get:
-          url: "/api/v1/auth/profile"
+          url: '/api/v1/auth/profile'
           headers:
-            Authorization: "Bearer {{ token }}"
-  
-  - name: "Health Check"
+            Authorization: 'Bearer {{ token }}'
+
+  - name: 'Health Check'
     weight: 30
     flow:
       - get:
-          url: "/api/v1/health"
+          url: '/api/v1/health'
 ```
 
 ### 3. Performance Monitoring Scripts
 
 **Create: `scripts/performance-monitor.js`**
+
 ```javascript
 import { performance } from 'perf_hooks';
 import { logger } from '../src/utils/logger.js';
@@ -217,33 +223,42 @@ class PerformanceMonitor {
 
   startMonitoring() {
     // Monitor memory usage
-    this.intervals.set('memory', setInterval(() => {
-      const usage = process.memoryUsage();
-      logger.info('Memory Usage', {
-        heapUsed: Math.round(usage.heapUsed / 1024 / 1024),
-        heapTotal: Math.round(usage.heapTotal / 1024 / 1024),
-        external: Math.round(usage.external / 1024 / 1024),
-        rss: Math.round(usage.rss / 1024 / 1024)
-      });
-    }, 30000)); // Every 30 seconds
+    this.intervals.set(
+      'memory',
+      setInterval(() => {
+        const usage = process.memoryUsage();
+        logger.info('Memory Usage', {
+          heapUsed: Math.round(usage.heapUsed / 1024 / 1024),
+          heapTotal: Math.round(usage.heapTotal / 1024 / 1024),
+          external: Math.round(usage.external / 1024 / 1024),
+          rss: Math.round(usage.rss / 1024 / 1024)
+        });
+      }, 30000)
+    ); // Every 30 seconds
 
     // Monitor CPU usage
-    this.intervals.set('cpu', setInterval(() => {
-      const usage = process.cpuUsage();
-      logger.info('CPU Usage', {
-        user: usage.user,
-        system: usage.system
-      });
-    }, 30000));
+    this.intervals.set(
+      'cpu',
+      setInterval(() => {
+        const usage = process.cpuUsage();
+        logger.info('CPU Usage', {
+          user: usage.user,
+          system: usage.system
+        });
+      }, 30000)
+    );
 
     // Monitor event loop lag
-    this.intervals.set('eventLoop', setInterval(() => {
-      const start = performance.now();
-      setImmediate(() => {
-        const lag = performance.now() - start;
-        logger.info('Event Loop Lag', { lag: Math.round(lag) });
-      });
-    }, 10000)); // Every 10 seconds
+    this.intervals.set(
+      'eventLoop',
+      setInterval(() => {
+        const start = performance.now();
+        setImmediate(() => {
+          const lag = performance.now() - start;
+          logger.info('Event Loop Lag', { lag: Math.round(lag) });
+        });
+      }, 10000)
+    ); // Every 10 seconds
   }
 
   stopMonitoring() {
@@ -289,7 +304,7 @@ class PerformanceMonitor {
     const measurements = this.metrics.get(name) || [];
     if (measurements.length === 0) return null;
 
-    const values = measurements.map(m => m.value);
+    const values = measurements.map((m) => m.value);
     return {
       count: values.length,
       min: Math.min(...values),
@@ -320,16 +335,16 @@ export const performanceMonitor = new PerformanceMonitor();
 // Middleware to measure request performance
 export const performanceMiddleware = (req, res, next) => {
   const start = performance.now();
-  
+
   res.on('finish', () => {
     const duration = performance.now() - start;
     const route = req.route ? req.route.path : req.path;
     const method = req.method;
     const status = res.statusCode;
-    
+
     performanceMonitor.recordMetric(`${method}_${route}`, duration);
     performanceMonitor.recordMetric(`status_${status}`, duration);
-    
+
     logger.info('Request Performance', {
       method,
       route,
@@ -338,7 +353,7 @@ export const performanceMiddleware = (req, res, next) => {
       ip: req.ip
     });
   });
-  
+
   next();
 };
 ```
@@ -348,6 +363,7 @@ export const performanceMiddleware = (req, res, next) => {
 ### 4. Optimized Docker Configuration
 
 **Create: `docker/optimized.Dockerfile`**
+
 ```dockerfile
 # Multi-stage build for optimal performance
 FROM node:22-alpine AS dependencies
@@ -398,11 +414,10 @@ ENTRYPOINT ["dumb-init", "--"]
 CMD ["node", "dist/index.cjs"]
 ```
 
-
-
 ### 6. Production Docker Compose
 
 **Create: `docker-compose.prod.yml`**
+
 ```yaml
 version: '3.8'
 
@@ -410,8 +425,8 @@ services:
   nginx:
     image: nginx:alpine
     ports:
-      - "80:80"
-      - "443:443"
+      - '80:80'
+      - '443:443'
     volumes:
       - ./nginx/performance.conf:/etc/nginx/conf.d/default.conf
       - ./certs:/etc/nginx/certs
@@ -491,7 +506,7 @@ services:
       - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
       - prometheus_data:/prometheus
     ports:
-      - "9090:9090"
+      - '9090:9090'
     restart: unless-stopped
 
   grafana:
@@ -502,7 +517,7 @@ services:
       - grafana_data:/var/lib/grafana
       - ./monitoring/grafana-dashboards:/etc/grafana/provisioning/dashboards
     ports:
-      - "3000:3000"
+      - '3000:3000'
     restart: unless-stopped
 
 volumes:
@@ -517,6 +532,7 @@ volumes:
 ### 7. Testing Scripts
 
 **Create: `scripts/run-load-tests.sh`**
+
 ```bash
 #!/bin/bash
 
@@ -548,6 +564,7 @@ echo "📊 Check results/ directory for detailed reports"
 ```
 
 **Create: `scripts/generate-performance-report.js`**
+
 ```javascript
 import fs from 'fs';
 import path from 'path';
@@ -555,7 +572,7 @@ import path from 'path';
 const generateReport = () => {
   const resultsDir = 'results';
   const reportFile = path.join(resultsDir, 'performance-report.html');
-  
+
   // Ensure results directory exists
   if (!fs.existsSync(resultsDir)) {
     fs.mkdirSync(resultsDir);
@@ -573,7 +590,10 @@ const generateReport = () => {
   }
 
   try {
-    const stressTestData = fs.readFileSync(path.join(resultsDir, 'stress-test-results.json'), 'utf8');
+    const stressTestData = fs.readFileSync(
+      path.join(resultsDir, 'stress-test-results.json'),
+      'utf8'
+    );
     stressTestResults = JSON.parse(stressTestData);
   } catch (error) {
     console.log('No stress test results found');
@@ -647,6 +667,7 @@ This comprehensive load testing guide provides everything you need to:
 5. **Generate detailed reports** for stakeholders
 
 **To get started:**
+
 ```bash
 # Install K6
 curl https://github.com/grafana/k6/releases/download/v0.47.0/k6-v0.47.0-linux-amd64.tar.gz -L | tar xvz --strip-components 1

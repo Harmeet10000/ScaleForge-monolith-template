@@ -11,6 +11,7 @@ export default [
       'build/',
       '.husky/',
       '.github/',
+      '.amazonq/rules/',
       'docker/',
       'logs/',
       'scripts/**',
