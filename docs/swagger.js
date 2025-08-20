@@ -101,7 +101,8 @@ const options = {
         name: 'Permissions',
         description: 'Role-based access control and permission management endpoints'
       },
-      { name: 'Users', description: 'User profile management and administration endpoints' }
+      { name: 'Users', description: 'User profile management and administration endpoints' },
+      { name: 'Search', description: 'Search using Elasticsearch' }
     ],
     security: [{ bearerAuth: [] }, { cookieAuth: [] }]
   },

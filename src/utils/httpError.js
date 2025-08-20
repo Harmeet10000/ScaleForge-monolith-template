@@ -2,9 +2,15 @@ import { EApplicationEnvironment } from '../constants/application.js';
 import { SOMETHING_WENT_WRONG } from '../constants/responseMessage.js';
 import { logger } from './logger.js';
 
-export const httpError = (nextFunc, err, req, errorStatusCode = 500) => {
+export const httpError = (next, err, req, errorStatusCode = 500) => {
   const errorObj = errorObject(err, req, errorStatusCode);
-  return nextFunc(errorObj);
+
+  if (typeof next === 'function') {
+    return next(errorObj);
+  }
+
+  // If next is not a function, throw the error
+  throw errorObj;
 };
 
 const errorObject = (err, req, errorStatusCode = 500) => {

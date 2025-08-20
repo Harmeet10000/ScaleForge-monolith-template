@@ -10,7 +10,7 @@
   "scripts": {
     "dev": "NODE_ENV=development node --watch-path=./src src/index.js",
     "build": "rm -rf dist && cross-env NODE_ENV=production npx webpack --config webpack.config.js",
-    "start": "node --env-file=.env.prod dist/index.cjs",
+    "start": "node --env-file=.env.development dist/index.cjs",
     "swagger": "node ./docs/swagger.js",
     "test": "node test-runner.js",
     "test:watch": "node --watch test-runner.js",

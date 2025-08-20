@@ -1,0 +1,385 @@
+{
+  "info": {
+    "name": "Elasticsearch Search API",
+    "description": "Comprehensive API tests for the Elasticsearch Search service, covering all implemented search endpoints and functionality.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8000",
+      "type": "string"
+    },
+    {
+      "key": "apiVersion",
+      "value": "v1",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Core Search Tests",
+      "item": [
+        {
+          "name": "Basic Multi-field Search",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/{{apiVersion}}/search?query=javascript tutorial&fields=[\"title\", \"content\"]&index=documents&page=1&limit=20&fuzzy=true&highlight=true",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "{{apiVersion}}", "search"],
+              "query": [
+                {
+                  "key": "query",
+                  "value": "javascript tutorial"
+                },
+                {
+                  "key": "fields",
+                  "value": "[\"title\", \"content\"]"
+                },
+                {
+                  "key": "index",
+                  "value": "documents"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "fuzzy",
+                  "value": "true"
+                },
+                {
+                  "key": "highlight",
+                  "value": "true"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Semantic Search",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"machine learning algorithms for natural language processing\",\n  \"index\": \"vectors\",\n  \"threshold\": 0.7,\n  \"hybridMode\": true,\n  \"hybridWeight\": {\n    \"semantic\": 0.8,\n    \"keyword\": 0.2\n  },\n  \"filters\": {\n    \"category\": [\"technology\", \"ai\"],\n    \"created_at\": {\n      \"gte\": \"2023-01-01\",\n      \"lte\": \"2024-12-31\"\n    }\n  },\n  \"pagination\": {\n    \"page\": 1,\n    \"limit\": 10\n  },\n  \"embedding_model\": \"sentence-transformers/all-MiniLM-L6-v2\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/{{apiVersion}}/search/semantic",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "{{apiVersion}}", "search", "semantic"]
+            }
+          }
+        },
+        {
+          "name": "KNN Search",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"vector\": [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],\n  \"k\": 5,\n  \"index\": \"vectors\",\n  \"vector_field\": \"embedding\",\n  \"similarity_metric\": \"cosine\",\n  \"filters\": {\n    \"status\": \"published\",\n    \"tags\": [\"tutorial\", \"beginner\"]\n  },\n  \"pre_filter\": true,\n  \"num_candidates\": 100,\n  \"boost\": 1.2,\n  \"rescore\": {\n    \"window_size\": 50,\n    \"query_weight\": 1.0,\n    \"rescore_query_weight\": 1.5\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/{{apiVersion}}/search/knn",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "{{apiVersion}}", "search", "knn"]
+            }
+          }
+        },
+        {
+          "name": "N-gram Search",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"javascrpt tutorail\",\n  \"fields\": [\"title\", \"content\"],\n  \"index\": \"documents\",\n  \"ngramType\": \"both\",\n  \"minScore\": 0.2,\n  \"filters\": {\n    \"category\": \"programming\",\n    \"difficulty\": [\"beginner\", \"intermediate\"]\n  },\n  \"pagination\": {\n    \"page\": 1,\n    \"limit\": 15\n  },\n  \"boost\": {\n    \"title\": 2.0,\n    \"content\": 1.0\n  },\n  \"highlight\": {\n    \"enabled\": true,\n    \"fragment_size\": 150,\n    \"number_of_fragments\": 2\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/{{apiVersion}}/search/ngram",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "{{apiVersion}}", "search", "ngram"]
+            }
+          }
+        },
+        {
+          "name": "Fuzzy Search",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"machien lerning algoritm\",\n  \"fields\": [\"title\", \"content\", \"description\"],\n  \"index\": \"documents\",\n  \"fuzziness\": \"AUTO\",\n  \"prefixLength\": 1,\n  \"maxExpansions\": 100,\n  \"transpositions\": true,\n  \"filters\": {\n    \"category\": \"ai\",\n    \"published\": true,\n    \"rating\": {\n      \"gte\": 4.0\n    }\n  },\n  \"pagination\": {\n    \"page\": 1,\n    \"limit\": 20\n  },\n  \"boost\": {\n    \"title\": 3.0,\n    \"content\": 1.5,\n    \"description\": 1.0\n  },\n  \"highlight\": {\n    \"enabled\": true,\n    \"fields\": [\"title\", \"content\"],\n    \"fragment_size\": 200,\n    \"number_of_fragments\": 3\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/{{apiVersion}}/search/fuzzy",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "{{apiVersion}}", "search", "fuzzy"]
+            }
+          }
+        },
+        {
+          "name": "Aggregation Search",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"programming tutorial\",\n  \"fields\": [\"title\", \"content\"],\n  \"index\": \"documents\",\n  \"filters\": {\n    \"status\": \"published\",\n    \"created_at\": {\n      \"gte\": \"2023-01-01\"\n    }\n  },\n  \"aggregations\": {\n    \"categories\": {\n      \"type\": \"terms\",\n      \"field\": \"category\",\n      \"size\": 10,\n      \"order\": {\n        \"_count\": \"desc\"\n      }\n    },\n    \"monthly_posts\": {\n      \"type\": \"date_histogram\",\n      \"field\": \"created_at\",\n      \"interval\": \"month\",\n      \"format\": \"yyyy-MM\",\n      \"min_doc_count\": 1\n    },\n    \"rating_ranges\": {\n      \"type\": \"range\",\n      \"field\": \"rating\",\n      \"ranges\": [\n        {\"to\": 2.0, \"key\": \"poor\"},\n        {\"from\": 2.0, \"to\": 3.5, \"key\": \"average\"},\n        {\"from\": 3.5, \"to\": 4.5, \"key\": \"good\"},\n        {\"from\": 4.5, \"key\": \"excellent\"}\n      ]\n    },\n    \"stats\": {\n      \"type\": \"stats\",\n      \"field\": \"rating\"\n    },\n    \"unique_authors\": {\n      \"type\": \"cardinality\",\n      \"field\": \"author.keyword\",\n      \"precision_threshold\": 1000\n    }\n  },\n  \"size\": 0,\n  \"timeout\": \"30s\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/{{apiVersion}}/search/aggregate",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "{{apiVersion}}", "search", "aggregate"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Document Management",
+      "item": [
+        {
+          "name": "Index Document",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"document\": {\n    \"title\": \"Advanced JavaScript Patterns\",\n    \"content\": \"This comprehensive guide covers advanced JavaScript design patterns including module pattern, observer pattern, and factory pattern. Learn how to write maintainable and scalable JavaScript code.\",\n    \"author\": \"John Doe\",\n    \"category\": \"programming\",\n    \"tags\": [\"javascript\", \"patterns\", \"advanced\", \"tutorial\"],\n    \"difficulty\": \"advanced\",\n    \"rating\": 4.8,\n    \"published\": true,\n    \"created_at\": \"2024-01-15T10:30:00Z\",\n    \"metadata\": {\n      \"source\": \"blog\",\n      \"language\": \"en\",\n      \"word_count\": 2500,\n      \"reading_time\": 12\n    }\n  },\n  \"index\": \"documents\",\n  \"id\": \"js-patterns-001\",\n  \"pipeline\": \"text_processing\",\n  \"refresh\": \"wait_for\",\n  \"routing\": \"programming\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/{{apiVersion}}/search/index",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "{{apiVersion}}", "search", "index"]
+            }
+          }
+        },
+        {
+          "name": "Bulk Index Documents",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"documents\": [\n    {\n      \"_index\": \"documents\",\n      \"_id\": \"react-hooks-001\",\n      \"_source\": {\n        \"title\": \"React Hooks Complete Guide\",\n        \"content\": \"Learn React Hooks from basics to advanced concepts. Covers useState, useEffect, useContext, and custom hooks.\",\n        \"author\": \"Jane Smith\",\n        \"category\": \"programming\",\n        \"tags\": [\"react\", \"hooks\", \"frontend\"],\n        \"difficulty\": \"intermediate\",\n        \"rating\": 4.6,\n        \"published\": true,\n        \"created_at\": \"2024-01-20T14:15:00Z\"\n      }\n    },\n    {\n      \"_index\": \"documents\",\n      \"_id\": \"python-ml-002\",\n      \"_source\": {\n        \"title\": \"Python Machine Learning Fundamentals\",\n        \"content\": \"Introduction to machine learning with Python using scikit-learn, pandas, and numpy. Covers supervised and unsupervised learning.\",\n        \"author\": \"Mike Johnson\",\n        \"category\": \"ai\",\n        \"tags\": [\"python\", \"machine-learning\", \"data-science\"],\n        \"difficulty\": \"beginner\",\n        \"rating\": 4.4,\n        \"published\": true,\n        \"created_at\": \"2024-01-18T09:45:00Z\"\n      }\n    },\n    {\n      \"_index\": \"documents\",\n      \"_id\": \"docker-guide-003\",\n      \"_source\": {\n        \"title\": \"Docker Containerization Guide\",\n        \"content\": \"Complete guide to Docker containerization. Learn how to create, manage, and deploy Docker containers in production.\",\n        \"author\": \"Sarah Wilson\",\n        \"category\": \"devops\",\n        \"tags\": [\"docker\", \"containers\", \"deployment\"],\n        \"difficulty\": \"intermediate\",\n        \"rating\": 4.7,\n        \"published\": true,\n        \"created_at\": \"2024-01-22T16:30:00Z\"\n      }\n    }\n  ],\n  \"index\": \"documents\",\n  \"pipeline\": \"text_processing\",\n  \"refresh\": \"wait_for\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/{{apiVersion}}/search/bulk",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "{{apiVersion}}", "search", "bulk"]
+            }
+          }
+        },
+        {
+          "name": "Update Document",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"document\": {\n    \"title\": \"Advanced JavaScript Design Patterns - Updated\",\n    \"content\": \"This comprehensive and updated guide covers advanced JavaScript design patterns including module pattern, observer pattern, factory pattern, and new ES6+ patterns. Learn how to write maintainable and scalable JavaScript code with modern techniques.\",\n    \"rating\": 4.9,\n    \"tags\": [\"javascript\", \"patterns\", \"advanced\", \"tutorial\", \"es6\", \"modern\"],\n    \"updated_at\": \"2024-01-25T12:00:00Z\",\n    \"version\": \"2.0\"\n  },\n  \"index\": \"documents\",\n  \"refresh\": \"wait_for\",\n  \"retry_on_conflict\": 3\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/{{apiVersion}}/search/document/js-patterns-001",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "{{apiVersion}}", "search", "document", "js-patterns-001"]
+            }
+          }
+        },
+        {
+          "name": "Delete Document",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/{{apiVersion}}/search/document/test-doc-001?index=documents&refresh=wait_for",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "{{apiVersion}}", "search", "document", "test-doc-001"],
+              "query": [
+                {
+                  "key": "index",
+                  "value": "documents"
+                },
+                {
+                  "key": "refresh",
+                  "value": "wait_for"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Index & Pipeline Management",
+      "item": [
+        {
+          "name": "Create Index",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"test_documents\",\n  \"mappings\": {\n    \"properties\": {\n      \"title\": {\n        \"type\": \"text\",\n        \"analyzer\": \"standard\",\n        \"fields\": {\n          \"keyword\": {\"type\": \"keyword\"},\n          \"ngram\": {\"type\": \"text\", \"analyzer\": \"ngram_analyzer\"},\n          \"edge_ngram\": {\"type\": \"text\", \"analyzer\": \"edge_ngram_analyzer\"},\n          \"fuzzy\": {\"type\": \"text\", \"analyzer\": \"fuzzy_analyzer\"}\n        }\n      },\n      \"content\": {\n        \"type\": \"text\",\n        \"analyzer\": \"standard\",\n        \"fields\": {\n          \"ngram\": {\"type\": \"text\", \"analyzer\": \"ngram_analyzer\"},\n          \"semantic\": {\"type\": \"text\", \"analyzer\": \"semantic_analyzer\"}\n        }\n      },\n      \"embedding\": {\n        \"type\": \"dense_vector\",\n        \"dims\": 768,\n        \"similarity\": \"cosine\"\n      },\n      \"category\": {\"type\": \"keyword\"},\n      \"tags\": {\"type\": \"keyword\"},\n      \"rating\": {\"type\": \"float\"},\n      \"published\": {\"type\": \"boolean\"},\n      \"created_at\": {\"type\": \"date\"},\n      \"updated_at\": {\"type\": \"date\"}\n    }\n  },\n  \"settings\": {\n    \"analysis\": {\n      \"analyzer\": {\n        \"ngram_analyzer\": {\n          \"type\": \"custom\",\n          \"tokenizer\": \"standard\",\n          \"filter\": [\"lowercase\", \"ngram_filter\"]\n        },\n        \"edge_ngram_analyzer\": {\n          \"type\": \"custom\",\n          \"tokenizer\": \"standard\",\n          \"filter\": [\"lowercase\", \"edge_ngram_filter\"]\n        },\n        \"fuzzy_analyzer\": {\n          \"type\": \"custom\",\n          \"tokenizer\": \"standard\",\n          \"filter\": [\"lowercase\", \"asciifolding\", \"phonetic_filter\"]\n        },\n        \"semantic_analyzer\": {\n          \"type\": \"custom\",\n          \"tokenizer\": \"standard\",\n          \"filter\": [\"lowercase\", \"stop\", \"stemmer\"]\n        }\n      },\n      \"filter\": {\n        \"ngram_filter\": {\n          \"type\": \"ngram\",\n          \"min_gram\": 2,\n          \"max_gram\": 4\n        },\n        \"edge_ngram_filter\": {\n          \"type\": \"edge_ngram\",\n          \"min_gram\": 2,\n          \"max_gram\": 10\n        },\n        \"phonetic_filter\": {\n          \"type\": \"phonetic\",\n          \"encoder\": \"double_metaphone\",\n          \"replace\": false\n        }\n      }\n    },\n    \"number_of_shards\": 1,\n    \"number_of_replicas\": 0\n  },\n  \"aliases\": {\n    \"documents_alias\": {}\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/{{apiVersion}}/search/index/create",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "{{apiVersion}}", "search", "index", "create"]
+            }
+          }
+        },
+        {
+          "name": "Create Pipeline",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"content_processing_pipeline\",\n  \"description\": \"Pipeline for processing content documents with text normalization and metadata enrichment\",\n  \"processors\": [\n    {\n      \"lowercase\": {\n        \"field\": \"title\",\n        \"ignore_missing\": true\n      }\n    },\n    {\n      \"trim\": {\n        \"field\": \"content\",\n        \"ignore_missing\": true\n      }\n    },\n    {\n      \"set\": {\n        \"field\": \"processed_at\",\n        \"value\": \"{{_ingest.timestamp}}\"\n      }\n    },\n    {\n      \"script\": {\n        \"source\": \"if (ctx.content != null) { ctx.word_count = ctx.content.length() / 5; }\",\n        \"lang\": \"painless\"\n      }\n    },\n    {\n      \"convert\": {\n        \"field\": \"rating\",\n        \"type\": \"float\",\n        \"ignore_missing\": true\n      }\n    }\n  ],\n  \"on_failure\": [\n    {\n      \"set\": {\n        \"field\": \"pipeline_error\",\n        \"value\": \"Failed to process document: {{_ingest.on_failure_message}}\"\n      }\n    }\n  ],\n  \"version\": 1,\n  \"meta\": {\n    \"created_by\": \"api_test\",\n    \"purpose\": \"content_processing\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/{{apiVersion}}/search/pipeline",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "{{apiVersion}}", "search", "pipeline"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "System Tests",
+      "item": [
+        {
+          "name": "Search Health Check",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/{{apiVersion}}/search/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "{{apiVersion}}", "search", "health"]
+            }
+          }
+        },
+        {
+          "name": "Search Statistics",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/{{apiVersion}}/search/stats/documents",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "{{apiVersion}}", "search", "stats", "documents"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Advanced Scenarios",
+      "item": [
+        {
+          "name": "Complex Search Scenarios",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"How to optimize database performance for large scale applications\",\n  \"index\": \"documents\",\n  \"threshold\": 0.6,\n  \"hybridMode\": true,\n  \"hybridWeight\": {\n    \"semantic\": 0.7,\n    \"keyword\": 0.3\n  },\n  \"filters\": {\n    \"category\": [\"database\", \"performance\", \"optimization\"],\n    \"difficulty\": [\"intermediate\", \"advanced\"],\n    \"rating\": {\n      \"gte\": 4.0\n    },\n    \"published\": true,\n    \"created_at\": {\n      \"gte\": \"2023-01-01\",\n      \"lte\": \"2024-12-31\"\n    },\n    \"tags\": {\n      \"should_contain_any\": [\"sql\", \"nosql\", \"mongodb\", \"postgresql\", \"mysql\", \"redis\"]\n    }\n  },\n  \"pagination\": {\n    \"page\": 1,\n    \"limit\": 25\n  },\n  \"sort\": {\n    \"rating\": \"desc\",\n    \"_score\": \"desc\",\n    \"created_at\": \"desc\"\n  },\n  \"highlight\": {\n    \"enabled\": true,\n    \"fields\": [\"title\", \"content\", \"summary\"],\n    \"fragment_size\": 200,\n    \"number_of_fragments\": 3\n  },\n  \"embedding_model\": \"sentence-transformers/all-mpnet-base-v2\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/{{apiVersion}}/search/semantic",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "{{apiVersion}}", "search", "semantic"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

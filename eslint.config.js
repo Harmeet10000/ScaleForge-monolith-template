@@ -17,7 +17,8 @@ export default [
       'scripts/**',
       'nginx/',
       'docs/**',
-      'test/**'
+      'test/**',
+      'test-runner.js'
     ]
   },
 

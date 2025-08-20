@@ -5,6 +5,7 @@ node_modules
 .eslintcache
 .github/prompts
 .amazonq/*
+.kiro
 
 # Package-lock files
 # package-lock.json

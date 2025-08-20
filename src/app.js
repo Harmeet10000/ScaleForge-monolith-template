@@ -20,6 +20,7 @@ import {
 import authRoutes from './routes/authRoutes.js';
 import healthRoutes from './routes/healthRoutes.js';
 import permissionsRoutes from './routes/permissionsRoutes.js';
+import searchRoutes from './routes/searchRoutes.js';
 
 const app = express();
 
@@ -27,7 +28,7 @@ const app = express();
 // Set request timeout to 10 seconds
 app.use(
   timeout.handler({
-    timeout: 10000,
+    timeout: 20000,
     onTimeout: (req, res, next) => {
       httpError(next, new Error('Request took too long to process'), req, 408);
     }
@@ -121,6 +122,7 @@ app.get('/', (req, res) => {
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/health', healthRoutes);
 app.use('/api/v1/permissions', permissionsRoutes);
+app.use('/api/v1/search', searchRoutes);
 // app.use('/api/v1/rabbitmq', rabbitmqRoutes);
 
 // 4) CATCHES ALL ROUTES THAT ARE NOT DEFINED

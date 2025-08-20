@@ -1,9 +1,9 @@
 6. add prometheus, loki and grafana for monitoring and alerting - DONE
 1. Implement a OpenFGA to enhance scalability, reliability, and security of your authentication service. with permissions - DONE
 1. add ELK stack for logging and monitoring - ABANDONED
-1. also add a search engine like Algolia or Elasticsearch for better search capabilities                               - Undergoing
-17. add Gemini system prompts, prompt message structure, LLM settings, structured output, tool calling and RAG         - Undergoing
-1. make AI-driven features for enhanced user experience and personalization using Gemini API                           - Undergoing
+1. also add a search engine Elasticsearch for better search capabilities - Undergoing 
+1. add Gemini system prompts, prompt message structure, LLM settings, structured output, tool calling and RAG - Undergoing
+1. make AI-driven features for enhanced user experience and personalization using Gemini API - Undergoing
 1. add recommendation system using Convex or AWS personalise/GCP equivalent
 1. properly implement RabbitMQ for message queuing for modularity and decoupling
 1. check performance/stress testing using grafana k6
@@ -15,8 +15,8 @@
 1. make a Golang version of the same
 1. lastly make a fastify version
 1. add SAGA pattern for managing complex workflows and state transitions
-18. explore Postgres Extensions for enhanced functionality
-**Current Architecture:**
+1. explore Postgres Extensions for enhanced functionality
+   **Current Architecture:**
 
 ```
 [Client] → [Single Auth Service] → [MongoDB + Redis]

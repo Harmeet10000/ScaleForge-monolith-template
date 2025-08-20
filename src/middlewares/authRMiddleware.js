@@ -1,4 +1,4 @@
-import * as policyManager from '../services/permissionService.js';
+import * as permissionService from '../services/permissionService.js';
 import { httpError } from '../utils/httpError.js';
 import { logger } from '../utils/logger.js';
 
@@ -21,7 +21,7 @@ export const authorize = (resourceType, permission = 'viewer', options = {}) => 
       }
 
       // Check authorization
-      const hasAccess = await policyManager.openFGAService.check(
+      const hasAccess = await permissionService.check(
         userId.toString(),
         permission,
         resourceId,
@@ -76,7 +76,7 @@ export const authorizeMultiple = (checks) => {
             return false;
           }
 
-          return await policyManager.openFGAService.check(
+          return await permissionService.check(
             userId.toString(),
             permission,
             resourceId,
@@ -149,7 +149,7 @@ export const conditionalAuthorize = (condition) => {
       const { resourceType, permission, resourceId } = shouldAuthorize;
       const userId = req.user?.id || req.user?._id;
 
-      const hasAccess = await policyManager.openFGAService.check(
+      const hasAccess = await permissionService.check(
         userId.toString(),
         permission,
         resourceId,
