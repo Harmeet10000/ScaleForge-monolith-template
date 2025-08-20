@@ -2,25 +2,30 @@
 # Stage 1: Dependencies
 FROM node:22-alpine AS deps
 
+# Enable pnpm
+RUN corepack enable pnpm
+
 # Setting Up Working Directory
 WORKDIR /usr/src/backend-app
 
 # Copy package files
-COPY package*.json ./
+COPY package.json pnpm-lock.yaml ./
 
 # Install all dependencies (including dev dependencies)
-RUN npm ci
+RUN pnpm install --frozen-lockfile
 
 # Stage 2: Development
 FROM node:22-alpine AS development
 
+# Enable pnpm
+RUN corepack enable pnpm
+
 # Setting Up Working Directory
 WORKDIR /usr/src/backend-app
 
-RUN npm install -g nodemon
 # Copy dependencies from deps stage
 COPY --from=deps /usr/src/backend-app/node_modules ./node_modules
-COPY package*.json ./
+COPY package.json pnpm-lock.yaml ./
 
 # Copy the rest of the application code
 COPY . .
@@ -29,4 +34,4 @@ COPY . .
 EXPOSE 8000
 
 # Start Application in development mode
-CMD ["npm", "run", "dev"]
+CMD ["pnpm", "run", "dev"]

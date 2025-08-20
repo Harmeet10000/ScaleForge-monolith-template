@@ -1,6 +1,6 @@
-// import dotenvFlow from 'dotenv-flow'
+import dotenvFlow from 'dotenv-flow';
 
-// dotenvFlow.config()
+dotenvFlow.config();
 
 // export default {
 //     // General
@@ -11,9 +11,3 @@
 //     // Database
 //     DATABASE_URL: process.env.DATABASE_URL
 // }
-
-import dotenv from 'dotenv';
-
-dotenv.config({
-  path: './.env.dev'
-});

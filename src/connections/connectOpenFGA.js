@@ -1,5 +1,4 @@
 import { CredentialsMethod, OpenFgaClient } from '@openfga/sdk';
-import 'dotenv/config';
 // who so ever is reading this please tell me if process.env is working beacuse the APIs dont work
 // I have tried hard coding the values and it works
 // process.env throws empty variable passed in client and  write/check calls

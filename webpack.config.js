@@ -53,7 +53,7 @@ export default {
   },
   plugins: [
     new Dotenv({
-      path: './.env.dev',
+      path: './.env.development',
       systemvars: true,
       safe: false
     })

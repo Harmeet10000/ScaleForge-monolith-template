@@ -60,7 +60,7 @@ router.get('/self', self);
 
 /**
  * @swagger
- * /health:
+ * /health/health:
  *   get:
  *     summary: Comprehensive health check
  *     description: Returns detailed health information including application status, system metrics, and external service checks

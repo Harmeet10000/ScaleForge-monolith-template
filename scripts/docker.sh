@@ -5,7 +5,7 @@
 docker run -d \
   -p 8000:8000 \
   --name auth-service-container \
-  --env-file .env.dev \
+  --env-file .env.development \
   auth-service:latest
 
 # View the logs of the Docker container
@@ -17,11 +17,11 @@ docker tag auth-service harmeet10000/auth-service:latest
 # push the docker image to docker hub
 docker push harmeet10000/auth-service:latest
 # for AWS ECR push the image to this repository:
-docker push 
+docker push
 
 #Run Loki Docker container
 docker run -d --name loki -v $(pwd):/mnt/config -p 3100:3100 grafana/loki:2.8.0 --config.file=/mnt/config/loki-config.yaml
-  
+
 #Run Promtail Docker container
 docker run -d --name promtail -v $(pwd):/mnt/config -v /var/log:/var/log --link loki grafana/promtail:2.8.0 --config.file=/mnt/config/promtail-config.yaml
 

@@ -3,24 +3,29 @@
 
 FROM node:22-alpine AS builder
 
+# Enable pnpm
+RUN corepack enable pnpm
+
 # Set working directory
 WORKDIR /usr/src/backend-app
 
 # Install dependencies first (caching)
-COPY package*.json ./
+COPY package.json pnpm-lock.yaml ./
 # Only install production dependencies
-RUN npm ci
+RUN pnpm install --frozen-lockfile
 
 # Copy source files
 COPY . .
 
 # Build the application
-RUN npm run build
+RUN pnpm run build
 
 # Stage 2: Runtime
 
-
 FROM node:22-alpine AS runtime
+
+# Enable pnpm
+RUN corepack enable pnpm
 
 # Runtime labels - following OCI image spec
 LABEL org.opencontainers.image.source="https://github.com/harmeet10000/production-grade-auth-template"
@@ -37,9 +42,9 @@ RUN mkdir -p /usr/src/backend-app/logs /usr/src/backend-app/backups && chown -R 
 
 RUN mkdir -p /home/appuser/.cache && chown -R appuser:appgroup /home/appuser
 
-COPY package*.json ./
+COPY package.json pnpm-lock.yaml ./
 
-RUN npm ci --only=production && npm cache clean --force
+RUN pnpm install --frozen-lockfile --prod && pnpm store prune
 
 COPY --from=builder /usr/src/backend-app/dist ./dist
 
