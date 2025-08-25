@@ -1,6 +1,5 @@
 import { httpResponse } from '../utils/httpResponse.js';
 import { httpError } from '../utils/httpError.js';
-import { catchAsync } from '../utils/catchAsync.js';
 import {
   validateJoiSchema,
   validateRegisterBody,
@@ -19,8 +18,9 @@ import {
 } from '../constants/responseMessage.js';
 import { EApplicationEnvironment } from '../constants/application.js';
 import { getDomainFromUrl } from '../helpers/generalHelper.js';
+import asyncHandler from 'express-async-handler';
 
-export const register = catchAsync(async (req, res, next) => {
+export const register = asyncHandler(async (req, res, next) => {
   const { error, value } = validateJoiSchema(validateRegisterBody, req.body);
   if (error) {
     return httpError(next, error, req, 422);
@@ -29,12 +29,12 @@ export const register = catchAsync(async (req, res, next) => {
   httpResponse(req, res, 201, SUCCESS, { _id: newUser._id });
 });
 
-export const confirmation = catchAsync(async (req, res, next) => {
+export const confirmation = asyncHandler(async (req, res, next) => {
   await authService.confirmAccount(req.params.email, req.query.code, req, next);
   httpResponse(req, res, 200, SUCCESS);
 });
 
-export const login = catchAsync(async (req, res, next) => {
+export const login = asyncHandler(async (req, res, next) => {
   const { error, value } = validateJoiSchema(validateLoginBody, req.body);
   if (error) {
     return httpError(next, error, req, 422);
@@ -70,7 +70,7 @@ export const login = catchAsync(async (req, res, next) => {
   });
 });
 
-export const logout = catchAsync(async (req, res) => {
+export const logout = asyncHandler(async (req, res) => {
   await authService.logoutUser(req.cookies.refreshToken);
 
   const DOMAIN = getDomainFromUrl(process.env.SERVER_URL);
@@ -95,7 +95,7 @@ export const logout = catchAsync(async (req, res) => {
   httpResponse(req, res, 200, SUCCESS);
 });
 
-export const genNewAccessToken = catchAsync(async (req, res, next) => {
+export const genNewAccessToken = asyncHandler(async (req, res, next) => {
   const { cookies } = req;
   const { refreshToken, accessToken } = cookies;
 
@@ -120,7 +120,7 @@ export const genNewAccessToken = catchAsync(async (req, res, next) => {
   }
 });
 
-export const forgotPassword = catchAsync(async (req, res, next) => {
+export const forgotPassword = asyncHandler(async (req, res, next) => {
   const { error, value } = validateJoiSchema(validateForgotPasswordBody, req.body);
   if (error) {
     return httpError(next, error, req, 422);
@@ -131,7 +131,7 @@ export const forgotPassword = catchAsync(async (req, res, next) => {
   httpResponse(req, res, 200, SUCCESS);
 });
 
-export const resetPassword = catchAsync(async (req, res, next) => {
+export const resetPassword = asyncHandler(async (req, res, next) => {
   const { error, value } = validateJoiSchema(validateResetPasswordBody, req.body);
   if (error) {
     return httpError(next, error, req, 422);
@@ -142,7 +142,7 @@ export const resetPassword = catchAsync(async (req, res, next) => {
   httpResponse(req, res, 200, SUCCESS);
 });
 
-export const changePassword = catchAsync(async (req, res, next) => {
+export const changePassword = asyncHandler(async (req, res, next) => {
   const { error, value } = validateJoiSchema(validateChangePasswordBody, req.body);
   if (error) {
     return httpError(next, error, req, 422);
@@ -159,7 +159,7 @@ export const changePassword = catchAsync(async (req, res, next) => {
   httpResponse(req, res, 200, SUCCESS);
 });
 
-export const googleOAuthSignupHandler = catchAsync(async (req, res, next) => {
+export const googleOAuthSignupHandler = asyncHandler(async (req, res, next) => {
   const { error, value } = validateJoiSchema(validateGoogleSignup, req.body);
   if (error) {
     return httpError(next, error, req, 400);
@@ -176,7 +176,7 @@ export const googleOAuthSignupHandler = catchAsync(async (req, res, next) => {
   });
 });
 
-export const googleOAuthLoginHandler = catchAsync(async (req, res, next) => {
+export const googleOAuthLoginHandler = asyncHandler(async (req, res, next) => {
   const { error, value } = validateJoiSchema(validateGoogleLogin, req.body);
   if (error) {
     return httpError(next, error, req, 400);

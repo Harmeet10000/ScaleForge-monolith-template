@@ -32,7 +32,7 @@ const handleJWTExpiredError = (err, next, req) => {
 };
 
 const sendErrorDev = (err, res) => {
-  logger.error(`🛑 Dev Error: ${err.message}\nStack: ${err.stack}`);
+  logger.error(`🛑 Dev Error: ${err.message}`, { meta: { error: err } });
 
   res.status(err.statusCode || 500).json({
     success: false,

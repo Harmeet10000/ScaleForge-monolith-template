@@ -1,5 +1,5 @@
 import { consumer, producer } from '../db/connectKafka.js';
-import { catchAsync } from '../utils/catchAsync.js';
+// import asyncHandler from 'express-async-handler';
 import { logger } from '../utils/logger.js';
 
 export const produceMessage = async (topic, message) => {
@@ -35,12 +35,12 @@ producer.on('event.error', (err) => {
   logger.error('Producer error:', err);
 });
 
-// export const subscribeToTopics = catchAsync(async (consumer, topics) => {
+// export const subscribeToTopics = asyncHandler(async (consumer, topics) => {
 //   consumer.subscribe(topics);
 //   logger.info(`Subscribed to topics: ${topics.join(', ')}`);
 // });
 
-// export const startConsuming = catchAsync(async (consumer, messageHandler) => {
+// export const startConsuming = asyncHandler(async (consumer, messageHandler) => {
 //   consumer.consume();
 
 //   consumer.on('data', async (data) => {

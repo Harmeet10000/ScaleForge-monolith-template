@@ -1,7 +1,7 @@
 import { getConnection } from '../db/rabbitMQConnection.js';
 import { logger } from '../utils/logger.js';
 import { ExchangeTypes } from './rabbitMQProducer.js';
-import { catchAsync } from '../utils/catchAsync.js';
+import asyncHandler from 'express-async-handler';
 
 // Create a consumer state object
 export const createConsumerState = (queueName, queueOptions = {}) => ({
@@ -22,7 +22,7 @@ export const createConsumerState = (queueName, queueOptions = {}) => ({
 });
 
 // Initialize the consumer's channel and queue
-export const initializeConsumer = catchAsync(async (consumerState) => {
+export const initializeConsumer = asyncHandler(async (consumerState) => {
   if (consumerState.channel) {
     return consumerState;
   }
@@ -42,6 +42,13 @@ export const initializeConsumer = catchAsync(async (consumerState) => {
     });
   } catch (checkError) {
     // Queue doesn't exist, will be created with provided options
+    logger.error('Queue does not exist, creating with provided options', {
+      meta: {
+        queueName: consumerState.queueName,
+        error: checkError.message,
+        stack: checkError.err
+      }
+    });
     queueExists = false;
   }
 
@@ -60,7 +67,7 @@ export const initializeConsumer = catchAsync(async (consumerState) => {
 });
 
 // Bind the queue to an exchange
-export const bindQueue = catchAsync(
+export const bindQueue = asyncHandler(
   async (consumerState, exchangeName, bindingKey = '', bindingOptions = {}) => {
     // Initialize if not already initialized
     const state = consumerState.channel ? consumerState : await initializeConsumer(consumerState);
@@ -80,7 +87,7 @@ export const bindQueue = catchAsync(
 );
 
 // Setup retry mechanism for the queue
-export const setupRetryQueue = catchAsync(async (consumerState) => {
+export const setupRetryQueue = asyncHandler(async (consumerState) => {
   // Initialize if not already initialized
   const state = consumerState.channel ? consumerState : await initializeConsumer(consumerState);
 
@@ -136,7 +143,7 @@ export const setupRetryQueue = catchAsync(async (consumerState) => {
 });
 
 // Start consuming messages from the queue
-export const consumeQueue = catchAsync(
+export const consumeQueue = asyncHandler(
   async (consumerState, messageHandler, consumeOptions = {}) => {
     // Initialize if not already initialized
     let state = consumerState.channel ? consumerState : await initializeConsumer(consumerState);
@@ -270,7 +277,7 @@ export const consumeQueue = catchAsync(
 );
 
 // Stop consuming messages
-export const stopConsuming = catchAsync(async (consumerState) => {
+export const stopConsuming = asyncHandler(async (consumerState) => {
   if (consumerState.channel && consumerState.consumerTag) {
     await consumerState.channel.cancel(consumerState.consumerTag);
 
@@ -284,7 +291,7 @@ export const stopConsuming = catchAsync(async (consumerState) => {
 });
 
 // Close the consumer's channel
-export const closeConsumer = catchAsync(async (consumerState) => {
+export const closeConsumer = asyncHandler(async (consumerState) => {
   let state = consumerState;
 
   if (state.consumerTag) {
@@ -304,7 +311,7 @@ export const closeConsumer = catchAsync(async (consumerState) => {
 });
 
 // Factory function to create and initialize a consumer
-export const createConsumer = catchAsync(async (queueName, queueOptions = {}) => {
+export const createConsumer = asyncHandler(async (queueName, queueOptions = {}) => {
   const consumerState = createConsumerState(queueName, queueOptions);
   const initializedState = await initializeConsumer(consumerState);
 
@@ -323,7 +330,7 @@ export const createConsumer = catchAsync(async (queueName, queueOptions = {}) =>
 });
 
 // Create a consumer bound to an exchange
-export const createBoundConsumer = catchAsync(
+export const createBoundConsumer = asyncHandler(
   async (queueName, exchangeName, bindingKey = '', options = {}) => {
     const { queueOptions = {}, bindingOptions = {} } = options;
 
@@ -337,7 +344,7 @@ export const createBoundConsumer = catchAsync(
 );
 
 // Set up a priority queue
-export const setupPriorityQueue = catchAsync(
+export const setupPriorityQueue = asyncHandler(
   async (queueName, maxPriority = 10, queueOptions = {}) => {
     const consumer = await createConsumer(queueName, {
       ...queueOptions,

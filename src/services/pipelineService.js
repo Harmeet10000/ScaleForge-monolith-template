@@ -1,9 +1,9 @@
 import { client } from '../connections/connectElasticSearch.js';
-import { catchAsync } from '../utils/catchAsync.js';
+import asyncHandler from 'express-async-handler';
 import { httpError } from '../utils/httpError.js';
 import { logger } from '../utils/logger.js';
 import {
-  SEARCH_ERROR_CODES,
+  // SEARCH_ERROR_CODES,
   // SEARCH_MESSAGES,
   PIPELINE_PROCESSORS
 } from '../constants/searchConstants.js';
@@ -23,62 +23,50 @@ import {
  * @param {Function} next - Express next function
  * @returns {Object} Pipeline creation response
  */
-export const createPipeline = catchAsync(async (pipelineName, processors, req, next) => {
-  try {
-    // Validate pipeline configuration
-    if (!pipelineName || typeof pipelineName !== 'string') {
-      logger.error('Invalid pipeline name provided', { pipelineName });
-      return httpError(next, new Error('Pipeline name is required and must be a string'), req, 400);
-    }
-
-    if (!processors || !Array.isArray(processors) || processors.length === 0) {
-      logger.error('Invalid processors configuration', { processors });
-      return httpError(
-        next,
-        new Error('Processors array is required and cannot be empty'),
-        req,
-        400
-      );
-    }
-
-    // Check if pipeline already exists
-    try {
-      await client.ingest.getPipeline({ id: pipelineName });
-      logger.warn('Pipeline already exists', { pipelineName });
-      return httpError(next, new Error(`Pipeline '${pipelineName}' already exists`), req, 409);
-    } catch (error) {
-      // Pipeline doesn't exist, which is what we want
-      if (error.meta?.statusCode !== 404) {
-        throw error;
-      }
-    }
-
-    const response = await client.ingest.putPipeline({
-      id: pipelineName,
-      body: {
-        description: `Pipeline: ${pipelineName}`,
-        processors
-      }
-    });
-
-    logger.info('Pipeline created successfully', {
-      pipelineName,
-      processorsCount: processors.length
-    });
-
-    return {
-      pipelineName,
-      acknowledged: response.acknowledged,
-      processorsCount: processors.length
-    };
-  } catch (error) {
-    logger.error('Pipeline creation failed', {
-      pipelineName,
-      error: error.message,
-      statusCode: error.meta?.statusCode
-    });
-    return httpError(next, new Error(SEARCH_ERROR_CODES.PIPELINE_CREATION_FAILED), req, 500);
+export const createPipeline = asyncHandler(async (pipelineName, processors, req, next) => {
+  // Validate pipeline configuration
+  if (!pipelineName || typeof pipelineName !== 'string') {
+    logger.error('Invalid pipeline name provided', { meta: { pipelineName } });
+    return httpError(next, new Error('Pipeline name is required and must be a string'), req, 400);
   }
+
+  if (!processors || !Array.isArray(processors) || processors.length === 0) {
+    logger.error('Invalid processors configuration', { meta: { processors } });
+    return httpError(next, new Error('Processors array is required and cannot be empty'), req, 400);
+  }
+
+  // Check if pipeline already exists
+  try {
+    await client.ingest.getPipeline({ id: pipelineName });
+    logger.warn('Pipeline already exists', { meta: { pipelineName } });
+    return httpError(next, new Error(`Pipeline '${pipelineName}' already exists`), req, 409);
+  } catch (error) {
+    // Pipeline doesn't exist, which is what we want
+    if (error.meta?.statusCode !== 404) {
+      throw error;
+    }
+  }
+
+  const response = await client.ingest.putPipeline({
+    id: pipelineName,
+    body: {
+      description: `Pipeline: ${pipelineName}`,
+      processors
+    }
+  });
+
+  logger.info('Pipeline created successfully', {
+    meta: {
+      pipelineName,
+      processorsCount: processors.length
+    }
+  });
+
+  return {
+    pipelineName,
+    acknowledged: response.acknowledged,
+    processorsCount: processors.length
+  };
 });
 
 /**
@@ -89,61 +77,49 @@ export const createPipeline = catchAsync(async (pipelineName, processors, req, n
  * @param {Function} next - Express next function
  * @returns {Object} Pipeline update response
  */
-export const updatePipeline = catchAsync(async (pipelineName, processors, req, next) => {
-  try {
-    // Validate pipeline configuration
-    if (!pipelineName || typeof pipelineName !== 'string') {
-      logger.error('Invalid pipeline name provided', { pipelineName });
-      return httpError(next, new Error('Pipeline name is required and must be a string'), req, 400);
-    }
-
-    if (!processors || !Array.isArray(processors) || processors.length === 0) {
-      logger.error('Invalid processors configuration', { processors });
-      return httpError(
-        next,
-        new Error('Processors array is required and cannot be empty'),
-        req,
-        400
-      );
-    }
-
-    // Check if pipeline exists
-    try {
-      await client.ingest.getPipeline({ id: pipelineName });
-    } catch (error) {
-      if (error.meta?.statusCode === 404) {
-        logger.error('Pipeline not found for update', { pipelineName });
-        return httpError(next, new Error(`Pipeline '${pipelineName}' not found`), req, 404);
-      }
-      throw error;
-    }
-
-    const response = await client.ingest.putPipeline({
-      id: pipelineName,
-      body: {
-        description: `Pipeline: ${pipelineName} (updated)`,
-        processors
-      }
-    });
-
-    logger.info('Pipeline updated successfully', {
-      pipelineName,
-      processorsCount: processors.length
-    });
-
-    return {
-      pipelineName,
-      acknowledged: response.acknowledged,
-      processorsCount: processors.length
-    };
-  } catch (error) {
-    logger.error('Pipeline update failed', {
-      pipelineName,
-      error: error.message,
-      statusCode: error.meta?.statusCode
-    });
-    return httpError(next, new Error(SEARCH_ERROR_CODES.PIPELINE_ERROR), req, 500);
+export const updatePipeline = asyncHandler(async (pipelineName, processors, req, next) => {
+  // Validate pipeline configuration
+  if (!pipelineName || typeof pipelineName !== 'string') {
+    logger.error('Invalid pipeline name provided', { meta: { pipelineName } });
+    return httpError(next, new Error('Pipeline name is required and must be a string'), req, 400);
   }
+
+  if (!processors || !Array.isArray(processors) || processors.length === 0) {
+    logger.error('Invalid processors configuration', { meta: { processors } });
+    return httpError(next, new Error('Processors array is required and cannot be empty'), req, 400);
+  }
+
+  // Check if pipeline exists
+  try {
+    await client.ingest.getPipeline({ id: pipelineName });
+  } catch (error) {
+    if (error.meta?.statusCode === 404) {
+      logger.error('Pipeline not found for update', { meta: { pipelineName } });
+      return httpError(next, new Error(`Pipeline '${pipelineName}' not found`), req, 404);
+    }
+    throw error;
+  }
+
+  const response = await client.ingest.putPipeline({
+    id: pipelineName,
+    body: {
+      description: `Pipeline: ${pipelineName} (updated)`,
+      processors
+    }
+  });
+
+  logger.info('Pipeline updated successfully', {
+    meta: {
+      pipelineName,
+      processorsCount: processors.length
+    }
+  });
+
+  return {
+    pipelineName,
+    acknowledged: response.acknowledged,
+    processorsCount: processors.length
+  };
 });
 
 /**
@@ -153,42 +129,32 @@ export const updatePipeline = catchAsync(async (pipelineName, processors, req, n
  * @param {Function} next - Express next function
  * @returns {Object} Pipeline deletion response
  */
-export const deletePipeline = catchAsync(async (pipelineName, req, next) => {
-  try {
-    if (!pipelineName || typeof pipelineName !== 'string') {
-      logger.error('Invalid pipeline name provided', { pipelineName });
-      return httpError(next, new Error('Pipeline name is required and must be a string'), req, 400);
-    }
-
-    // Check if pipeline exists
-    try {
-      await client.ingest.getPipeline({ id: pipelineName });
-    } catch (error) {
-      if (error.meta?.statusCode === 404) {
-        logger.error('Pipeline not found for deletion', { pipelineName });
-        return httpError(next, new Error(`Pipeline '${pipelineName}' not found`), req, 404);
-      }
-      throw error;
-    }
-
-    const response = await client.ingest.deletePipeline({
-      id: pipelineName
-    });
-
-    logger.info('Pipeline deleted successfully', { pipelineName });
-
-    return {
-      pipelineName,
-      acknowledged: response.acknowledged
-    };
-  } catch (error) {
-    logger.error('Pipeline deletion failed', {
-      pipelineName,
-      error: error.message,
-      statusCode: error.meta?.statusCode
-    });
-    return httpError(next, new Error(SEARCH_ERROR_CODES.PIPELINE_ERROR), req, 500);
+export const deletePipeline = asyncHandler(async (pipelineName, req, next) => {
+  if (!pipelineName || typeof pipelineName !== 'string') {
+    logger.error('Invalid pipeline name provided', { meta: { pipelineName } });
+    return httpError(next, new Error('Pipeline name is required and must be a string'), req, 400);
   }
+
+  // Check if pipeline exists
+  try {
+    await client.ingest.getPipeline({ id: pipelineName });
+  } catch (error) {
+    if (error.meta?.statusCode === 404) {
+      logger.error('Pipeline not found for deletion', { meta: { pipelineName } });
+      return httpError(next, new Error(`Pipeline '${pipelineName}' not found`), req, 404);
+    }
+  }
+
+  const response = await client.ingest.deletePipeline({
+    id: pipelineName
+  });
+
+  logger.info('Pipeline deleted successfully', { meta: { pipelineName } });
+
+  return {
+    pipelineName,
+    acknowledged: response.acknowledged
+  };
 });
 
 /**
@@ -198,32 +164,18 @@ export const deletePipeline = catchAsync(async (pipelineName, req, next) => {
  * @param {Function} next - Express next function
  * @returns {Object} Pipeline configuration
  */
-export const getPipeline = catchAsync(async (pipelineName, req, next) => {
-  try {
-    if (!pipelineName || typeof pipelineName !== 'string') {
-      logger.error('Invalid pipeline name provided', { pipelineName });
-      return httpError(next, new Error('Pipeline name is required and must be a string'), req, 400);
-    }
-
-    const response = await client.ingest.getPipeline({
-      id: pipelineName
-    });
-
-    logger.info('Pipeline retrieved successfully', { pipelineName });
-    return response[pipelineName];
-  } catch (error) {
-    if (error.meta?.statusCode === 404) {
-      logger.error('Pipeline not found', { pipelineName });
-      return httpError(next, new Error(`Pipeline '${pipelineName}' not found`), req, 404);
-    }
-
-    logger.error('Pipeline retrieval failed', {
-      pipelineName,
-      error: error.message,
-      statusCode: error.meta?.statusCode
-    });
-    return httpError(next, new Error(SEARCH_ERROR_CODES.PIPELINE_ERROR), req, 500);
+export const getPipeline = asyncHandler(async (pipelineName, req, next) => {
+  if (!pipelineName || typeof pipelineName !== 'string') {
+    logger.error('Invalid pipeline name provided', { meta: { pipelineName } });
+    return httpError(next, new Error('Pipeline name is required and must be a string'), req, 400);
   }
+
+  const response = await client.ingest.getPipeline({
+    id: pipelineName
+  });
+
+  logger.info('Pipeline retrieved successfully', { meta: { pipelineName } });
+  return response[pipelineName];
 });
 
 // Document Processing Functions
@@ -236,73 +188,105 @@ export const getPipeline = catchAsync(async (pipelineName, req, next) => {
  * @param {Function} next - Express next function
  * @returns {Object} Processed document
  */
-export const processDocument = catchAsync(async (document, pipelineName, req, next) => {
+export const processDocument = asyncHandler(async (document, pipelineName, req, next) => {
+  if (!document || typeof document !== 'object') {
+    logger.error('Invalid document provided', { meta: { document } });
+    return httpError(next, new Error('Document is required and must be an object'), req, 400);
+  }
+
+  // If no pipeline specified, return document as-is
+  if (!pipelineName) {
+    logger.info('No pipeline specified, returning document as-is');
+    return document;
+  }
+
+  // Validate pipeline exists
   try {
-    if (!document || typeof document !== 'object') {
-      logger.error('Invalid document provided', { document });
-      return httpError(next, new Error('Document is required and must be an object'), req, 400);
+    await client.ingest.getPipeline({ id: pipelineName });
+  } catch (error) {
+    if (error.meta?.statusCode === 404) {
+      logger.error('Pipeline not found for document processing', { meta: { pipelineName } });
+      return httpError(next, new Error(`Pipeline '${pipelineName}' not found`), req, 404);
     }
+    // Re-throw other errors
+    throw error;
+  }
 
-    // If no pipeline specified, return document as-is
-    if (!pipelineName) {
-      logger.info('No pipeline specified, returning document as-is');
-      return document;
+  const response = await client.ingest.simulate({
+    id: pipelineName,
+    body: {
+      docs: [{ _source: document }]
     }
+  });
 
-    // Validate pipeline exists
-    try {
-      await client.ingest.getPipeline({ id: pipelineName });
-    } catch (error) {
-      if (error.meta?.statusCode === 404) {
-        logger.error('Pipeline not found for document processing', { pipelineName });
-        return httpError(next, new Error(`Pipeline '${pipelineName}' not found`), req, 404);
+  logger.info('Pipeline simulation response', {
+    meta: {
+      pipelineName,
+      responseStructure: {
+        hasDocs: Boolean(response.docs),
+        docsLength: response.docs?.length || 0,
+        firstDocStructure: response.docs?.[0] ? Object.keys(response.docs[0]) : []
       }
-      throw error;
     }
+  });
 
-    const response = await client.ingest.simulate({
-      id: pipelineName,
-      body: {
-        docs: [{ _source: document }]
-      }
-    });
+  if (response.docs && response.docs.length > 0) {
+    const processedDoc = response.docs[0];
 
-    if (response.docs && response.docs.length > 0) {
-      const processedDoc = response.docs[0];
-
-      // Check for processing errors
-      if (processedDoc.error) {
-        logger.error('Document processing failed', {
+    // Check for processing errors
+    if (processedDoc.error) {
+      logger.error('Document processing failed', {
+        meta: {
           pipelineName,
-          error: processedDoc.error
-        });
-        return httpError(
-          next,
-          new Error(`Document processing failed: ${processedDoc.error.reason}`),
-          req,
-          400
-        );
-      }
+          error: processedDoc.error.reason || processedDoc.error,
+          statusCode: processedDoc.error.status
+        }
+      });
+      return httpError(
+        next,
+        new Error(`Document processing failed: ${processedDoc.error.reason || processedDoc.error}`),
+        req,
+        400
+      );
+    }
 
-      logger.info('Document processed successfully', {
+    // Handle different response structures
+    let processedSource;
+    if (processedDoc.doc && processedDoc.doc._source) {
+      // Structure: { doc: { _source: {...} } }
+      processedSource = processedDoc.doc._source;
+    } else if (processedDoc._source) {
+      // Structure: { _source: {...} }
+      processedSource = processedDoc._source;
+    } else {
+      // Fallback: use the document as-is
+      processedSource = processedDoc;
+    }
+
+    if (!processedSource || typeof processedSource !== 'object') {
+      logger.error('Invalid processed document structure', {
+        meta: {
+          pipelineName,
+          processedDoc,
+          processedSource
+        }
+      });
+      return httpError(next, new Error('Invalid processed document structure'), req, 500);
+    }
+
+    logger.info('Document processed successfully', {
+      meta: {
         pipelineName,
         originalFields: Object.keys(document).length,
-        processedFields: Object.keys(processedDoc._source).length
-      });
-
-      return processedDoc._source;
-    }
-
-    logger.error('No processed document returned', { pipelineName });
-    return httpError(next, new Error('Document processing failed - no result returned'), req, 500);
-  } catch (error) {
-    logger.error('Document processing failed', {
-      pipelineName,
-      error: error.message,
-      statusCode: error.meta?.statusCode
+        processedFields: Object.keys(processedSource).length
+      }
     });
-    return httpError(next, new Error(SEARCH_ERROR_CODES.PIPELINE_ERROR), req, 500);
+
+    return processedSource;
   }
+
+  logger.error('No processed document returned', { meta: { pipelineName } });
+  return httpError(next, new Error('Document processing failed - no result returned'), req, 500);
 });
 
 /**
@@ -313,96 +297,103 @@ export const processDocument = catchAsync(async (document, pipelineName, req, ne
  * @param {Function} next - Express next function
  * @returns {Array} Array of processed documents
  */
-export const processBatch = catchAsync(async (documents, pipelineName, req, next) => {
+export const processBatch = asyncHandler(async (documents, pipelineName, req, next) => {
+  // Validate pipeline exists
   try {
-    if (!documents || !Array.isArray(documents) || documents.length === 0) {
-      logger.error('Invalid documents array provided', { documents });
-      return httpError(
-        next,
-        new Error('Documents array is required and cannot be empty'),
-        req,
-        400
-      );
+    await client.ingest.getPipeline({ id: pipelineName });
+  } catch (error) {
+    if (error.meta?.statusCode === 404) {
+      logger.error('Pipeline not found for batch processing', { meta: { pipelineName } });
+      return httpError(next, new Error(`Pipeline '${pipelineName}' not found`), req, 404);
     }
+  }
 
-    // If no pipeline specified, return documents as-is
-    if (!pipelineName) {
-      logger.info('No pipeline specified, returning documents as-is');
-      return documents;
+  // Extract _source from documents if they have bulk format structure
+  const docs = documents.map((doc) => {
+    // If document has _source property (bulk format), use that
+    if (doc._source) {
+      return { _source: doc._source };
     }
+    // Otherwise, use the document as-is
+    return { _source: doc };
+  });
+  const response = await client.ingest.simulate({
+    id: pipelineName,
+    body: { docs }
+  });
 
-    // Validate pipeline exists
-    try {
-      await client.ingest.getPipeline({ id: pipelineName });
-    } catch (error) {
-      if (error.meta?.statusCode === 404) {
-        logger.error('Pipeline not found for batch processing', { pipelineName });
-        return httpError(next, new Error(`Pipeline '${pipelineName}' not found`), req, 404);
-      }
-      throw error;
-    }
+  if (response.docs && response.docs.length > 0) {
+    const processedDocs = [];
+    const errors = [];
 
-    const docs = documents.map((doc) => ({ _source: doc }));
-    const response = await client.ingest.simulate({
-      id: pipelineName,
-      body: { docs }
-    });
+    response.docs.forEach((doc, index) => {
+      if (doc.error) {
+        errors.push({
+          index,
+          error: doc.error.reason || doc.error,
+          originalDoc: documents[index]
+        });
+      } else {
+        // Handle different response structures
+        let processedSource;
+        if (doc.doc && doc.doc._source) {
+          // Structure: { doc: { _source: {...} } }
+          processedSource = doc.doc._source;
+        } else if (doc._source) {
+          // Structure: { _source: {...} }
+          processedSource = doc._source;
+        } else {
+          // Fallback: use the document as-is
+          processedSource = doc;
+        }
 
-    if (response.docs && response.docs.length > 0) {
-      const processedDocs = [];
-      const errors = [];
-
-      response.docs.forEach((doc, index) => {
-        if (doc.error) {
+        if (processedSource && typeof processedSource === 'object') {
+          processedDocs.push(processedSource);
+        } else {
           errors.push({
             index,
-            error: doc.error.reason,
+            error: 'Invalid processed document structure',
             originalDoc: documents[index]
           });
-        } else {
-          processedDocs.push(doc._source);
         }
-      });
+      }
+    });
 
-      // Log errors but continue with successful documents
-      if (errors.length > 0) {
-        logger.warn('Some documents failed processing', {
+    // Log errors but continue with successful documents
+    if (errors.length > 0) {
+      logger.warn('Some documents failed processing', {
+        meta: {
           pipelineName,
           totalDocs: documents.length,
           successfulDocs: processedDocs.length,
           failedDocs: errors.length,
           errors: errors.slice(0, 5) // Log first 5 errors
-        });
-      }
+        }
+      });
+    }
 
-      logger.info('Batch processing completed', {
+    logger.info('Batch processing completed', {
+      meta: {
         pipelineName,
         totalDocs: documents.length,
         successfulDocs: processedDocs.length,
         failedDocs: errors.length
-      });
-
-      return {
-        processedDocuments: processedDocs,
-        errors: errors.length > 0 ? errors : null,
-        summary: {
-          total: documents.length,
-          successful: processedDocs.length,
-          failed: errors.length
-        }
-      };
-    }
-
-    logger.error('No processed documents returned', { pipelineName });
-    return httpError(next, new Error('Batch processing failed - no results returned'), req, 500);
-  } catch (error) {
-    logger.error('Batch processing failed', {
-      pipelineName,
-      error: error.message,
-      statusCode: error.meta?.statusCode
+      }
     });
-    return httpError(next, new Error(SEARCH_ERROR_CODES.PIPELINE_ERROR), req, 500);
+
+    return {
+      processedDocuments: processedDocs,
+      errors: errors.length > 0 ? errors : null,
+      summary: {
+        total: documents.length,
+        successful: processedDocs.length,
+        failed: errors.length
+      }
+    };
   }
+
+  logger.error('No processed documents returned', { meta: { pipelineName } });
+  return httpError(next, new Error('Batch processing failed - no results returned'), req, 500);
 });
 
 // Helper Functions for Common Pipeline Configurations
@@ -415,7 +406,7 @@ export const processBatch = catchAsync(async (documents, pipelineName, req, next
  * @param {Function} next - Express next function
  * @returns {Object} Pipeline creation response
  */
-export const createTextProcessingPipeline = catchAsync(
+export const createTextProcessingPipeline = asyncHandler(
   async (pipelineName, options = {}, req, next) => {
     const {
       titleField = 'title',
@@ -494,65 +485,67 @@ export const createTextProcessingPipeline = catchAsync(
  * @param {Function} next - Express next function
  * @returns {Object} Pipeline creation response
  */
-export const createEmbeddingPipeline = catchAsync(async (pipelineName, options = {}, req, next) => {
-  const {
-    textField = 'content',
-    embeddingField = 'embedding',
-    modelId = 'sentence-transformers__all-minilm-l6-v2',
-    addMetadata = true
-  } = options;
+export const createEmbeddingPipeline = asyncHandler(
+  async (pipelineName, options = {}, req, next) => {
+    const {
+      textField = 'content',
+      embeddingField = 'embedding',
+      modelId = 'sentence-transformers__all-minilm-l6-v2',
+      addMetadata = true
+    } = options;
 
-  const processors = [];
+    const processors = [];
 
-  // Text preprocessing
-  processors.push({
-    [PIPELINE_PROCESSORS.TRIM]: {
-      field: textField,
-      ignore_missing: true
-    }
-  });
-
-  // Generate embeddings using inference processor
-  // Note: This requires ML models to be deployed in Elasticsearch
-  processors.push({
-    inference: {
-      model_id: modelId,
-      target_field: embeddingField,
-      field_map: {
-        [textField]: 'text_field'
-      },
-      inference_config: {
-        text_embedding: {
-          results_field: 'predicted_value'
-        }
-      },
-      on_failure: [
-        {
-          [PIPELINE_PROCESSORS.SET]: {
-            field: 'embedding_error',
-            value: 'Failed to generate embedding: {{_ingest.on_failure_message}}'
-          }
-        }
-      ]
-    }
-  });
-
-  // Add embedding metadata if requested
-  if (addMetadata) {
+    // Text preprocessing
     processors.push({
-      [PIPELINE_PROCESSORS.SET]: {
-        field: 'embedding_metadata',
-        value: {
-          model_id: modelId,
-          text_field: textField,
-          generated_at: '{{_ingest.timestamp}}'
-        }
+      [PIPELINE_PROCESSORS.TRIM]: {
+        field: textField,
+        ignore_missing: true
       }
     });
-  }
 
-  return createPipeline(pipelineName, processors, req, next);
-});
+    // Generate embeddings using inference processor
+    // Note: This requires ML models to be deployed in Elasticsearch
+    processors.push({
+      inference: {
+        model_id: modelId,
+        target_field: embeddingField,
+        field_map: {
+          [textField]: 'text_field'
+        },
+        inference_config: {
+          text_embedding: {
+            results_field: 'predicted_value'
+          }
+        },
+        on_failure: [
+          {
+            [PIPELINE_PROCESSORS.SET]: {
+              field: 'embedding_error',
+              value: 'Failed to generate embedding: {{_ingest.on_failure_message}}'
+            }
+          }
+        ]
+      }
+    });
+
+    // Add embedding metadata if requested
+    if (addMetadata) {
+      processors.push({
+        [PIPELINE_PROCESSORS.SET]: {
+          field: 'embedding_metadata',
+          value: {
+            model_id: modelId,
+            text_field: textField,
+            generated_at: '{{_ingest.timestamp}}'
+          }
+        }
+      });
+    }
+
+    return createPipeline(pipelineName, processors, req, next);
+  }
+);
 
 /**
  * Create a data enrichment pipeline
@@ -562,7 +555,7 @@ export const createEmbeddingPipeline = catchAsync(async (pipelineName, options =
  * @param {Function} next - Express next function
  * @returns {Object} Pipeline creation response
  */
-export const createDataEnrichmentPipeline = catchAsync(
+export const createDataEnrichmentPipeline = asyncHandler(
   async (pipelineName, options = {}, req, next) => {
     const {
       categoryField = 'category',
@@ -649,7 +642,7 @@ export const createDataEnrichmentPipeline = catchAsync(
  * @param {Function} next - Express next function
  * @returns {Object} Pipeline creation response
  */
-export const createValidationPipeline = catchAsync(
+export const createValidationPipeline = asyncHandler(
   async (pipelineName, options = {}, req, next) => {
     const {
       requiredFields = ['title', 'content'],
@@ -727,25 +720,17 @@ export const createValidationPipeline = catchAsync(
  * @param {Function} next - Express next function
  * @returns {Object} List of all pipelines
  */
-export const getAllPipelines = catchAsync(async (req, next) => {
-  try {
-    const response = await client.ingest.getPipeline();
+export const getAllPipelines = asyncHandler(async () => {
+  const response = await client.ingest.getPipeline();
 
-    const pipelines = Object.keys(response).map((pipelineName) => ({
-      name: pipelineName,
-      description: response[pipelineName].description || '',
-      processorsCount: response[pipelineName].processors?.length || 0
-    }));
+  const pipelines = Object.keys(response).map((pipelineName) => ({
+    name: pipelineName,
+    description: response[pipelineName].description || '',
+    processorsCount: response[pipelineName].processors?.length || 0
+  }));
 
-    logger.info('Retrieved all pipelines', { count: pipelines.length });
-    return pipelines;
-  } catch (error) {
-    logger.error('Failed to retrieve pipelines', {
-      error: error.message,
-      statusCode: error.meta?.statusCode
-    });
-    return httpError(next, new Error(SEARCH_ERROR_CODES.PIPELINE_ERROR), req, 500);
-  }
+  logger.info('Retrieved all pipelines', { meta: { count: pipelines.length } });
+  return pipelines;
 });
 
 /**
@@ -756,64 +741,41 @@ export const getAllPipelines = catchAsync(async (req, next) => {
  * @param {Function} next - Express next function
  * @returns {Object} Test results
  */
-export const testPipeline = catchAsync(async (pipelineName, sampleDocument, req, next) => {
+export const testPipeline = asyncHandler(async (pipelineName, sampleDocument, req, next) => {
+  // Validate pipeline exists
   try {
-    if (!pipelineName || typeof pipelineName !== 'string') {
-      logger.error('Invalid pipeline name provided for testing', { pipelineName });
-      return httpError(next, new Error('Pipeline name is required and must be a string'), req, 400);
+    await client.ingest.getPipeline({ id: pipelineName });
+  } catch (error) {
+    if (error.meta?.statusCode === 404) {
+      logger.error('Pipeline not found for testing', { meta: { pipelineName } });
+      return httpError(next, new Error(`Pipeline '${pipelineName}' not found`), req, 404);
     }
+  }
 
-    if (!sampleDocument || typeof sampleDocument !== 'object') {
-      logger.error('Invalid sample document provided for testing', { sampleDocument });
-      return httpError(
-        next,
-        new Error('Sample document is required and must be an object'),
-        req,
-        400
-      );
+  const response = await client.ingest.simulate({
+    id: pipelineName,
+    body: {
+      docs: [{ _source: sampleDocument }]
     }
+  });
 
-    // Validate pipeline exists
-    try {
-      await client.ingest.getPipeline({ id: pipelineName });
-    } catch (error) {
-      if (error.meta?.statusCode === 404) {
-        logger.error('Pipeline not found for testing', { pipelineName });
-        return httpError(next, new Error(`Pipeline '${pipelineName}' not found`), req, 404);
-      }
-      throw error;
-    }
+  const result = response.docs[0];
+  const testResult = {
+    pipelineName,
+    originalDocument: sampleDocument,
+    processedDocument: result._source,
+    success: !result.error,
+    error: result.error || null,
+    processingTime: response.took || null
+  };
 
-    const response = await client.ingest.simulate({
-      id: pipelineName,
-      body: {
-        docs: [{ _source: sampleDocument }]
-      }
-    });
-
-    const result = response.docs[0];
-    const testResult = {
-      pipelineName,
-      originalDocument: sampleDocument,
-      processedDocument: result._source,
-      success: !result.error,
-      error: result.error || null,
-      processingTime: response.took || null
-    };
-
-    logger.info('Pipeline test completed', {
+  logger.info('Pipeline test completed', {
+    meta: {
       pipelineName,
       success: testResult.success,
       hasError: Boolean(result.error)
-    });
+    }
+  });
 
-    return testResult;
-  } catch (error) {
-    logger.error('Pipeline testing failed', {
-      pipelineName,
-      error: error.message,
-      statusCode: error.meta?.statusCode
-    });
-    return httpError(next, new Error(SEARCH_ERROR_CODES.PIPELINE_ERROR), req, 500);
-  }
+  return testResult;
 });

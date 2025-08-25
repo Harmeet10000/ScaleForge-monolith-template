@@ -1,10 +1,10 @@
 import APIFeatures from '../utils/apiFeatures.js';
 import { httpError } from '../utils/httpError.js';
-import { catchAsync } from '../utils/catchAsync.js';
+import asyncHandler from 'express-async-handler';
 import { logger } from '../utils/logger.js';
 
 export const getAll = (Model, popOptions) =>
-  catchAsync(async (req, res, next, filter = {}) => {
+  asyncHandler(async (req, res, next, filter = {}) => {
     const features = new APIFeatures(Model.find(filter), req.query)
       .filter()
       .sort()
@@ -25,7 +25,7 @@ export const getAll = (Model, popOptions) =>
   });
 
 export const getOne = (Model, popOptions) =>
-  catchAsync(async (req, res, next) => {
+  asyncHandler(async (req, res, next) => {
     let query = Model.findById(req.params.id);
     if (popOptions) {
       query = query.populate(popOptions);
@@ -41,13 +41,13 @@ export const getOne = (Model, popOptions) =>
   });
 
 export const createOne = (Model) =>
-  catchAsync(async (req) => {
+  asyncHandler(async (req) => {
     const doc = await Model.create(req.body);
     return doc;
   });
 
 export const updateOne = (Model) =>
-  catchAsync(async (req, res, next) => {
+  asyncHandler(async (req, res, next) => {
     const doc = await Model.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
       runValidators: true
@@ -61,7 +61,7 @@ export const updateOne = (Model) =>
   });
 
 export const deleteOne = (Model) =>
-  catchAsync(async (req, res, next) => {
+  asyncHandler(async (req, res, next) => {
     const doc = await Model.findByIdAndDelete(req.params.id);
 
     if (!doc) {

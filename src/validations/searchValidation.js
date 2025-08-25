@@ -63,7 +63,7 @@ const highlightSchema = Joi.object({
 // Multi-field search validation
 export const validateSearchRequest = Joi.object({
   query: Joi.string().min(1).max(1000).required(),
-  fields: Joi.array().items(Joi.string()).min(1).default([FIELD_NAMES.TITLE, FIELD_NAMES.CONTENT]),
+  // fields: Joi.array().items(Joi.string()).min(1).default([FIELD_NAMES.TITLE, FIELD_NAMES.CONTENT]),
   index: Joi.string().default(INDEX_NAMES.DOCUMENTS),
   filters: filtersSchema.optional(),
   sort: sortSchema.optional(),
@@ -259,7 +259,7 @@ export const validateDeleteDocumentRequest = Joi.object({
 
 // Index management validation
 export const validateCreateIndexRequest = Joi.object({
-  index: Joi.string().required(),
+  name: Joi.string().required(),
   mappings: Joi.object().required(),
   settings: Joi.object().optional(),
   aliases: Joi.object().optional()
@@ -339,7 +339,7 @@ const pipelineProcessorSchema = Joi.object({
 }).or('lowercase', 'uppercase', 'trim', 'remove', 'rename', 'set', 'script', 'date', 'convert');
 
 export const validateCreatePipelineRequest = Joi.object({
-  id: Joi.string().required(),
+  name: Joi.string().required(),
   description: Joi.string().optional(),
   processors: Joi.array().items(pipelineProcessorSchema).min(1).required(),
   on_failure: Joi.array().items(pipelineProcessorSchema).optional(),

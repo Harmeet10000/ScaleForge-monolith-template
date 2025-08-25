@@ -1,8 +1,8 @@
 import mongoose from 'mongoose';
 import { logger } from '../utils/logger.js';
-import { catchAsync } from '../utils/catchAsync.js';
+import asyncHandler from 'express-async-handler';
 
-export const connectDB = catchAsync(async () => {
+export const connectDB = asyncHandler(async () => {
   const mongoOptions = {
     maxPoolSize: process.env.DB_POOL_SIZE || 10,
     minPoolSize: 2,

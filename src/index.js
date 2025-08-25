@@ -6,7 +6,7 @@ import { connectRedis, redisClient } from './connections/connectRedis.js';
 import { createConnection, closeConnection } from './connections/connectRabbitMQ.js';
 // import { connectKafkaProducer, consumer, producer } from './connections/connectKafka.js';
 import { logger } from './utils/logger.js';
-import { catchAsync } from './utils/catchAsync.js';
+import asyncHandler from 'express-async-handler';
 
 Promise.all([connectDB(), connectRedis(), createConnection()])
   .then(() => {
@@ -62,7 +62,7 @@ Promise.all([connectDB(), connectRedis(), createConnection()])
     });
   });
 
-const disconnectRedis = catchAsync(async () => {
+const disconnectRedis = asyncHandler(async () => {
   if (redisClient.status === 'ready' || redisClient.status === 'connect') {
     await redisClient.quit();
     logger.info('Redis client disconnected gracefully.');
@@ -71,17 +71,17 @@ const disconnectRedis = catchAsync(async () => {
   }
 });
 
-const disconnectMongo = catchAsync(async () => {
+const disconnectMongo = asyncHandler(async () => {
   await mongoose.disconnect();
   logger.info('MongoDB disconnected gracefully.');
 });
 
-const disconnectRabbitMQ = catchAsync(async () => {
+const disconnectRabbitMQ = asyncHandler(async () => {
   await closeConnection();
   logger.info('RabbitMQ disconnected gracefully.');
 });
 
-// const disconnectKafka = catchAsync(async () => {
+// const disconnectKafka = asyncHandler(async () => {
 //   await producer.disconnect();
 //   logger.info('Kafka producer disconnected');
 //   await consumer.destroy();

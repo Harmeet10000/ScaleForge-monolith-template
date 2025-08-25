@@ -1,7 +1,6 @@
 import * as permissionService from '../services/permissionService.js';
 import { httpResponse } from '../utils/httpResponse.js';
 import { httpError } from '../utils/httpError.js';
-import { catchAsync } from '../utils/catchAsync.js';
 import {
   addUserToOrganizationValidation,
   addUserToProjectValidation,
@@ -51,9 +50,10 @@ import {
   USERS_ADDED_TO_ORGANIZATION,
   USERS_REMOVED_FROM_ORGANIZATION
 } from '../constants/responseMessage.js';
+import asyncHandler from 'express-async-handler';
 
 // Organization permissions
-export const addUserToOrganization = catchAsync(async (req, res, next) => {
+export const addUserToOrganization = asyncHandler(async (req, res, next) => {
   const data = { ...req.body, ...req.params };
   const { error, value } = validateJoiSchema(addUserToOrganizationValidation, data);
   if (error) {
@@ -65,7 +65,7 @@ export const addUserToOrganization = catchAsync(async (req, res, next) => {
   httpResponse(req, res, 201, USER_ADDED_TO_ORGANIZATION);
 });
 
-export const removeUserFromOrganization = catchAsync(async (req, res, next) => {
+export const removeUserFromOrganization = asyncHandler(async (req, res, next) => {
   const data = { ...req.body, ...req.params };
   const { error, value } = validateJoiSchema(removeUserFromOrganizationValidation, data);
   if (error) {
@@ -81,7 +81,7 @@ export const removeUserFromOrganization = catchAsync(async (req, res, next) => {
   httpResponse(req, res, 200, USER_REMOVED_FROM_ORGANIZATION);
 });
 
-export const getOrganizationUsers = catchAsync(async (req, res, next) => {
+export const getOrganizationUsers = asyncHandler(async (req, res, next) => {
   const data = { ...req.params, ...req.query };
   const { error, value } = validateJoiSchema(getOrganizationUsersValidation, data);
   if (error) {
@@ -93,7 +93,7 @@ export const getOrganizationUsers = catchAsync(async (req, res, next) => {
   httpResponse(req, res, 200, ORGANIZATION_USERS_RETRIEVED, { users });
 });
 
-export const getUserOrganizations = catchAsync(async (req, res, next) => {
+export const getUserOrganizations = asyncHandler(async (req, res, next) => {
   const data = { ...req.params, ...req.query };
   const { error, value } = validateJoiSchema(getUserOrganizationsValidation, data);
   if (error) {
@@ -109,7 +109,7 @@ export const getUserOrganizations = catchAsync(async (req, res, next) => {
 });
 
 // Project permissions
-export const createProject = catchAsync(async (req, res, next) => {
+export const createProject = asyncHandler(async (req, res, next) => {
   const { error, value } = validateJoiSchema(createProjectValidation, req.body);
   if (error) {
     return httpError(next, error, req, 422);
@@ -120,7 +120,7 @@ export const createProject = catchAsync(async (req, res, next) => {
   httpResponse(req, res, 201, PROJECT_CREATED);
 });
 
-export const addUserToProject = catchAsync(async (req, res, next) => {
+export const addUserToProject = asyncHandler(async (req, res, next) => {
   const data = { ...req.body, ...req.params };
   const { error, value } = validateJoiSchema(addUserToProjectValidation, data);
   if (error) {
@@ -132,7 +132,7 @@ export const addUserToProject = catchAsync(async (req, res, next) => {
   httpResponse(req, res, 201, USER_ADDED_TO_PROJECT);
 });
 
-export const removeUserFromProject = catchAsync(async (req, res, next) => {
+export const removeUserFromProject = asyncHandler(async (req, res, next) => {
   const data = { ...req.body, ...req.params };
   const { error, value } = validateJoiSchema(removeUserFromProjectValidation, data);
   if (error) {
@@ -144,7 +144,7 @@ export const removeUserFromProject = catchAsync(async (req, res, next) => {
   httpResponse(req, res, 200, USER_REMOVED_FROM_PROJECT);
 });
 
-export const getProjectUsers = catchAsync(async (req, res, next) => {
+export const getProjectUsers = asyncHandler(async (req, res, next) => {
   const data = { ...req.params, ...req.query };
   const { error, value } = validateJoiSchema(getProjectUsersValidation, data);
   if (error) {
@@ -156,7 +156,7 @@ export const getProjectUsers = catchAsync(async (req, res, next) => {
   httpResponse(req, res, 200, PROJECT_USERS_RETRIEVED, { users });
 });
 
-export const getUserProjects = catchAsync(async (req, res, next) => {
+export const getUserProjects = asyncHandler(async (req, res, next) => {
   const data = { ...req.params, ...req.query };
   const { error, value } = validateJoiSchema(getUserProjectsValidation, data);
   if (error) {
@@ -169,7 +169,7 @@ export const getUserProjects = catchAsync(async (req, res, next) => {
 });
 
 // Document permissions
-export const createDocument = catchAsync(async (req, res, next) => {
+export const createDocument = asyncHandler(async (req, res, next) => {
   const { error, value } = validateJoiSchema(createDocumentValidation, req.body);
   if (error) {
     return httpError(next, error, req, 422);
@@ -180,7 +180,7 @@ export const createDocument = catchAsync(async (req, res, next) => {
   httpResponse(req, res, 201, DOCUMENT_CREATED);
 });
 
-export const shareDocument = catchAsync(async (req, res, next) => {
+export const shareDocument = asyncHandler(async (req, res, next) => {
   const data = { ...req.body, ...req.params };
   const { error, value } = validateJoiSchema(shareDocumentValidation, data);
   if (error) {
@@ -192,7 +192,7 @@ export const shareDocument = catchAsync(async (req, res, next) => {
   httpResponse(req, res, 201, DOCUMENT_SHARED);
 });
 
-export const unshareDocument = catchAsync(async (req, res, next) => {
+export const unshareDocument = asyncHandler(async (req, res, next) => {
   const data = { ...req.body, ...req.params };
   const { error, value } = validateJoiSchema(unshareDocumentValidation, data);
   if (error) {
@@ -204,7 +204,7 @@ export const unshareDocument = catchAsync(async (req, res, next) => {
   httpResponse(req, res, 200, DOCUMENT_UNSHARED);
 });
 
-export const getDocumentUsers = catchAsync(async (req, res, next) => {
+export const getDocumentUsers = asyncHandler(async (req, res, next) => {
   const data = { ...req.params, ...req.query };
   const { error, value } = validateJoiSchema(getDocumentUsersValidation, data);
   if (error) {
@@ -216,7 +216,7 @@ export const getDocumentUsers = catchAsync(async (req, res, next) => {
   httpResponse(req, res, 200, DOCUMENT_USERS_RETRIEVED, { users });
 });
 
-export const getUserDocuments = catchAsync(async (req, res, next) => {
+export const getUserDocuments = asyncHandler(async (req, res, next) => {
   const data = { ...req.params, ...req.query };
   const { error, value } = validateJoiSchema(getUserDocumentsValidation, data);
   if (error) {
@@ -229,7 +229,7 @@ export const getUserDocuments = catchAsync(async (req, res, next) => {
 });
 
 // Bulk operations
-export const bulkAddUsersToOrganization = catchAsync(async (req, res, next) => {
+export const bulkAddUsersToOrganization = asyncHandler(async (req, res, next) => {
   const data = { ...req.body, ...req.params };
   const { error, value } = validateJoiSchema(bulkAddUsersToOrganizationValidation, data);
   if (error) {
@@ -245,7 +245,7 @@ export const bulkAddUsersToOrganization = catchAsync(async (req, res, next) => {
   httpResponse(req, res, 201, `${value.userIds.length} ${USERS_ADDED_TO_ORGANIZATION}`);
 });
 
-export const bulkRemoveUsersFromOrganization = catchAsync(async (req, res, next) => {
+export const bulkRemoveUsersFromOrganization = asyncHandler(async (req, res, next) => {
   const data = { ...req.body, ...req.params };
   const { error, value } = validateJoiSchema(bulkRemoveUsersFromOrganizationValidation, data);
   if (error) {
@@ -261,7 +261,7 @@ export const bulkRemoveUsersFromOrganization = catchAsync(async (req, res, next)
 });
 
 // Transfer ownership
-export const transferOwnership = catchAsync(async (req, res, next) => {
+export const transferOwnership = asyncHandler(async (req, res, next) => {
   const data = { ...req.body, ...req.params };
   const { error, value } = validateJoiSchema(transferOwnershipValidation, data);
   if (error) {
@@ -281,7 +281,7 @@ export const transferOwnership = catchAsync(async (req, res, next) => {
 });
 
 // Advanced queries
-export const getUserPermissions = catchAsync(async (req, res, next) => {
+export const getUserPermissions = asyncHandler(async (req, res, next) => {
   const { error, value } = validateJoiSchema(getUserPermissionsValidation, req.params);
   if (error) {
     return httpError(next, error, req, 422);
@@ -292,7 +292,7 @@ export const getUserPermissions = catchAsync(async (req, res, next) => {
   httpResponse(req, res, 200, USER_PERMISSIONS_RETRIEVED, permissions);
 });
 
-export const getResourcePermissions = catchAsync(async (req, res, next) => {
+export const getResourcePermissions = asyncHandler(async (req, res, next) => {
   const { error, value } = validateJoiSchema(getResourcePermissionsValidation, req.params);
   if (error) {
     return httpError(next, error, req, 422);
@@ -307,7 +307,7 @@ export const getResourcePermissions = catchAsync(async (req, res, next) => {
 });
 
 // Check access
-export const checkAccess = catchAsync(async (req, res, next) => {
+export const checkAccess = asyncHandler(async (req, res, next) => {
   const { error, value } = validateJoiSchema(checkAccessValidation, req.body);
   if (error) {
     return httpError(next, error, req, 422);
@@ -324,7 +324,7 @@ export const checkAccess = catchAsync(async (req, res, next) => {
 });
 
 // Cleanup operations
-export const removeAllUserPermissions = catchAsync(async (req, res, next) => {
+export const removeAllUserPermissions = asyncHandler(async (req, res, next) => {
   const { error, value } = validateJoiSchema(removeAllUserPermissionsValidation, req.params);
   if (error) {
     return httpError(next, error, req, 422);
@@ -335,7 +335,7 @@ export const removeAllUserPermissions = catchAsync(async (req, res, next) => {
   httpResponse(req, res, 200, ALL_USER_PERMISSIONS_REMOVED);
 });
 
-export const removeAllResourcePermissions = catchAsync(async (req, res, next) => {
+export const removeAllResourcePermissions = asyncHandler(async (req, res, next) => {
   const { error, value } = validateJoiSchema(removeAllResourcePermissionsValidation, req.params);
   if (error) {
     return httpError(next, error, req, 422);

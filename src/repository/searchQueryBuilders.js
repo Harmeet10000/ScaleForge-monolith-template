@@ -152,7 +152,7 @@ export const buildMultiFieldQuery = (searchParams) => {
       }, {})
     };
   }
-
+  // logger.debug('Built multi-field query', { meta: { searchQuery } });
   return searchQuery;
 };
 
@@ -383,8 +383,8 @@ export const buildNgramQuery = (searchParams) => {
     fields,
     filters,
     pagination,
-    ngramType = 'both', // 'ngram', 'edge_ngram', or 'both'
-    minScore = 0.1
+    ngramType, // 'ngram', 'edge_ngram', or 'both'
+    minScore
   } = searchParams;
 
   const searchQuery = {
@@ -454,7 +454,7 @@ export const buildNgramQuery = (searchParams) => {
       }
     });
   }
-
+  // logger.debug('Built ngram query', { meta: { searchQuery } });
   return searchQuery;
 };
 

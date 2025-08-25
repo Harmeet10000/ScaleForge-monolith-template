@@ -26,6 +26,7 @@ type document
     define viewer: [user] or editor
     define project_viewer: viewer from project
 
+
   # bulk/non-bulk add skip user that already exists
   # bulk/non-bulk delete skip user that does not exists
   # "FGA Error: Hostname/IP does not match certificate's altnames: Host: api.au1.fga.dev. is not in the cert's altnames: DNS:*.ap-southeast-4.es.amazonaws.com",
@@ -33,7 +34,70 @@ type document
   # FGA API Validation Error: post write : Error Invalid tuple &#39;document:doc789#project@user:project123&#39;. Reason: type &#39;user&#39; is not an allowed type restriction for &#39;document#project&#39
   # FGA API Validation Error: post check : Error type &#39;undefined&#39; not found',
   # error: "Cannot read properties of undefined (reading 'length')",
-  # 
+  # ES pipeline already exists
+
+  # **Endpoint:** `POST /api/v1/search/bulk`   if pipeline specifed empty result given back
+# check why is res.ERROR being sent after res.RESPONSE
+# ERROR [2025-08-23T15:58:43.252Z] Pipeline creation failed
+# META {
+#   pipelineName: 'content_processing_pipeline',
+#   error: "Pipeline 'content_processing_pipeline' already exists",
+#   statusCode: undefined
+# }
+
+#   stack: "TypeError: Cannot read properties of undefined (reading 'acknowledged')\n" +
+#     '    at file:///home/harmeet/Desktop/Projects/production-grade-auth-template/src/services/searchService.js:999:30\n' +
+#     '    at processTicksAndRejections (node:internal/process/task_queues:105:5)'
+# }
+
+# WARN [2025-08-23T16:07:10.722Z] Index already exists
+# META { indexName: 'documents' }
+
+
+# ERROR [2025-08-21T07:49:36.133Z] Document processing failed
+# META {
+#   pipelineName: 'content_processing_pipeline',
+#   error: 'Cannot convert undefined or null to object',
+#   statusCode: undefined
+# }
+# ERROR [2025-08-21T07:51:37.124Z] Document processing failed
+# META {
+#   pipelineName: 'text_processing',
+#   error: "Pipeline 'text_processing' not found",
+#   statusCode: undefined
+# }
+# ERROR [2025-08-21T08:09:46.920Z] Batch processing failed
+# META {
+#   pipelineName: 'content_processing_pipeline',
+#   error: 'illegal_argument_exception\n' +
+#     '\tRoot causes:\n' +
+#     '\t\tillegal_argument_exception: unexpected metadata [_id:js-advanced-001, _index:documents] in source',
+#   statusCode: 400
+# }
+# ERROR [2025-08-21T08:21:29.967Z] Bulk index completed with errors
+# META {
+#   indexName: 'vectors',
+#   errorCount: 2,
+#   totalItems: 2,
+#   errors: [
+#     {
+#       type: 'document_parsing_exception',
+#       reason: "[1:11] failed to parse field [_index] of type [_index] in document with id 'IXG3y5gBzQaABWNK_gks'. Preview of field's value: 'vectors'",
+#       caused_by: {
+#         type: 'document_parsing_exception',
+#         reason: '[1:11] Field [_index] is a metadata field and cannot be added inside a document. Use the index API request parameters.'
+#       }
+#     },
+#     {
+#       type: 'document_parsing_exception',
+#       reason: "[1:11] failed to parse field [_index] of type [_index] in document with id 'InG3y5gBzQaABWNK_gks'. Preview of field's value: 'vectors'",
+#       caused_by: {
+#         type: 'document_parsing_exception',
+#         reason: '[1:11] Field [_index] is a metadata field and cannot be added inside a document. Use the index API request parameters.'
+#       }
+#     }
+#   ]
+# }
 
 # name: auth-service-store
 # description: 'Store ID: 01K2G1S42TBKRDWZC65MKYW940'

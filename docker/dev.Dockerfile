@@ -30,6 +30,9 @@ COPY package.json pnpm-lock.yaml ./
 # Copy the rest of the application code
 COPY . .
 
+# Copy .env files if they exist (optional for Railway compatibility)
+COPY .env.development* ./
+
 # Exposing Port
 EXPOSE 8000
 

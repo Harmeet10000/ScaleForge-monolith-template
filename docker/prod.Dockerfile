@@ -50,7 +50,7 @@ COPY --from=builder /usr/src/backend-app/dist ./dist
 
 COPY --chown=appuser:appgroup ./scripts ./scripts
 COPY --chown=appuser:appgroup ./swagger.json ./swagger.json
-COPY --chown=appuser:appgroup ./.env.prod ./.env.prod
+# Note: .env files are not copied in production - use environment variables instead
 
 EXPOSE 8000
 

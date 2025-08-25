@@ -17,7 +17,6 @@ import {
   updatePipeline,
   deletePipeline,
   getPipeline,
-  getSearchStats,
   searchHealthCheck
 } from '../controllers/searchController.js';
 import { protect } from '../middlewares/authNMiddleware.js';
@@ -814,34 +813,6 @@ router.delete(
 router.get('/pipeline/:pipelineId', getPipeline);
 
 // Health and Statistics Routes
-
-/**
- * @swagger
- * /search/stats:
- *   get:
- *     summary: Get search statistics
- *     description: Retrieve search performance and usage statistics
- *     tags: [Search]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: query
- *         name: index
- *         schema:
- *           type: string
- *         description: Specific index name (optional)
- *     responses:
- *       200:
- *         description: Statistics retrieved successfully
- *       401:
- *         description: Authentication required
- *       403:
- *         description: Insufficient permissions
- *       429:
- *         description: Rate limit exceeded
- */
-router.get('/stats/:indexName?', getSearchStats);
-
 /**
  * @swagger
  * /search/health:

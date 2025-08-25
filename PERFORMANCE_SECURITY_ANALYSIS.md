@@ -1,7 +1,7 @@
 6. add prometheus, loki and grafana for monitoring and alerting - DONE
 1. Implement a OpenFGA to enhance scalability, reliability, and security of your authentication service. with permissions - DONE
 1. add ELK stack for logging and monitoring - ABANDONED
-1. also add a search engine Elasticsearch for better search capabilities - Undergoing 
+1. also add a search engine Elasticsearch for better search capabilities - Undergoing
 1. add Gemini system prompts, prompt message structure, LLM settings, structured output, tool calling and RAG - Undergoing
 1. make AI-driven features for enhanced user experience and personalization using Gemini API - Undergoing
 1. add recommendation system using Convex or AWS personalise/GCP equivalent

@@ -8,7 +8,7 @@ import {
   HeadObjectCommand
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
-import { catchAsync } from '../utils/catchAsync.js';
+import asyncHandler from 'express-async-handler';
 import { httpError } from '../utils/httpError.js';
 import { httpResponse } from '../utils/httpResponse.js';
 import { logger } from '../utils/logger.js';
@@ -21,7 +21,7 @@ const s3Client = new S3Client({
   }
 });
 
-export const getS3URL = catchAsync(async (fileName) => {
+export const getS3URL = asyncHandler(async (fileName) => {
   const getObjectParams = {
     Bucket: process.env.BUCKET_NAME,
     Key: `material/${fileName}`
@@ -32,7 +32,7 @@ export const getS3URL = catchAsync(async (fileName) => {
   return signedUrl;
 });
 
-export const getUploadS3URL = catchAsync(async (req, res, next) => {
+export const getUploadS3URL = asyncHandler(async (req, res, next) => {
   const { filename, contentType, destination } = req.body;
 
   if (!filename || !contentType) {
@@ -56,7 +56,7 @@ export const getUploadS3URL = catchAsync(async (req, res, next) => {
   httpResponse(req, res, 200, 'Upload URL generated successfully', { signedUrl, path });
 });
 
-export const deleteS3Object = catchAsync(async (req, res, next) => {
+export const deleteS3Object = asyncHandler(async (req, res, next) => {
   const { path } = req.body;
 
   if (!path) {
@@ -74,7 +74,7 @@ export const deleteS3Object = catchAsync(async (req, res, next) => {
   httpResponse(req, res, 200, 'Object deleted successfully');
 });
 
-export const listS3Objects = catchAsync(async (req, res) => {
+export const listS3Objects = asyncHandler(async (req, res) => {
   const { prefix = '', maxKeys = 1000 } = req.query;
 
   const params = {
@@ -96,7 +96,7 @@ export const listS3Objects = catchAsync(async (req, res) => {
   });
 });
 
-export const copyS3Object = catchAsync(async (req, res, next) => {
+export const copyS3Object = asyncHandler(async (req, res, next) => {
   const { sourcePath, destinationPath } = req.body;
 
   if (!sourcePath || !destinationPath) {
@@ -115,7 +115,7 @@ export const copyS3Object = catchAsync(async (req, res, next) => {
   httpResponse(req, res, 200, 'Object copied successfully', { path: destinationPath });
 });
 
-export const checkS3ObjectExists = catchAsync(async (req, res, next) => {
+export const checkS3ObjectExists = asyncHandler(async (req, res, next) => {
   const { path } = req.query;
 
   if (!path) {
@@ -141,7 +141,7 @@ export const checkS3ObjectExists = catchAsync(async (req, res, next) => {
   }
 });
 
-export const getS3ObjectMetadata = catchAsync(async (req, res, next) => {
+export const getS3ObjectMetadata = asyncHandler(async (req, res, next) => {
   const { path } = req.query;
 
   if (!path) {

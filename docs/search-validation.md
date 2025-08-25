@@ -39,23 +39,27 @@ if (error) {
 ## Available Validation Schemas
 
 ### Search Operations
+
 - `validateSearchRequest` - Multi-field text search
 - `validateSemanticSearchRequest` - Vector-based semantic search
 - `validateKNNSearchRequest` - K-nearest neighbors search
 - `validateAggregationRequest` - Aggregation queries
 
 ### Document Operations
+
 - `validateIndexDocumentRequest` - Single document indexing
 - `validateBulkIndexRequest` - Bulk document operations
 - `validateUpdateDocumentRequest` - Document updates
 - `validateDeleteDocumentRequest` - Document deletion
 
 ### Index Management
+
 - `validateCreateIndexRequest` - Index creation
 - `validateUpdateIndexMappingRequest` - Index mapping updates
 - `validateDeleteIndexRequest` - Index deletion
 
 ### Pipeline Management
+
 - `validateCreatePipelineRequest` - Ingest pipeline creation
 - `validateUpdatePipelineRequest` - Pipeline updates
 - `validateDeletePipelineRequest` - Pipeline deletion
@@ -63,13 +67,16 @@ if (error) {
 ## Key Features
 
 ### Default Values
+
 All schemas provide sensible defaults:
+
 - Default page size: 20 (max 100)
 - Default index: 'documents' or 'vectors'
 - Default similarity metric: 'cosine'
 - Default refresh: 'false'
 
 ### Comprehensive Validation
+
 - Field type validation
 - Range constraints (e.g., pagination limits)
 - Pattern matching (e.g., timeout formats)
@@ -77,11 +84,13 @@ All schemas provide sensible defaults:
 - Array validation with size limits
 
 ### Error Handling
+
 - Detailed error messages with field paths
 - Multiple error reporting (abortEarly: false)
 - Unknown field stripping for security
 
 ### Performance Considerations
+
 - Maximum vector dimensions: 2048
 - Maximum bulk size: 10,000 documents
 - Maximum page offset: 10,000
@@ -90,6 +99,7 @@ All schemas provide sensible defaults:
 ## Examples
 
 ### Multi-field Search
+
 ```javascript
 const searchRequest = {
   query: 'machine learning algorithms',
@@ -98,7 +108,7 @@ const searchRequest = {
     category: 'technology',
     created_at: { gte: '2023-01-01' }
   },
-  sort: { 'created_at': 'desc' },
+  sort: { created_at: 'desc' },
   pagination: { page: 1, limit: 50 },
   highlight: {
     enabled: true,
@@ -109,6 +119,7 @@ const searchRequest = {
 ```
 
 ### Semantic Search
+
 ```javascript
 const semanticRequest = {
   query: 'natural language processing techniques',
@@ -122,9 +133,10 @@ const semanticRequest = {
 ```
 
 ### KNN Search
+
 ```javascript
 const knnRequest = {
-  vector: [0.1, 0.2, 0.3, /* ... 768 dimensions */],
+  vector: [0.1, 0.2, 0.3 /* ... 768 dimensions */],
   k: 10,
   similarity_metric: 'cosine',
   filters: { category: 'research' },
@@ -137,6 +149,7 @@ const knnRequest = {
 ```
 
 ### Aggregations
+
 ```javascript
 const aggregationRequest = {
   aggregations: {
@@ -164,6 +177,7 @@ const aggregationRequest = {
 ```
 
 ### Document Indexing
+
 ```javascript
 const indexRequest = {
   document: {
@@ -183,6 +197,7 @@ const indexRequest = {
 ```
 
 ### Pipeline Creation
+
 ```javascript
 const pipelineRequest = {
   id: 'comprehensive_text_processing',
@@ -226,6 +241,7 @@ const pipelineRequest = {
 ## Testing
 
 The validation schemas are thoroughly tested with 57+ test cases covering:
+
 - Valid input scenarios
 - Invalid input rejection
 - Edge cases and boundary conditions
@@ -233,6 +249,7 @@ The validation schemas are thoroughly tested with 57+ test cases covering:
 - Complex nested object validation
 
 Run tests with:
+
 ```bash
 npm test
 ```
@@ -240,6 +257,7 @@ npm test
 ## Integration
 
 The validation schemas integrate seamlessly with the existing Express.js application:
+
 - Consistent with existing validation patterns
 - Uses the same `validateJoiSchema` helper function
 - Follows DRY principles with reusable components

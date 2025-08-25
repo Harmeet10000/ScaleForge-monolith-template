@@ -1,4 +1,4 @@
-import { catchAsync } from '../utils/catchAsync.js';
+import asyncHandler from 'express-async-handler';
 import { httpError } from '../utils/httpError.js';
 import jwt from 'jsonwebtoken';
 import { promisify } from 'util';
@@ -13,7 +13,7 @@ import {
   USER_NO_LONGER_EXISTS
 } from '../constants/responseMessage.js';
 
-export const protect = catchAsync(async (req, res, next) => {
+export const protect = asyncHandler(async (req, res, next) => {
   let token;
   const currentIp = req.ip || req.connection.remoteAddress;
 

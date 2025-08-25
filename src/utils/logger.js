@@ -170,5 +170,5 @@ export const logger = createLogger({
   defaultMeta: {
     meta: {}
   },
-  transports: [...FileTransport(), ...consoleTransport(), ...LokiTransportConfig()]
+  transports: [...FileTransport(), ...consoleTransport()]
 });

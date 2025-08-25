@@ -1,4 +1,4 @@
-import { catchAsync } from '../utils/catchAsync.js';
+import asyncHandler from 'express-async-handler';
 import { logger } from '../utils/logger.js';
 import {
   createSearchIndex,
@@ -17,7 +17,7 @@ import {
  * allowing for advanced search capabilities like partial matching,
  * filtering by fields, and more.
  */
-export const setupUserSearchIndex = catchAsync(async () => {
+export const setupUserSearchIndex = asyncHandler(async () => {
   // Define the index schema
   const userSchema = {
     name: { type: 'TEXT', weight: 1.0, sortable: true },
@@ -41,7 +41,7 @@ export const setupUserSearchIndex = catchAsync(async () => {
 /**
  * Example: Searching users with specific criteria
  */
-export const searchUsers = catchAsync(async (searchTerm, options = {}) => {
+export const searchUsers = asyncHandler(async (searchTerm, options = {}) => {
   // Build a query that searches across name and email
   let query = searchTerm ? `@name:(${searchTerm}*) | @emailAddress:(${searchTerm}*)` : '*';
 
@@ -72,7 +72,7 @@ export const searchUsers = catchAsync(async (searchTerm, options = {}) => {
  * rate limiting system that can efficiently check if an IP address
  * has made too many requests in a time window.
  */
-export const setupRateLimiter = catchAsync(async () => {
+export const setupRateLimiter = asyncHandler(async () => {
   // Create a Bloom filter with a low error rate and high capacity
   // Error rate 0.01 means 1% false positive rate
   // Capacity 100000 means it can handle that many unique items efficiently
@@ -87,7 +87,7 @@ export const setupRateLimiter = catchAsync(async () => {
  * Uses a bloom filter to implement a sliding window rate limiter
  * by combining the IP address with a time window identifier.
  */
-export const checkRateLimit = catchAsync(async (ip, endpoint, windowSizeMinutes = 15) => {
+export const checkRateLimit = asyncHandler(async (ip, endpoint, windowSizeMinutes = 15) => {
   // Create a time-window identifier (e.g., current hour, 15-minute window, etc.)
   const now = new Date();
   const windowId = `${now.getUTCFullYear()}-${now.getUTCMonth()}-${now.getUTCDate()}-${now.getUTCHours()}-${Math.floor(now.getUTCMinutes() / windowSizeMinutes)}`;
@@ -113,7 +113,7 @@ export const checkRateLimit = catchAsync(async (ip, endpoint, windowSizeMinutes 
 /**
  * Example: Get information about the bloom filter's status
  */
-export const getRateLimiterStatus = catchAsync(async () => {
+export const getRateLimiterStatus = asyncHandler(async () => {
   const info = await getBloomFilterInfo('rate_limiter');
   logger.info('Rate limiter bloom filter status:', { meta: info });
   return info;
@@ -122,7 +122,7 @@ export const getRateLimiterStatus = catchAsync(async () => {
 /**
  * Example: Combined usage for user search with rate limiting
  */
-export const searchUsersWithRateLimit = catchAsync(async (searchTerm, ip, options = {}) => {
+export const searchUsersWithRateLimit = asyncHandler(async (searchTerm, ip, options = {}) => {
   // First check if the IP is rate limited
   const rateCheck = await checkRateLimit(ip, 'user_search', 5); // 5-minute window
 
@@ -139,7 +139,7 @@ export const searchUsersWithRateLimit = catchAsync(async (searchTerm, ip, option
 /**
  * Example: Clean up resources
  */
-export const cleanupRedisResources = catchAsync(async () => {
+export const cleanupRedisResources = asyncHandler(async () => {
   await deleteSearchIndex('userIdx');
   // Note: Redis Bloom doesn't have a direct 'drop filter' command,
   // so we would need to use DEL on the key

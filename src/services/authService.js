@@ -34,11 +34,11 @@ import {
 import * as authRepository from '../repository/authRepository.js';
 import * as tokenRepository from '../repository/tokenRepository.js';
 import { deleteHash, getHash, setHash } from '../helpers/redisFunctions.js';
-import { catchAsync } from '../utils/catchAsync.js';
+import asyncHandler from 'express-async-handler';
 
 dayjs.extend(utc);
 
-export const registerUser = async (userData) => {
+export const registerUser = asyncHandler(async (userData) => {
   const { name, emailAddress, password, phoneNumber, consent } = userData;
 
   const { countryCode, isoCode, internationalNumber } = extractInfoPhoneNumber(`+${phoneNumber}`);
@@ -107,9 +107,9 @@ export const registerUser = async (userData) => {
   Resendmail(info);
 
   return newUser;
-};
+});
 
-export const confirmAccount = async (emailAddress, code, req, next) => {
+export const confirmAccount = asyncHandler(async (emailAddress, code, req, next) => {
   // Find user by email
   const user = await authRepository.findUserByEmailAddress(emailAddress);
   if (!user) {
@@ -141,17 +141,18 @@ export const confirmAccount = async (emailAddress, code, req, next) => {
   Resendmail(info);
 
   return true;
-};
+});
 
-export const loginUser = async (credentials, req, next) => {
+export const loginUser = asyncHandler(async (credentials, req, next) => {
   const { emailAddress, password } = credentials;
   const userIp = req.ip;
 
   let user = await getHash('user', `email:${emailAddress}`);
-  logger.debug(`User from cache: ${JSON.stringify(user)}`, { meta: user });
+  logger.debug(`User from cache:`, { meta: { user } });
   if (!user) {
     user = await authRepository.findUserByEmailAddress(emailAddress, `+password`);
   }
+  logger.debug('user', { meta: { user } });
 
   if (!user) {
     return httpError(next, new Error(NOT_FOUND('user')), req, 404);
@@ -211,9 +212,9 @@ export const loginUser = async (credentials, req, next) => {
     userForResponse,
     domain
   };
-};
+});
 
-export const logoutUser = catchAsync(async (refreshToken) => {
+export const logoutUser = asyncHandler(async (refreshToken) => {
   logger.info('Logout called with refresh:', refreshToken);
   if (refreshToken) {
     // Get user ID from refresh token
@@ -230,7 +231,7 @@ export const logoutUser = catchAsync(async (refreshToken) => {
   return true;
 });
 
-export const refreshUserToken = async (refreshToken, req, next) => {
+export const refreshUserToken = asyncHandler(async (refreshToken, req, next) => {
   if (!refreshToken) {
     return httpError(next, new Error(UNAUTHORIZED), req, 401);
   }
@@ -270,9 +271,9 @@ export const refreshUserToken = async (refreshToken, req, next) => {
     newAccessToken,
     domain
   };
-};
+});
 
-export const requestPasswordReset = async (emailAddress, req, next) => {
+export const requestPasswordReset = asyncHandler(async (emailAddress, req, next) => {
   // Find User by Email Address
   const user = await authRepository.findUserByEmailAddress(emailAddress);
   if (!user) {
@@ -309,9 +310,9 @@ export const requestPasswordReset = async (emailAddress, req, next) => {
   Resendmail(info);
 
   return true;
-};
+});
 
-export const resetUserPassword = async (token, newPassword, req, next) => {
+export const resetUserPassword = asyncHandler(async (token, newPassword, req, next) => {
   // Fetch user by token
   const user = await authRepository.findByResetToken(token);
   if (!user) {
@@ -356,47 +357,49 @@ export const resetUserPassword = async (token, newPassword, req, next) => {
 
   Resendmail(info);
   return true;
-};
+});
 
-export const changeUserPassword = async (userId, oldPassword, newPassword, req, next) => {
-  // Find User by id
-  const user = await authRepository.findUserById(userId, '+password');
-  if (!user) {
-    return httpError(next, new Error(NOT_FOUND('user')), req, 404);
+export const changeUserPassword = asyncHandler(
+  async (userId, oldPassword, newPassword, req, next) => {
+    // Find User by id
+    const user = await authRepository.findUserById(userId, '+password');
+    if (!user) {
+      return httpError(next, new Error(NOT_FOUND('user')), req, 404);
+    }
+
+    // Check if old password is matching with stored password
+    const isPasswordMatching = await comparePassword(oldPassword, user.password);
+    if (!isPasswordMatching) {
+      return httpError(next, new Error(INVALID_OLD_PASSWORD), req, 400);
+    }
+
+    if (newPassword === oldPassword) {
+      return httpError(next, new Error(PASSWORD_MATCHING_WITH_OLD_PASSWORD), req, 400);
+    }
+
+    // Password hash for new password
+    const hashedPassword = await hashPassword(newPassword);
+
+    // User update
+    user.password = hashedPassword;
+    await user.save();
+
+    // Email Send
+
+    const info = {
+      to: [user.emailAddress],
+      subject: 'Password Changed',
+      name: user.name,
+      purpose: 'changeUserPassword'
+    };
+
+    Resendmail(info);
+
+    return true;
   }
+);
 
-  // Check if old password is matching with stored password
-  const isPasswordMatching = await comparePassword(oldPassword, user.password);
-  if (!isPasswordMatching) {
-    return httpError(next, new Error(INVALID_OLD_PASSWORD), req, 400);
-  }
-
-  if (newPassword === oldPassword) {
-    return httpError(next, new Error(PASSWORD_MATCHING_WITH_OLD_PASSWORD), req, 400);
-  }
-
-  // Password hash for new password
-  const hashedPassword = await hashPassword(newPassword);
-
-  // User update
-  user.password = hashedPassword;
-  await user.save();
-
-  // Email Send
-
-  const info = {
-    to: [user.emailAddress],
-    subject: 'Password Changed',
-    name: user.name,
-    purpose: 'changeUserPassword'
-  };
-
-  Resendmail(info);
-
-  return true;
-};
-
-export const googleOAuthSignup = async (payload, req, next) => {
+export const googleOAuthSignup = asyncHandler(async (payload, req, next) => {
   const { id, email, name, picture } = payload;
   // Check if user already exists
   let user = await authRepository.findUserByEmailAddress(email);
@@ -433,9 +436,9 @@ export const googleOAuthSignup = async (payload, req, next) => {
   const domain = getDomainFromUrl(process.env.SERVER_URL);
 
   return { accessToken, refreshToken, domain };
-};
+});
 
-export const googleOAuthLogin = async (payload, req, next) => {
+export const googleOAuthLogin = asyncHandler(async (payload, req, next) => {
   const { id, email } = payload;
   // Find user by email and oauth_id
   const user = await authRepository.findUserByEmailAddress(email);
@@ -459,4 +462,4 @@ export const googleOAuthLogin = async (payload, req, next) => {
   const domain = getDomainFromUrl(process.env.SERVER_URL);
 
   return { accessToken, refreshToken, domain };
-};
+});

@@ -8,7 +8,7 @@ import {
   getSystemHealth
 } from '../utils/quicker.js';
 import { SUCCESS } from '../constants/responseMessage.js';
-import { catchAsync } from '../utils/catchAsync.js';
+import asyncHandler from 'express-async-handler';
 
 export const self = (req, res) => {
   const serverInfo = {
@@ -19,7 +19,7 @@ export const self = (req, res) => {
   httpResponse(req, res, 200, SUCCESS, serverInfo);
 };
 
-export const health = catchAsync(async (req, res) => {
+export const health = asyncHandler(async (req, res) => {
   const checks = {
     database: await checkDatabase(),
     redis: await checkRedis(),

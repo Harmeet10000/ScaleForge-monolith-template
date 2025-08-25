@@ -1,5 +1,5 @@
 import { logger } from '../utils/logger.js';
-import { catchAsync } from '../utils/catchAsync.js';
+import asyncHandler from 'express-async-handler';
 import { redisClient } from '../connections/connectRedis.js';
 
 // Use Case | Recommended Redis Type
@@ -19,7 +19,7 @@ const getKeyName = (objectType, ...args) => `${objectType}:${args.join(':')}`;
 const getCacheKey = (objectType, key) =>
   getKeyName(objectType, ...(Array.isArray(key) ? key : [key]));
 
-export const setCache = catchAsync(async (objectType, key, value, expireSeconds = 1800) => {
+export const setCache = asyncHandler(async (objectType, key, value, expireSeconds = 1800) => {
   const cacheKey = getCacheKey(objectType, key);
 
   const stringValue = typeof value === 'object' ? JSON.stringify(value) : value;
@@ -30,7 +30,7 @@ export const setCache = catchAsync(async (objectType, key, value, expireSeconds 
   return true;
 });
 
-export const getCache = catchAsync(async (objectType, key, parseJson = true) => {
+export const getCache = asyncHandler(async (objectType, key, parseJson = true) => {
   const cacheKey = getCacheKey(objectType, key);
 
   const result = await redisClient.get(cacheKey);
@@ -51,7 +51,7 @@ export const getCache = catchAsync(async (objectType, key, parseJson = true) => 
   return result;
 });
 
-export const deleteCache = catchAsync(async (objectType, key) => {
+export const deleteCache = asyncHandler(async (objectType, key) => {
   const cacheKey = getCacheKey(objectType, key);
 
   const result = await redisClient.del(cacheKey);
@@ -75,7 +75,7 @@ const serializeHashData = (data) => {
 
 // Redis Hash CRUD Operations
 
-export const setHash = catchAsync(async (objectType, key, data, expireSeconds = 1800) => {
+export const setHash = asyncHandler(async (objectType, key, data, expireSeconds = 1800) => {
   const cacheKey = getCacheKey(objectType, key);
   // Serialize nested objects to prevent data loss
   const serializedData = serializeHashData(data);
@@ -88,7 +88,7 @@ export const setHash = catchAsync(async (objectType, key, data, expireSeconds = 
   return true;
 });
 
-export const getHash = catchAsync(async (objectType, key) => {
+export const getHash = asyncHandler(async (objectType, key) => {
   const cacheKey = getCacheKey(objectType, key);
   // logger.debug(`Getting hash: ${cacheKey}`);
   const result = await redisClient.hgetall(cacheKey);
@@ -96,19 +96,19 @@ export const getHash = catchAsync(async (objectType, key) => {
   //   return null;
   // }
   // Deserialize each field if it's a JSON string
-  Object.keys(result).forEach((field) => {
-    try {
-      result[field] = JSON.parse(result[field]);
-    } catch (err) {
-      // Leave as is if parsing fails
-      logger.error('Error parsing hash field JSON', { meta: { cacheKey, field, error: err } });
-    }
-  });
+  // Object.keys(result).forEach((field) => {
+  //   try {
+  //     result[field] = JSON.parse(result[field]);
+  //   } catch (err) {
+  //     // Leave as is if parsing fails
+  //     logger.error('Error parsing hash field JSON', { meta: { cacheKey, field, error: err } });
+  //   }
+  // });
   logger.info(`Hash retrieved:`, { meta: result });
   return result;
 });
 
-export const updateHash = catchAsync(async (objectType, key, data) => {
+export const updateHash = asyncHandler(async (objectType, key, data) => {
   const cacheKey = getCacheKey(objectType, key);
   const serializedData = serializeHashData(data);
   await redisClient.hset(cacheKey, serializedData);
@@ -116,14 +116,14 @@ export const updateHash = catchAsync(async (objectType, key, data) => {
   return true;
 });
 
-export const deleteHashField = catchAsync(async (objectType, key, field) => {
+export const deleteHashField = asyncHandler(async (objectType, key, field) => {
   const cacheKey = getCacheKey(objectType, key);
   const result = await redisClient.hdel(cacheKey, field);
   logger.info(`Hash field deleted: ${cacheKey}, field: ${field}, Result: ${result}`);
   return result > 0;
 });
 
-export const deleteHash = catchAsync(async (objectType, key) => {
+export const deleteHash = asyncHandler(async (objectType, key) => {
   const cacheKey = getCacheKey(objectType, key);
   const result = await redisClient.del(cacheKey);
   logger.info(`Hash deleted: ${cacheKey}, Result: ${result}`);
@@ -132,7 +132,7 @@ export const deleteHash = catchAsync(async (objectType, key) => {
 
 // Redis List CRUD Operations
 
-export const pushToList = catchAsync(
+export const pushToList = asyncHandler(
   async (objectType, key, value, prepend = false, expireSeconds = null) => {
     const cacheKey = getCacheKey(objectType, key);
 
@@ -156,7 +156,7 @@ export const pushToList = catchAsync(
   }
 );
 
-export const getListItems = catchAsync(
+export const getListItems = asyncHandler(
   async (objectType, key, start = 0, end = -1, parseJson = true) => {
     const cacheKey = getCacheKey(objectType, key);
     const items = await redisClient.lrange(cacheKey, start, end);
@@ -181,13 +181,13 @@ export const getListItems = catchAsync(
   }
 );
 
-export const getListLength = catchAsync(async (objectType, key) => {
+export const getListLength = asyncHandler(async (objectType, key) => {
   const cacheKey = getCacheKey(objectType, key);
   const length = await redisClient.llen(cacheKey);
   return length;
 });
 
-export const removeFromList = catchAsync(async (objectType, key, value, count = 0) => {
+export const removeFromList = asyncHandler(async (objectType, key, value, count = 0) => {
   const cacheKey = getCacheKey(objectType, key);
 
   const stringValue = typeof value === 'object' ? JSON.stringify(value) : value;
@@ -201,7 +201,7 @@ export const removeFromList = catchAsync(async (objectType, key, value, count = 
   return result;
 });
 
-export const updateListItem = catchAsync(async (objectType, key, index, newValue) => {
+export const updateListItem = asyncHandler(async (objectType, key, index, newValue) => {
   const cacheKey = getCacheKey(objectType, key);
 
   // Stringify objects/arrays if needed
@@ -212,14 +212,14 @@ export const updateListItem = catchAsync(async (objectType, key, index, newValue
   return true;
 });
 
-export const trimList = catchAsync(async (objectType, key, start, end) => {
+export const trimList = asyncHandler(async (objectType, key, start, end) => {
   const cacheKey = getCacheKey(objectType, key);
   await redisClient.ltrim(cacheKey, start, end);
   logger.info(`Trimmed list: ${cacheKey}, Range: ${start} to ${end}`);
   return true;
 });
 
-export const deleteList = catchAsync(async (objectType, key) => {
+export const deleteList = asyncHandler(async (objectType, key) => {
   const cacheKey = getCacheKey(objectType, key);
   const result = await redisClient.del(cacheKey);
   logger.info(`List deleted: ${cacheKey}, Result: ${result}`);
@@ -228,7 +228,7 @@ export const deleteList = catchAsync(async (objectType, key) => {
 
 // Redis Search Functions
 
-export const createSearchIndex = catchAsync(async (indexName, prefix, schema, options = {}) => {
+export const createSearchIndex = asyncHandler(async (indexName, prefix, schema, options = {}) => {
   // Check if index already exists
   let indexExists = false;
 
@@ -292,7 +292,7 @@ export const createSearchIndex = catchAsync(async (indexName, prefix, schema, op
   return { created: true, indexName };
 });
 
-export const searchIndex = catchAsync(async (indexName, query, options = {}) => {
+export const searchIndex = asyncHandler(async (indexName, query, options = {}) => {
   // Prepare base arguments
   const args = ['FT.SEARCH', indexName, query];
 
@@ -377,7 +377,7 @@ export const searchIndex = catchAsync(async (indexName, query, options = {}) => 
   return { totalResults, documents: formattedResults };
 });
 
-export const deleteSearchIndex = catchAsync(async (indexName) => {
+export const deleteSearchIndex = asyncHandler(async (indexName) => {
   await redisClient.call('FT.DROPINDEX', indexName);
   logger.info(`Search index deleted: ${indexName}`);
   return { deleted: true, indexName };
@@ -385,7 +385,7 @@ export const deleteSearchIndex = catchAsync(async (indexName) => {
 
 // Redis Bloom Filter Functions
 
-export const createBloomFilter = catchAsync(async (filterName, errorRate, capacity) => {
+export const createBloomFilter = asyncHandler(async (filterName, errorRate, capacity) => {
   // Check if filter already exists
   let filterExists = false;
 
@@ -411,7 +411,7 @@ export const createBloomFilter = catchAsync(async (filterName, errorRate, capaci
   return { created: true, filterName };
 });
 
-export const addToBloomFilter = catchAsync(async (filterName, value) => {
+export const addToBloomFilter = asyncHandler(async (filterName, value) => {
   if (Array.isArray(value)) {
     // Multi-add for arrays
     const args = ['BF.MADD', filterName, ...value];
@@ -425,7 +425,7 @@ export const addToBloomFilter = catchAsync(async (filterName, value) => {
   return result === 1; // Returns true if item was added, false if it already existed
 });
 
-export const checkBloomFilter = catchAsync(async (filterName, value) => {
+export const checkBloomFilter = asyncHandler(async (filterName, value) => {
   try {
     if (Array.isArray(value)) {
       // Multi-check for arrays
@@ -445,7 +445,7 @@ export const checkBloomFilter = catchAsync(async (filterName, value) => {
   }
 });
 
-export const getBloomFilterInfo = catchAsync(async (filterName) => {
+export const getBloomFilterInfo = asyncHandler(async (filterName) => {
   try {
     const info = await redisClient.call('BF.INFO', filterName);
 

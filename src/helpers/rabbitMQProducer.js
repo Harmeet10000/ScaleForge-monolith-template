@@ -1,6 +1,6 @@
 import { getConnection } from '../db/rabbitMQConnection.js';
 import { logger } from '../utils/logger.js';
-import { catchAsync } from '../utils/catchAsync.js';
+import asyncHandler from 'express-async-handler';
 
 export const ExchangeTypes = {
   DIRECT: 'direct',
@@ -22,7 +22,7 @@ export const createProducerState = (
 });
 
 // Initialize the producer's channel and exchange
-export const initializeProducer = catchAsync(async (producerState) => {
+export const initializeProducer = asyncHandler(async (producerState) => {
   if (producerState.channel) {
     return producerState;
   }
@@ -46,7 +46,7 @@ export const initializeProducer = catchAsync(async (producerState) => {
 });
 
 // Publish a message to the exchange
-export const publishMessage = catchAsync(
+export const publishMessage = asyncHandler(
   async (producerState, message, routingKey = '', options = {}) => {
     // Initialize if not already initialized
     const state = producerState.channel ? producerState : await initializeProducer(producerState);
@@ -90,7 +90,7 @@ export const publishMessage = catchAsync(
 );
 
 // Publish a message with retry logic
-export const publishWithRetry = catchAsync(
+export const publishWithRetry = asyncHandler(
   async (producerState, message, routingKey = '', options = {}, retryOptions = {}) => {
     const delayExecution = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
     const maxRetries = retryOptions.maxRetries || 3;
@@ -134,7 +134,7 @@ export const publishWithRetry = catchAsync(
 );
 
 // Schedule a message to be delivered after a delay
-export const scheduleMessage = catchAsync(
+export const scheduleMessage = asyncHandler(
   async (producerState, message, routingKey = '', delayMs = 0, options = {}) => {
     if (delayMs <= 0) {
       return await publishMessage(producerState, message, routingKey, options);
@@ -156,7 +156,7 @@ export const scheduleMessage = catchAsync(
 );
 
 // Close the producer's channel
-export const closeProducer = catchAsync(async (producerState) => {
+export const closeProducer = asyncHandler(async (producerState) => {
   if (producerState.channel) {
     await producerState.channel.close();
     logger.info('RabbitMQ producer channel closed', {
@@ -168,7 +168,7 @@ export const closeProducer = catchAsync(async (producerState) => {
 });
 
 // Factory function to create and initialize a producer
-export const createProducer = catchAsync(
+export const createProducer = asyncHandler(
   async (exchangeName, exchangeType = ExchangeTypes.DIRECT, durable = true) => {
     const producerState = createProducerState(exchangeName, exchangeType, durable);
     const initializedState = await initializeProducer(producerState);

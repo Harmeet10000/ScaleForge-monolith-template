@@ -1,6 +1,6 @@
 import { httpResponse } from '../utils/httpResponse.js';
 import { httpError } from '../utils/httpError.js';
-import { catchAsync } from '../utils/catchAsync.js';
+import asyncHandler from 'express-async-handler';
 import {
   validateJoiSchema,
   validateSearchRequest,
@@ -23,26 +23,16 @@ import * as searchService from '../services/searchService.js';
 import { SEARCH_MESSAGES } from '../constants/searchConstants.js';
 
 /**
- * Search Controller
- * Handles HTTP requests and responses for all search operations
- */
-
-// Core Search Endpoints
-
-/**
  * Multi-field search endpoint with validation and error handling
  * @route GET /api/v1/search
  */
-export const search = catchAsync(async (req, res, next) => {
+export const search = asyncHandler(async (req, res, next) => {
   const { error, value } = validateJoiSchema(validateSearchRequest, req.query);
   if (error) {
     return httpError(next, error, req, 422);
   }
 
   const results = await searchService.performSearch(value, req, next);
-  if (!results) {
-    return; // Error already handled by service
-  }
 
   httpResponse(req, res, 200, SEARCH_MESSAGES.SEARCH_SUCCESS, results);
 });
@@ -51,16 +41,13 @@ export const search = catchAsync(async (req, res, next) => {
  * Semantic search endpoint for vector-based queries
  * @route POST /api/v1/search/semantic
  */
-export const semanticSearch = catchAsync(async (req, res, next) => {
+export const semanticSearch = asyncHandler(async (req, res, next) => {
   const { error, value } = validateJoiSchema(validateSemanticSearchRequest, req.body);
   if (error) {
     return httpError(next, error, req, 422);
   }
 
   const results = await searchService.performSemanticSearch(value, req, next);
-  if (!results) {
-    return; // Error already handled by service
-  }
 
   httpResponse(req, res, 200, SEARCH_MESSAGES.SEMANTIC_SEARCH_SUCCESS, results);
 });
@@ -69,16 +56,13 @@ export const semanticSearch = catchAsync(async (req, res, next) => {
  * KNN search endpoint for similarity matching
  * @route POST /api/v1/search/knn
  */
-export const knnSearch = catchAsync(async (req, res, next) => {
+export const knnSearch = asyncHandler(async (req, res, next) => {
   const { error, value } = validateJoiSchema(validateKNNSearchRequest, req.body);
   if (error) {
     return httpError(next, error, req, 422);
   }
 
   const results = await searchService.performKNNSearch(value, req, next);
-  if (!results) {
-    return; // Error already handled by service
-  }
 
   httpResponse(req, res, 200, SEARCH_MESSAGES.KNN_SEARCH_SUCCESS, results);
 });
@@ -87,16 +71,13 @@ export const knnSearch = catchAsync(async (req, res, next) => {
  * Aggregation search endpoint for analytics
  * @route POST /api/v1/search/aggregate
  */
-export const aggregateSearch = catchAsync(async (req, res, next) => {
+export const aggregateSearch = asyncHandler(async (req, res, next) => {
   const { error, value } = validateJoiSchema(validateAggregationRequest, req.body);
   if (error) {
     return httpError(next, error, req, 422);
   }
 
   const results = await searchService.performAggregatedSearch(value, req, next);
-  if (!results) {
-    return; // Error already handled by service
-  }
 
   httpResponse(req, res, 200, SEARCH_MESSAGES.AGGREGATION_SUCCESS, results);
 });
@@ -105,16 +86,13 @@ export const aggregateSearch = catchAsync(async (req, res, next) => {
  * N-gram search endpoint for partial matching and typo tolerance
  * @route POST /api/v1/search/ngram
  */
-export const ngramSearch = catchAsync(async (req, res, next) => {
+export const ngramSearch = asyncHandler(async (req, res, next) => {
   const { error, value } = validateJoiSchema(validateNgramSearchRequest, req.body);
   if (error) {
     return httpError(next, error, req, 422);
   }
 
   const results = await searchService.performNgramSearch(value, req, next);
-  if (!results) {
-    return; // Error already handled by service
-  }
 
   httpResponse(req, res, 200, SEARCH_MESSAGES.NGRAM_SEARCH_SUCCESS, results);
 });
@@ -123,16 +101,13 @@ export const ngramSearch = catchAsync(async (req, res, next) => {
  * Fuzzy search endpoint for advanced typo tolerance
  * @route POST /api/v1/search/fuzzy
  */
-export const fuzzySearch = catchAsync(async (req, res, next) => {
+export const fuzzySearch = asyncHandler(async (req, res, next) => {
   const { error, value } = validateJoiSchema(validateFuzzySearchRequest, req.body);
   if (error) {
     return httpError(next, error, req, 422);
   }
 
   const results = await searchService.performFuzzySearch(value, req, next);
-  if (!results) {
-    return; // Error already handled by service
-  }
 
   httpResponse(req, res, 200, SEARCH_MESSAGES.FUZZY_SEARCH_SUCCESS, results);
 });
@@ -143,16 +118,13 @@ export const fuzzySearch = catchAsync(async (req, res, next) => {
  * Index single document endpoint for data ingestion
  * @route POST /api/v1/search/index
  */
-export const indexDocument = catchAsync(async (req, res, next) => {
+export const indexDocument = asyncHandler(async (req, res, next) => {
   const { error, value } = validateJoiSchema(validateIndexDocumentRequest, req.body);
   if (error) {
     return httpError(next, error, req, 422);
   }
 
   const result = await searchService.indexDocument(value, req, next);
-  if (!result) {
-    return; // Error already handled by service
-  }
 
   httpResponse(req, res, 201, SEARCH_MESSAGES.INDEX_SUCCESS, result);
 });
@@ -161,16 +133,13 @@ export const indexDocument = catchAsync(async (req, res, next) => {
  * Bulk index documents endpoint for efficient data ingestion
  * @route POST /api/v1/search/bulk
  */
-export const bulkIndex = catchAsync(async (req, res, next) => {
+export const bulkIndex = asyncHandler(async (req, res, next) => {
   const { error, value } = validateJoiSchema(validateBulkIndexRequest, req.body);
   if (error) {
     return httpError(next, error, req, 422);
   }
 
   const result = await searchService.bulkIndexDocuments(value, req, next);
-  if (!result) {
-    return; // Error already handled by service
-  }
 
   httpResponse(req, res, 201, SEARCH_MESSAGES.BULK_INDEX_SUCCESS, result);
 });
@@ -179,7 +148,7 @@ export const bulkIndex = catchAsync(async (req, res, next) => {
  * Update document endpoint
  * @route PUT /api/v1/search/document/:id
  */
-export const updateDocument = catchAsync(async (req, res, next) => {
+export const updateDocument = asyncHandler(async (req, res, next) => {
   const requestData = {
     ...req.body,
     id: req.params.id
@@ -191,9 +160,6 @@ export const updateDocument = catchAsync(async (req, res, next) => {
   }
 
   const result = await searchService.updateDocument(value, req, next);
-  if (!result) {
-    return; // Error already handled by service
-  }
 
   httpResponse(req, res, 200, SEARCH_MESSAGES.DOCUMENT_UPDATED, result);
 });
@@ -202,7 +168,7 @@ export const updateDocument = catchAsync(async (req, res, next) => {
  * Delete document endpoint
  * @route DELETE /api/v1/search/document/:id
  */
-export const deleteDocument = catchAsync(async (req, res, next) => {
+export const deleteDocument = asyncHandler(async (req, res, next) => {
   const requestData = {
     id: req.params.id,
     index: req.query.index || req.body.index
@@ -214,9 +180,6 @@ export const deleteDocument = catchAsync(async (req, res, next) => {
   }
 
   const result = await searchService.deleteDocument(value, req, next);
-  if (!result) {
-    return; // Error already handled by service
-  }
 
   httpResponse(req, res, 200, SEARCH_MESSAGES.DOCUMENT_DELETED, result);
 });
@@ -227,10 +190,10 @@ export const deleteDocument = catchAsync(async (req, res, next) => {
  * Create search index endpoint
  * @route POST /api/v1/search/index/create
  */
-export const createIndex = catchAsync(async (req, res, next) => {
+export const createIndex = asyncHandler(async (req, res, next) => {
   const requestData = {
-    name: req.body.index || req.body.name,
-    mapping: req.body.mappings || req.body.mapping,
+    name: req.body.name,
+    mappings: req.body.mappings,
     settings: req.body.settings,
     aliases: req.body.aliases
   };
@@ -241,9 +204,6 @@ export const createIndex = catchAsync(async (req, res, next) => {
   }
 
   const result = await searchService.createSearchIndex(value, req, next);
-  if (!result) {
-    return; // Error already handled by service
-  }
 
   httpResponse(req, res, 201, SEARCH_MESSAGES.INDEX_CREATED, result);
 });
@@ -252,7 +212,7 @@ export const createIndex = catchAsync(async (req, res, next) => {
  * Delete search index endpoint
  * @route DELETE /api/v1/search/index/:indexName
  */
-export const deleteIndex = catchAsync(async (req, res, next) => {
+export const deleteIndex = asyncHandler(async (req, res, next) => {
   const requestData = {
     index: req.params.indexName
   };
@@ -263,9 +223,6 @@ export const deleteIndex = catchAsync(async (req, res, next) => {
   }
 
   const result = await searchService.deleteSearchIndex(value, req, next);
-  if (!result) {
-    return; // Error already handled by service
-  }
 
   httpResponse(req, res, 200, SEARCH_MESSAGES.INDEX_DELETED, result);
 });
@@ -276,9 +233,9 @@ export const deleteIndex = catchAsync(async (req, res, next) => {
  * Create ingest pipeline endpoint
  * @route POST /api/v1/search/pipeline
  */
-export const createPipeline = catchAsync(async (req, res, next) => {
+export const createPipeline = asyncHandler(async (req, res, next) => {
   const requestData = {
-    name: req.body.id || req.body.name,
+    name: req.body.name,
     processors: req.body.processors,
     description: req.body.description,
     onFailure: req.body.on_failure || req.body.onFailure,
@@ -292,9 +249,6 @@ export const createPipeline = catchAsync(async (req, res, next) => {
   }
 
   const result = await searchService.createIngestPipeline(value, req, next);
-  if (!result) {
-    return; // Error already handled by service
-  }
 
   httpResponse(req, res, 201, SEARCH_MESSAGES.PIPELINE_CREATED, result);
 });
@@ -303,7 +257,7 @@ export const createPipeline = catchAsync(async (req, res, next) => {
  * Update ingest pipeline endpoint
  * @route PUT /api/v1/search/pipeline/:pipelineId
  */
-export const updatePipeline = catchAsync(async (req, res, next) => {
+export const updatePipeline = asyncHandler(async (req, res, next) => {
   const requestData = {
     id: req.params.pipelineId,
     processors: req.body.processors,
@@ -319,9 +273,6 @@ export const updatePipeline = catchAsync(async (req, res, next) => {
   }
 
   const result = await searchService.updateIngestPipeline(value, req, next);
-  if (!result) {
-    return; // Error already handled by service
-  }
 
   httpResponse(req, res, 200, SEARCH_MESSAGES.PIPELINE_CREATED, result);
 });
@@ -330,7 +281,7 @@ export const updatePipeline = catchAsync(async (req, res, next) => {
  * Delete ingest pipeline endpoint
  * @route DELETE /api/v1/search/pipeline/:pipelineId
  */
-export const deletePipeline = catchAsync(async (req, res, next) => {
+export const deletePipeline = asyncHandler(async (req, res, next) => {
   const requestData = {
     id: req.params.pipelineId
   };
@@ -341,9 +292,6 @@ export const deletePipeline = catchAsync(async (req, res, next) => {
   }
 
   const result = await searchService.deleteIngestPipeline(value, req, next);
-  if (!result) {
-    return; // Error already handled by service
-  }
 
   httpResponse(req, res, 200, SEARCH_MESSAGES.PIPELINE_DELETED, result);
 });
@@ -352,7 +300,7 @@ export const deletePipeline = catchAsync(async (req, res, next) => {
  * Get pipeline information endpoint
  * @route GET /api/v1/search/pipeline/:pipelineId
  */
-export const getPipeline = catchAsync(async (req, res, next) => {
+export const getPipeline = asyncHandler(async (req, res, next) => {
   const { pipelineId } = req.params.pipelineId;
 
   if (!pipelineId) {
@@ -360,9 +308,6 @@ export const getPipeline = catchAsync(async (req, res, next) => {
   }
 
   const result = await searchService.getPipelineInfo(pipelineId, req, next);
-  if (!result) {
-    return; // Error already handled by service
-  }
 
   httpResponse(req, res, 200, 'Pipeline information retrieved successfully', result);
 });
@@ -370,60 +315,11 @@ export const getPipeline = catchAsync(async (req, res, next) => {
 // Health and Statistics Endpoints
 
 /**
- * Get search statistics endpoint
- * @route GET /api/v1/search/stats/:indexName?
- */
-export const getSearchStats = catchAsync(async (req, res, next) => {
-  const indexName = req.params.indexName || req.query.index;
-
-  const result = await searchService.getSearchStats(indexName, req, next);
-  if (!result) {
-    return; // Error already handled by service
-  }
-
-  httpResponse(req, res, 200, 'Search statistics retrieved successfully', result);
-});
-
-/**
  * Health check endpoint for search functionality
  * @route GET /api/v1/search/health
  */
-export const searchHealthCheck = catchAsync(async (req, res, next) => {
+export const searchHealthCheck = asyncHandler(async (req, res, next) => {
   const result = await searchService.checkSearchHealth(req, next);
-  if (!result) {
-    return; // Error already handled by service
-  }
 
   httpResponse(req, res, 200, 'Search system is healthy', result);
 });
-
-// Export all controller functions
-export default {
-  // Core search endpoints
-  search,
-  semanticSearch,
-  knnSearch,
-  ngramSearch,
-  fuzzySearch,
-  aggregateSearch,
-
-  // Document management endpoints
-  indexDocument,
-  bulkIndex,
-  updateDocument,
-  deleteDocument,
-
-  // Index management endpoints
-  createIndex,
-  deleteIndex,
-
-  // Pipeline management endpoints
-  createPipeline,
-  updatePipeline,
-  deletePipeline,
-  getPipeline,
-
-  // Health and statistics endpoints
-  getSearchStats,
-  searchHealthCheck
-};
