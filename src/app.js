@@ -21,6 +21,7 @@ import authRoutes from './routes/authRoutes.js';
 import healthRoutes from './routes/healthRoutes.js';
 import permissionsRoutes from './routes/permissionsRoutes.js';
 import searchRoutes from './routes/searchRoutes.js';
+import paymentsRoutes from './routes/paymentsRoutes.js';
 
 const app = express();
 
@@ -123,7 +124,7 @@ app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/health', healthRoutes);
 app.use('/api/v1/permissions', permissionsRoutes);
 app.use('/api/v1/search', searchRoutes);
-// app.use('/api/v1/rabbitmq', rabbitmqRoutes);
+app.use('/api/v1/payments', paymentsRoutes);
 
 // 4) CATCHES ALL ROUTES THAT ARE NOT DEFINED
 app.all('*', (req, res, next) => {

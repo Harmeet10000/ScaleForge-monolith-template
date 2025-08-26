@@ -148,11 +148,11 @@ export const loginUser = asyncHandler(async (credentials, req, next) => {
   const userIp = req.ip;
 
   let user = await getHash('user', `email:${emailAddress}`);
-  logger.debug(`User from cache:`, { meta: { user } });
+  // logger.debug(`User from cache:`, { meta: { user } });
   if (!user) {
     user = await authRepository.findUserByEmailAddress(emailAddress, `+password`);
   }
-  logger.debug('user', { meta: { user } });
+  // logger.debug('user', { meta: { user } });
 
   if (!user) {
     return httpError(next, new Error(NOT_FOUND('user')), req, 404);
@@ -187,9 +187,8 @@ export const loginUser = asyncHandler(async (credentials, req, next) => {
 
   await authRepository.updateUserLastLogin(user._id);
   user.lastLoginAt = dayjs().utc().toDate();
-  const userForResponse = user.toObject();
+  const userForResponse = user.toObject ? user.toObject() : { ...user };
   delete userForResponse.passwordReset;
-  delete userForResponse.accountConfirmation;
   delete userForResponse.__v;
   await setHash('user', `email:${emailAddress}`, userForResponse, 1800);
   await setHash('user', `id:${user._id}`, userForResponse, 1800);
@@ -201,6 +200,7 @@ export const loginUser = asyncHandler(async (credentials, req, next) => {
   await tokenRepository.createRefreshToken(refreshTokenPayload);
 
   const domain = getDomainFromUrl(process.env.SERVER_URL);
+  delete userForResponse.accountConfirmation;
   delete userForResponse.password;
   delete userForResponse.consent;
   delete userForResponse.createdAt;

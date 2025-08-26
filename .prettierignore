@@ -5,4 +5,8 @@ yarn.lock
 node_modules
 dist
 coverage
+.devcontainer
+.*
+docker
+logs
 .nyc_output

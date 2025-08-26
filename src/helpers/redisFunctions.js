@@ -92,18 +92,18 @@ export const getHash = asyncHandler(async (objectType, key) => {
   const cacheKey = getCacheKey(objectType, key);
   // logger.debug(`Getting hash: ${cacheKey}`);
   const result = await redisClient.hgetall(cacheKey);
-  // if (!result || Object.keys(result).length === 0) {
-  //   return null;
-  // }
+  if (!result || Object.keys(result).length === 0) {
+    return null;
+  }
   // Deserialize each field if it's a JSON string
-  // Object.keys(result).forEach((field) => {
-  //   try {
-  //     result[field] = JSON.parse(result[field]);
-  //   } catch (err) {
-  //     // Leave as is if parsing fails
-  //     logger.error('Error parsing hash field JSON', { meta: { cacheKey, field, error: err } });
-  //   }
-  // });
+  Object.keys(result).forEach((field) => {
+    try {
+      result[field] = JSON.parse(result[field]);
+    } catch (err) {
+      // Leave as is if parsing fails
+      logger.error('Error parsing hash field JSON', { meta: { cacheKey, field, error: err } });
+    }
+  });
   logger.info(`Hash retrieved:`, { meta: result });
   return result;
 });

@@ -1,7 +1,7 @@
 import asyncHandler from 'express-async-handler';
-import { httpError } from '../utils/httpError.js';
+// import { httpError } from '../utils/httpError.js';
+// import { SEARCH_ERROR_CODES } from '../constants/searchConstants.js';
 import { logger } from '../utils/logger.js';
-import { SEARCH_ERROR_CODES } from '../constants/searchConstants.js';
 import * as searchRepository from '../repository/searchRepository.js';
 import * as searchQueryBuilder from '../repository/searchQueryBuilders.js';
 import * as embeddingService from './embeddingService.js';
@@ -244,255 +244,6 @@ export const performAggregatedSearch = asyncHandler(async (searchParams) => {
 
   return formattedResults;
 });
-
-// Helper Functions for Result Formatting
-
-/**
- * Format standard search results
- * @param {Object} results - Raw Elasticsearch results
- * @param {Object} params - Search parameters
- * @returns {Object} Formatted search results
- */
-const formatSearchResults = (results, params) => {
-  // logger.debug('result', { meta: { results } });
-  const pagination = calculatePagination(results.hits.total.value, params);
-
-  return {
-    hits: results.hits?.hits.map((hit) => ({
-      id: hit._id,
-      score: hit._score,
-      source: hit._source,
-      highlight: hit.highlight || null
-    })),
-    total: {
-      value: results.hits.total.value,
-      relation: results.hits.total.relation
-    },
-    pagination,
-    aggregations: results.aggregations || null,
-    took: results.took,
-    maxScore: results.hits.max_score
-  };
-};
-
-/**
- * Format semantic search results
- * @param {Object} results - Raw Elasticsearch results
- * @param {Object} params - Search parameters
- * @returns {Object} Formatted semantic search results
- */
-const formatSemanticSearchResults = (results, params) => {
-  const pagination = calculatePagination(results.hits.total.value, params);
-
-  return {
-    hits: results.hits?.hits.map((hit) => ({
-      id: hit._id,
-      score: hit._score,
-      source: hit._source,
-      semanticScore: hit._score, // In semantic search, score represents similarity
-      highlight: hit.highlight || null
-    })),
-    total: {
-      value: results.hits.total.value,
-      relation: results.hits.total.relation
-    },
-    pagination,
-    searchType: 'semantic',
-    hybridMode: params.hybridMode || false,
-    threshold: params.threshold,
-    took: results.took,
-    maxScore: results.hits.max_score
-  };
-};
-
-/**
- * Format KNN search results
- * @param {Object} results - Raw Elasticsearch results
- * @param {Object} params - Search parameters
- * @returns {Object} Formatted KNN results
- */
-const formatKNNResults = (results, params) => ({
-  hits: results.hits?.hits.map((hit) => ({
-    id: hit._id,
-    score: hit._score,
-    source: hit._source,
-    similarityScore: hit._score,
-    rank: results.hits.hits.indexOf(hit) + 1
-  })),
-  total: {
-    value: results.hits.total.value,
-    relation: results.hits.total.relation
-  },
-  k: params.k,
-  similarityMetric: params.similarityMetric || 'cosine',
-  searchType: 'knn',
-  took: results.took,
-  maxScore: results.hits.max_score
-});
-
-/**
- * Format aggregation results
- * @param {Object} results - Raw Elasticsearch results
- * @param {Object} params - Search parameters
- * @returns {Object} Formatted aggregation results
- */
-const formatAggregationResults = (results, params) => {
-  const pagination = calculatePagination(results.hits.total.value, params);
-
-  return {
-    hits: results.hits?.hits.map((hit) => ({
-      id: hit._id,
-      score: hit._score,
-      source: hit._source
-    })),
-    total: {
-      value: results.hits.total.value,
-      relation: results.hits.total.relation
-    },
-    pagination,
-    aggregations: formatAggregations(results.aggregations),
-    searchType: 'aggregated',
-    took: results.took,
-    maxScore: results.hits.max_score
-  };
-};
-
-/**
- * Format n-gram search results
- * @param {Object} results - Raw Elasticsearch results
- * @param {Object} params - Search parameters
- * @returns {Object} Formatted n-gram search results
- */
-const formatNgramSearchResults = (results, params) => {
-  const pagination = calculatePagination(results.hits.total.value, params);
-
-  return {
-    hits: results.hits?.hits.map((hit) => ({
-      id: hit._id,
-      score: hit._score,
-      source: hit._source,
-      partialMatchScore: hit._score,
-      highlight: hit.highlight || null
-    })),
-    total: {
-      value: results.hits.total.value,
-      relation: results.hits.total.relation
-    },
-    pagination,
-    searchType: 'ngram',
-    ngramType: params.ngramType || 'both',
-    minScore: params.minScore || 0.1,
-    took: results.took,
-    maxScore: results.hits.max_score
-  };
-};
-
-/**
- * Format fuzzy search results
- * @param {Object} results - Raw Elasticsearch results
- * @param {Object} params - Search parameters
- * @returns {Object} Formatted fuzzy search results
- */
-const formatFuzzySearchResults = (results, params) => {
-  const pagination = calculatePagination(results.hits.total.value, params);
-
-  return {
-    hits: results.hits?.hits.map((hit) => ({
-      id: hit._id,
-      score: hit._score,
-      source: hit._source,
-      fuzzyScore: hit._score,
-      typoTolerance: true,
-      highlight: hit.highlight || null
-    })),
-    total: {
-      value: results.hits.total.value,
-      relation: results.hits.total.relation
-    },
-    pagination,
-    searchType: 'fuzzy',
-    fuzziness: params.fuzziness || 'AUTO',
-    prefixLength: params.prefixLength || 0,
-    maxExpansions: params.maxExpansions || 50,
-    took: results.took,
-    maxScore: results.hits.max_score
-  };
-};
-
-/**
- * Format aggregation buckets and metrics
- * @param {Object} aggregations - Raw aggregation results
- * @returns {Object} Formatted aggregations
- */
-const formatAggregations = (aggregations) => {
-  const formatted = {};
-
-  Object.entries(aggregations).forEach(([name, agg]) => {
-    if (agg.buckets) {
-      // Terms, date_histogram, range aggregations
-      formatted[name] = {
-        buckets: agg.buckets.map((bucket) => ({
-          key: bucket.key,
-          keyAsString: bucket.key_as_string || bucket.key,
-          docCount: bucket.doc_count,
-          // Include nested aggregations if present
-          ...Object.fromEntries(
-            Object.entries(bucket)
-              .filter(([key]) => !['key', 'key_as_string', 'doc_count'].includes(key))
-              .map(([key, value]) => [key, formatAggregations({ [key]: value })[key]])
-          )
-        })),
-        docCountErrorUpperBound: agg.doc_count_error_upper_bound,
-        sumOtherDocCount: agg.sum_other_doc_count
-      };
-    } else if (agg.value !== undefined) {
-      // Metric aggregations (avg, sum, min, max, cardinality)
-      formatted[name] = {
-        value: agg.value,
-        valueAsString: agg.value_as_string || agg.value
-      };
-    } else if (agg.count !== undefined) {
-      // Stats aggregation
-      formatted[name] = {
-        count: agg.count,
-        min: agg.min,
-        max: agg.max,
-        avg: agg.avg,
-        sum: agg.sum
-      };
-    } else {
-      // Other aggregation types
-      formatted[name] = agg;
-    }
-  });
-
-  return formatted;
-};
-
-/**
- * Calculate pagination metadata
- * @param {number} total - Total number of results
- * @param {Object} params - Search parameters
- * @returns {Object} Pagination metadata
- */
-const calculatePagination = (total, params) => {
-  const page = params.pagination?.page || 1;
-  const limit = params.pagination?.limit || 20;
-  const totalPages = Math.ceil(total / limit);
-  const offset = (page - 1) * limit;
-
-  return {
-    page,
-    limit,
-    offset,
-    total,
-    totalPages,
-    hasNext: page < totalPages,
-    hasPrev: page > 1,
-    isFirstPage: page === 1,
-    isLastPage: page === totalPages
-  };
-};
 
 // Document Management Functions
 
@@ -999,3 +750,252 @@ export const checkSearchHealth = asyncHandler(async () => {
 
   return healthStatus;
 });
+
+// Helper Functions for Result Formatting
+
+/**
+ * Format standard search results
+ * @param {Object} results - Raw Elasticsearch results
+ * @param {Object} params - Search parameters
+ * @returns {Object} Formatted search results
+ */
+const formatSearchResults = (results, params) => {
+  // logger.debug('result', { meta: { results } });
+  const pagination = calculatePagination(results.hits.total.value, params);
+
+  return {
+    hits: results.hits?.hits.map((hit) => ({
+      id: hit._id,
+      score: hit._score,
+      source: hit._source,
+      highlight: hit.highlight || null
+    })),
+    total: {
+      value: results.hits.total.value,
+      relation: results.hits.total.relation
+    },
+    pagination,
+    aggregations: results.aggregations || null,
+    took: results.took,
+    maxScore: results.hits.max_score
+  };
+};
+
+/**
+ * Format semantic search results
+ * @param {Object} results - Raw Elasticsearch results
+ * @param {Object} params - Search parameters
+ * @returns {Object} Formatted semantic search results
+ */
+const formatSemanticSearchResults = (results, params) => {
+  const pagination = calculatePagination(results.hits.total.value, params);
+
+  return {
+    hits: results.hits?.hits.map((hit) => ({
+      id: hit._id,
+      score: hit._score,
+      source: hit._source,
+      semanticScore: hit._score, // In semantic search, score represents similarity
+      highlight: hit.highlight || null
+    })),
+    total: {
+      value: results.hits.total.value,
+      relation: results.hits.total.relation
+    },
+    pagination,
+    searchType: 'semantic',
+    hybridMode: params.hybridMode || false,
+    threshold: params.threshold,
+    took: results.took,
+    maxScore: results.hits.max_score
+  };
+};
+
+/**
+ * Format KNN search results
+ * @param {Object} results - Raw Elasticsearch results
+ * @param {Object} params - Search parameters
+ * @returns {Object} Formatted KNN results
+ */
+const formatKNNResults = (results, params) => ({
+  hits: results.hits?.hits.map((hit) => ({
+    id: hit._id,
+    score: hit._score,
+    source: hit._source,
+    similarityScore: hit._score,
+    rank: results.hits.hits.indexOf(hit) + 1
+  })),
+  total: {
+    value: results.hits.total.value,
+    relation: results.hits.total.relation
+  },
+  k: params.k,
+  similarityMetric: params.similarityMetric || 'cosine',
+  searchType: 'knn',
+  took: results.took,
+  maxScore: results.hits.max_score
+});
+
+/**
+ * Format aggregation results
+ * @param {Object} results - Raw Elasticsearch results
+ * @param {Object} params - Search parameters
+ * @returns {Object} Formatted aggregation results
+ */
+const formatAggregationResults = (results, params) => {
+  const pagination = calculatePagination(results.hits.total.value, params);
+
+  return {
+    hits: results.hits?.hits.map((hit) => ({
+      id: hit._id,
+      score: hit._score,
+      source: hit._source
+    })),
+    total: {
+      value: results.hits.total.value,
+      relation: results.hits.total.relation
+    },
+    pagination,
+    aggregations: formatAggregations(results.aggregations),
+    searchType: 'aggregated',
+    took: results.took,
+    maxScore: results.hits.max_score
+  };
+};
+
+/**
+ * Format n-gram search results
+ * @param {Object} results - Raw Elasticsearch results
+ * @param {Object} params - Search parameters
+ * @returns {Object} Formatted n-gram search results
+ */
+const formatNgramSearchResults = (results, params) => {
+  const pagination = calculatePagination(results.hits.total.value, params);
+
+  return {
+    hits: results.hits?.hits.map((hit) => ({
+      id: hit._id,
+      score: hit._score,
+      source: hit._source,
+      partialMatchScore: hit._score,
+      highlight: hit.highlight || null
+    })),
+    total: {
+      value: results.hits.total.value,
+      relation: results.hits.total.relation
+    },
+    pagination,
+    searchType: 'ngram',
+    ngramType: params.ngramType || 'both',
+    minScore: params.minScore || 0.1,
+    took: results.took,
+    maxScore: results.hits.max_score
+  };
+};
+
+/**
+ * Format fuzzy search results
+ * @param {Object} results - Raw Elasticsearch results
+ * @param {Object} params - Search parameters
+ * @returns {Object} Formatted fuzzy search results
+ */
+const formatFuzzySearchResults = (results, params) => {
+  const pagination = calculatePagination(results.hits.total.value, params);
+
+  return {
+    hits: results.hits?.hits.map((hit) => ({
+      id: hit._id,
+      score: hit._score,
+      source: hit._source,
+      fuzzyScore: hit._score,
+      typoTolerance: true,
+      highlight: hit.highlight || null
+    })),
+    total: {
+      value: results.hits.total.value,
+      relation: results.hits.total.relation
+    },
+    pagination,
+    searchType: 'fuzzy',
+    fuzziness: params.fuzziness || 'AUTO',
+    prefixLength: params.prefixLength || 0,
+    maxExpansions: params.maxExpansions || 50,
+    took: results.took,
+    maxScore: results.hits.max_score
+  };
+};
+
+/**
+ * Format aggregation buckets and metrics
+ * @param {Object} aggregations - Raw aggregation results
+ * @returns {Object} Formatted aggregations
+ */
+const formatAggregations = (aggregations) => {
+  const formatted = {};
+
+  Object.entries(aggregations).forEach(([name, agg]) => {
+    if (agg.buckets) {
+      // Terms, date_histogram, range aggregations
+      formatted[name] = {
+        buckets: agg.buckets.map((bucket) => ({
+          key: bucket.key,
+          keyAsString: bucket.key_as_string || bucket.key,
+          docCount: bucket.doc_count,
+          // Include nested aggregations if present
+          ...Object.fromEntries(
+            Object.entries(bucket)
+              .filter(([key]) => !['key', 'key_as_string', 'doc_count'].includes(key))
+              .map(([key, value]) => [key, formatAggregations({ [key]: value })[key]])
+          )
+        })),
+        docCountErrorUpperBound: agg.doc_count_error_upper_bound,
+        sumOtherDocCount: agg.sum_other_doc_count
+      };
+    } else if (agg.value !== undefined) {
+      // Metric aggregations (avg, sum, min, max, cardinality)
+      formatted[name] = {
+        value: agg.value,
+        valueAsString: agg.value_as_string || agg.value
+      };
+    } else if (agg.count !== undefined) {
+      // Stats aggregation
+      formatted[name] = {
+        count: agg.count,
+        min: agg.min,
+        max: agg.max,
+        avg: agg.avg,
+        sum: agg.sum
+      };
+    } else {
+      // Other aggregation types
+      formatted[name] = agg;
+    }
+  });
+
+  return formatted;
+};
+
+/**
+ * Calculate pagination metadata
+ * @param {number} total - Total number of results
+ * @param {Object} params - Search parameters
+ * @returns {Object} Pagination metadata
+ */
+const calculatePagination = (total, params) => {
+  const page = params.pagination?.page || 1;
+  const limit = params.pagination?.limit || 20;
+  const totalPages = Math.ceil(total / limit);
+  const offset = (page - 1) * limit;
+
+  return {
+    page,
+    limit,
+    offset,
+    total,
+    totalPages,
+    hasNext: page < totalPages,
+    hasPrev: page > 1,
+    isFirstPage: page === 1,
+    isLastPage: page === totalPages
+  };
+};

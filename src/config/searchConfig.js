@@ -506,14 +506,3 @@ export const defaultPipelineConfigurations = {
     ]
   }
 };
-
-export default {
-  indexConfigurations,
-  searchConfiguration,
-  defaultPipelineConfigurations,
-  ngramAnalyzer,
-  edgeNgramAnalyzer,
-  fuzzyAnalyzer,
-  semanticAnalyzer,
-  defaultIndexSettings
-};
