@@ -1,5 +1,4 @@
 import swaggerJSDoc from 'swagger-jsdoc';
-import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -101,7 +100,6 @@ const options = {
         name: 'Permissions',
         description: 'Role-based access control and permission management endpoints'
       },
-      { name: 'Users', description: 'User profile management and administration endpoints' },
       { name: 'Search', description: 'Search using Elasticsearch' }
     ],
     security: [{ bearerAuth: [] }, { cookieAuth: [] }]
@@ -111,8 +109,3 @@ const options = {
 
 // Generate swagger specification
 export const swaggerSpec = swaggerJSDoc(options);
-
-// Write swagger specification to file when executed
-// const outputFile = path.join(__dirname, 'swagger-output.json');
-// fs.writeFileSync(outputFile, JSON.stringify(swaggerSpec, null, 2));
-// console.log('✅ Swagger documentation generated at:', outputFile);

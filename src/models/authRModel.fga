@@ -99,6 +99,7 @@ type document
 #   ]
 # }
 
+
 # name: auth-service-store
 # description: 'Store ID: 01K2G1S42TBKRDWZC65MKYW940'
 # model: |

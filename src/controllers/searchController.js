@@ -22,10 +22,6 @@ import {
 import * as searchService from '../services/searchService.js';
 import { SEARCH_MESSAGES } from '../constants/searchConstants.js';
 
-/**
- * Multi-field search endpoint with validation and error handling
- * @route GET /api/v1/search
- */
 export const search = asyncHandler(async (req, res, next) => {
   const { error, value } = validateJoiSchema(validateSearchRequest, req.query);
   if (error) {
@@ -37,10 +33,6 @@ export const search = asyncHandler(async (req, res, next) => {
   httpResponse(req, res, 200, SEARCH_MESSAGES.SEARCH_SUCCESS, results);
 });
 
-/**
- * Semantic search endpoint for vector-based queries
- * @route POST /api/v1/search/semantic
- */
 export const semanticSearch = asyncHandler(async (req, res, next) => {
   const { error, value } = validateJoiSchema(validateSemanticSearchRequest, req.body);
   if (error) {
@@ -52,10 +44,6 @@ export const semanticSearch = asyncHandler(async (req, res, next) => {
   httpResponse(req, res, 200, SEARCH_MESSAGES.SEMANTIC_SEARCH_SUCCESS, results);
 });
 
-/**
- * KNN search endpoint for similarity matching
- * @route POST /api/v1/search/knn
- */
 export const knnSearch = asyncHandler(async (req, res, next) => {
   const { error, value } = validateJoiSchema(validateKNNSearchRequest, req.body);
   if (error) {
@@ -67,10 +55,6 @@ export const knnSearch = asyncHandler(async (req, res, next) => {
   httpResponse(req, res, 200, SEARCH_MESSAGES.KNN_SEARCH_SUCCESS, results);
 });
 
-/**
- * Aggregation search endpoint for analytics
- * @route POST /api/v1/search/aggregate
- */
 export const aggregateSearch = asyncHandler(async (req, res, next) => {
   const { error, value } = validateJoiSchema(validateAggregationRequest, req.body);
   if (error) {
@@ -82,10 +66,6 @@ export const aggregateSearch = asyncHandler(async (req, res, next) => {
   httpResponse(req, res, 200, SEARCH_MESSAGES.AGGREGATION_SUCCESS, results);
 });
 
-/**
- * N-gram search endpoint for partial matching and typo tolerance
- * @route POST /api/v1/search/ngram
- */
 export const ngramSearch = asyncHandler(async (req, res, next) => {
   const { error, value } = validateJoiSchema(validateNgramSearchRequest, req.body);
   if (error) {
@@ -97,10 +77,6 @@ export const ngramSearch = asyncHandler(async (req, res, next) => {
   httpResponse(req, res, 200, SEARCH_MESSAGES.NGRAM_SEARCH_SUCCESS, results);
 });
 
-/**
- * Fuzzy search endpoint for advanced typo tolerance
- * @route POST /api/v1/search/fuzzy
- */
 export const fuzzySearch = asyncHandler(async (req, res, next) => {
   const { error, value } = validateJoiSchema(validateFuzzySearchRequest, req.body);
   if (error) {
@@ -114,10 +90,6 @@ export const fuzzySearch = asyncHandler(async (req, res, next) => {
 
 // Document Management Endpoints
 
-/**
- * Index single document endpoint for data ingestion
- * @route POST /api/v1/search/index
- */
 export const indexDocument = asyncHandler(async (req, res, next) => {
   const { error, value } = validateJoiSchema(validateIndexDocumentRequest, req.body);
   if (error) {
@@ -129,10 +101,6 @@ export const indexDocument = asyncHandler(async (req, res, next) => {
   httpResponse(req, res, 201, SEARCH_MESSAGES.INDEX_SUCCESS, result);
 });
 
-/**
- * Bulk index documents endpoint for efficient data ingestion
- * @route POST /api/v1/search/bulk
- */
 export const bulkIndex = asyncHandler(async (req, res, next) => {
   const { error, value } = validateJoiSchema(validateBulkIndexRequest, req.body);
   if (error) {
@@ -144,10 +112,6 @@ export const bulkIndex = asyncHandler(async (req, res, next) => {
   httpResponse(req, res, 201, SEARCH_MESSAGES.BULK_INDEX_SUCCESS, result);
 });
 
-/**
- * Update document endpoint
- * @route PUT /api/v1/search/document/:id
- */
 export const updateDocument = asyncHandler(async (req, res, next) => {
   const requestData = {
     ...req.body,
@@ -164,10 +128,6 @@ export const updateDocument = asyncHandler(async (req, res, next) => {
   httpResponse(req, res, 200, SEARCH_MESSAGES.DOCUMENT_UPDATED, result);
 });
 
-/**
- * Delete document endpoint
- * @route DELETE /api/v1/search/document/:id
- */
 export const deleteDocument = asyncHandler(async (req, res, next) => {
   const requestData = {
     id: req.params.id,
@@ -186,10 +146,6 @@ export const deleteDocument = asyncHandler(async (req, res, next) => {
 
 // Index Management Endpoints
 
-/**
- * Create search index endpoint
- * @route POST /api/v1/search/index/create
- */
 export const createIndex = asyncHandler(async (req, res, next) => {
   const requestData = {
     name: req.body.name,
@@ -208,10 +164,6 @@ export const createIndex = asyncHandler(async (req, res, next) => {
   httpResponse(req, res, 201, SEARCH_MESSAGES.INDEX_CREATED, result);
 });
 
-/**
- * Delete search index endpoint
- * @route DELETE /api/v1/search/index/:indexName
- */
 export const deleteIndex = asyncHandler(async (req, res, next) => {
   const requestData = {
     index: req.params.indexName
@@ -229,10 +181,6 @@ export const deleteIndex = asyncHandler(async (req, res, next) => {
 
 // Pipeline Management Endpoints
 
-/**
- * Create ingest pipeline endpoint
- * @route POST /api/v1/search/pipeline
- */
 export const createPipeline = asyncHandler(async (req, res, next) => {
   const requestData = {
     name: req.body.name,
@@ -253,10 +201,6 @@ export const createPipeline = asyncHandler(async (req, res, next) => {
   httpResponse(req, res, 201, SEARCH_MESSAGES.PIPELINE_CREATED, result);
 });
 
-/**
- * Update ingest pipeline endpoint
- * @route PUT /api/v1/search/pipeline/:pipelineId
- */
 export const updatePipeline = asyncHandler(async (req, res, next) => {
   const requestData = {
     id: req.params.pipelineId,
@@ -277,10 +221,6 @@ export const updatePipeline = asyncHandler(async (req, res, next) => {
   httpResponse(req, res, 200, SEARCH_MESSAGES.PIPELINE_CREATED, result);
 });
 
-/**
- * Delete ingest pipeline endpoint
- * @route DELETE /api/v1/search/pipeline/:pipelineId
- */
 export const deletePipeline = asyncHandler(async (req, res, next) => {
   const requestData = {
     id: req.params.pipelineId
@@ -296,10 +236,6 @@ export const deletePipeline = asyncHandler(async (req, res, next) => {
   httpResponse(req, res, 200, SEARCH_MESSAGES.PIPELINE_DELETED, result);
 });
 
-/**
- * Get pipeline information endpoint
- * @route GET /api/v1/search/pipeline/:pipelineId
- */
 export const getPipeline = asyncHandler(async (req, res, next) => {
   const { pipelineId } = req.params.pipelineId;
 
@@ -314,10 +250,6 @@ export const getPipeline = asyncHandler(async (req, res, next) => {
 
 // Health and Statistics Endpoints
 
-/**
- * Health check endpoint for search functionality
- * @route GET /api/v1/search/health
- */
 export const searchHealthCheck = asyncHandler(async (req, res, next) => {
   const result = await searchService.checkSearchHealth(req, next);
 
