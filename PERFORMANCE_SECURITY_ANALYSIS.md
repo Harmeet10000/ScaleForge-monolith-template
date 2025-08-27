@@ -7,7 +7,7 @@
 1. add recommendation system using Convex or AWS personalise/GCP equivalent
 1. properly implement RabbitMQ for message queuing for modularity and decoupling
 1. check performance/stress testing using grafana k6
-1. add AWS SNS for push notifications   - Undergoing 
+1. add AWS SNS for push notifications - Undergoing
 1. make a fucking awesome documentation for the same in Postman or Swagger - Undergoing
 1. make a branch for drizzle + JS for AI features and Postgres extensions
 1. check if I can deploy it on AWS Lambda or Google Cloud Functions for serverless architecture and also check about cloudflare WAF
@@ -17,16 +17,13 @@
 1. add SAGA pattern for managing complex workflows and state transitions
 1. explore Postgres Extensions for enhanced functionality
 
-
-to de done now 
+to de done now
 {{baseUrl}}/api/v1/permissions/organizations/org123/users/bulk
+
 # 🛑 Dev Error: FGA API Validation Error: post write : Error cannot write a tuple which already exists: user: &#39;user:user999&#39;, relation: &#39;member&#39;, object: &#39;organization:org123&#39;: tuple to be written already existed or the tuple to be deleted did not exist
-# META {
-#   error: AxiosError: Request failed with status code 400
 
 
-
-   **Current Architecture:**
+**Current Architecture:**
 
 ```
 [Client] → [Single Auth Service] → [MongoDB + Redis]
@@ -64,6 +61,7 @@ to de done now
 - **Unit test coverage** appears limited
 - **Integration tests** for API endpoints needed
 - **Load testing** for performance validation
+
 ---
 
 ### Recommended Architecture Enhancements 🚀
@@ -130,6 +128,7 @@ services:
 ---
 
 ## 🎯 Priority Action Items
+
 ---
 
 ## 📊 Performance Benchmarks

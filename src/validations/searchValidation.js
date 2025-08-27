@@ -82,7 +82,7 @@ export const validateSearchRequest = Joi.object({
 // Semantic search validation
 export const validateSemanticSearchRequest = Joi.object({
   query: Joi.string().min(1).max(2000).required(),
-  index: Joi.string().default(INDEX_NAMES.VECTORS),
+  index: Joi.string().required(),
   threshold: Joi.number().min(0).max(1).default(0.5),
   hybridMode: Joi.boolean().default(false),
   hybridWeight: Joi.object({
@@ -120,7 +120,7 @@ export const validateKNNSearchRequest = Joi.object({
 export const validateNgramSearchRequest = Joi.object({
   query: Joi.string().min(1).max(1000).required(),
   fields: Joi.array().items(Joi.string()).min(1).default([FIELD_NAMES.TITLE, FIELD_NAMES.CONTENT]),
-  index: Joi.string().default(INDEX_NAMES.DOCUMENTS),
+  index: Joi.string(),
   filters: filtersSchema.optional(),
   pagination: paginationSchema.optional(),
   ngram_type: Joi.string().valid('ngram', 'edge_ngram', 'both').default('both'),

@@ -5,6 +5,7 @@ import { SEARCH_ERROR_CODES } from '../constants/searchConstants.js';
 import asyncHandler from 'express-async-handler';
 // Core search operations
 export const executeSearch = asyncHandler(async (query, indexName) => {
+  logger.debug('Executing search', { meta: { indexName, body: query } });
   const response = await client.search({
     index: indexName,
     body: query
@@ -161,6 +162,7 @@ export const deleteIndex = asyncHandler(async (indexName) => {
 
 // N-gram search operations
 export const executeNgramSearch = asyncHandler(async (query, indexName) => {
+  logger.debug('Executing N-gram search', { meta: { indexName, body: query } });
   const response = await client.search({
     index: indexName,
     body: query

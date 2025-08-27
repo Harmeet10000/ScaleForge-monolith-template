@@ -237,7 +237,7 @@ export const deletePipeline = asyncHandler(async (req, res, next) => {
 });
 
 export const getPipeline = asyncHandler(async (req, res, next) => {
-  const { pipelineId } = req.params.pipelineId;
+  const { pipelineId } = req.params;
 
   if (!pipelineId) {
     return httpError(next, new Error('Pipeline ID is required'), req, 400);

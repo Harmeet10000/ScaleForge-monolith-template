@@ -67,6 +67,7 @@ export const performSemanticSearch = asyncHandler(async (searchParams) => {
     fields: searchParams.fields
   });
 
+  // logger.debug('Semantic Query', { meta: { query } });
   // Execute semantic search
   const results = await searchRepository.executeSearch(query, searchParams.index);
 
@@ -143,9 +144,10 @@ export const performNgramSearch = asyncHandler(async (searchParams) => {
     fields: searchParams.fields,
     filters: searchParams.filters,
     pagination: searchParams.pagination,
-    ngramType: searchParams.ngram_type || 'both',
-    minScore: searchParams.min_score || 0.1
+    ngramType: searchParams.ngram_type,
+    minScore: searchParams.min_score
   });
+  // logger.debug('query', { meta: { query } });
 
   // Execute n-gram search
   const results = await searchRepository.executeNgramSearch(query, searchParams.index);
@@ -187,7 +189,7 @@ export const performFuzzySearch = asyncHandler(async (searchParams) => {
     maxExpansions: searchParams.maxExpansions || 50,
     transpositions: searchParams.transpositions !== false
   });
-
+  logger.debug('Fuzzy query', { meta: { query } });
   // Execute fuzzy search
   const results = await searchRepository.executeFuzzySearch(query, searchParams.index);
 
@@ -259,11 +261,6 @@ export const indexDocument = asyncHandler(async (documentData) => {
 
   // Process document through pipeline if specified
   if (documentData.pipeline) {
-    // Ensure default pipeline exists if it's the content_processing_pipeline
-    if (documentData.pipeline === 'content_processing_pipeline') {
-      await pipelineService.ensureDefaultPipeline();
-    }
-
     processedDoc = await pipelineService.processDocument(
       documentData.document,
       documentData.pipeline
@@ -412,7 +409,7 @@ export const bulkIndexDocuments = asyncHandler(async (bulkData) => {
 
   // Perform bulk indexing
   const result = await searchRepository.bulkIndex(processedDocs, bulkData.index);
-  logger.debug('result', { meta: { result } });
+  // logger.debug('result', { meta: { result } });
   // Analyze results
   const successful = result.items.filter((item) => !item.index.error).length;
   const failed = result.items.filter((item) => item.index.error).length;
@@ -659,11 +656,8 @@ export const deleteSearchIndex = asyncHandler(async (deleteData) => {
  * @returns {Object} Pipeline update result
  */
 export const updateIngestPipeline = asyncHandler(async (pipelineData) => {
+  // logger.debug('pipeline', { meta: { pipelineData } });
   const result = await pipelineService.updatePipeline(pipelineData.id, pipelineData.processors);
-
-  if (!result) {
-    return null; // Error already handled by pipeline service
-  }
 
   logger.info('Ingest pipeline updated successfully', {
     meta: {
@@ -710,6 +704,8 @@ export const deleteIngestPipeline = asyncHandler(async (pipelineData) => {
  * @returns {Object} Pipeline information
  */
 export const getPipelineInfo = asyncHandler(async (pipelineId) => {
+  // logger.debug('pipeline', { meta: { pipelineId } });
+
   const result = await pipelineService.getPipeline(pipelineId);
 
   logger.info('Pipeline information retrieved successfully', { meta: { pipelineId } });

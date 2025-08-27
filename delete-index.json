@@ -1,0 +1,7 @@
+{
+  "method": "DELETE",
+  "url": "http://localhost:9200/documents",
+  "headers": {
+    "Content-Type": "application/json"
+  }
+}

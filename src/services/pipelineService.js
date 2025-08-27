@@ -15,14 +15,6 @@ import {
 
 // Pipeline Management Functions
 
-/**
- * Create a new ingest pipeline
- * @param {string} pipelineName - Name of the pipeline
- * @param {Array} processors - Array of processor configurations
- * @param {Object} req - Express request object
- * @param {Function} next - Express next function
- * @returns {Object} Pipeline creation response
- */
 export const createPipeline = asyncHandler(async (pipelineName, processors, req, next) => {
   // Validate pipeline configuration
   if (!pipelineName || typeof pipelineName !== 'string') {
@@ -69,26 +61,7 @@ export const createPipeline = asyncHandler(async (pipelineName, processors, req,
   };
 });
 
-/**
- * Update an existing ingest pipeline
- * @param {string} pipelineName - Name of the pipeline
- * @param {Array} processors - Updated array of processor configurations
- * @param {Object} req - Express request object
- * @param {Function} next - Express next function
- * @returns {Object} Pipeline update response
- */
 export const updatePipeline = asyncHandler(async (pipelineName, processors, req, next) => {
-  // Validate pipeline configuration
-  if (!pipelineName || typeof pipelineName !== 'string') {
-    logger.error('Invalid pipeline name provided', { meta: { pipelineName } });
-    return httpError(next, new Error('Pipeline name is required and must be a string'), req, 400);
-  }
-
-  if (!processors || !Array.isArray(processors) || processors.length === 0) {
-    logger.error('Invalid processors configuration', { meta: { processors } });
-    return httpError(next, new Error('Processors array is required and cannot be empty'), req, 400);
-  }
-
   // Check if pipeline exists
   try {
     await client.ingest.getPipeline({ id: pipelineName });
@@ -122,19 +95,7 @@ export const updatePipeline = asyncHandler(async (pipelineName, processors, req,
   };
 });
 
-/**
- * Delete an ingest pipeline
- * @param {string} pipelineName - Name of the pipeline to delete
- * @param {Object} req - Express request object
- * @param {Function} next - Express next function
- * @returns {Object} Pipeline deletion response
- */
 export const deletePipeline = asyncHandler(async (pipelineName, req, next) => {
-  if (!pipelineName || typeof pipelineName !== 'string') {
-    logger.error('Invalid pipeline name provided', { meta: { pipelineName } });
-    return httpError(next, new Error('Pipeline name is required and must be a string'), req, 400);
-  }
-
   // Check if pipeline exists
   try {
     await client.ingest.getPipeline({ id: pipelineName });
@@ -157,19 +118,7 @@ export const deletePipeline = asyncHandler(async (pipelineName, req, next) => {
   };
 });
 
-/**
- * Get pipeline configuration
- * @param {string} pipelineName - Name of the pipeline
- * @param {Object} req - Express request object
- * @param {Function} next - Express next function
- * @returns {Object} Pipeline configuration
- */
-export const getPipeline = asyncHandler(async (pipelineName, req, next) => {
-  if (!pipelineName || typeof pipelineName !== 'string') {
-    logger.error('Invalid pipeline name provided', { meta: { pipelineName } });
-    return httpError(next, new Error('Pipeline name is required and must be a string'), req, 400);
-  }
-
+export const getPipeline = asyncHandler(async (pipelineName) => {
   const response = await client.ingest.getPipeline({
     id: pipelineName
   });
@@ -180,26 +129,7 @@ export const getPipeline = asyncHandler(async (pipelineName, req, next) => {
 
 // Document Processing Functions
 
-/**
- * Process a single document through a pipeline
- * @param {Object} document - Document to process
- * @param {string} pipelineName - Name of the pipeline to use
- * @param {Object} req - Express request object
- * @param {Function} next - Express next function
- * @returns {Object} Processed document
- */
 export const processDocument = asyncHandler(async (document, pipelineName, req, next) => {
-  if (!document || typeof document !== 'object') {
-    logger.error('Invalid document provided', { meta: { document } });
-    return httpError(next, new Error('Document is required and must be an object'), req, 400);
-  }
-
-  // If no pipeline specified, return document as-is
-  if (!pipelineName) {
-    logger.info('No pipeline specified, returning document as-is');
-    return document;
-  }
-
   // Validate pipeline exists
   try {
     await client.ingest.getPipeline({ id: pipelineName });
@@ -289,14 +219,6 @@ export const processDocument = asyncHandler(async (document, pipelineName, req, 
   return httpError(next, new Error('Document processing failed - no result returned'), req, 500);
 });
 
-/**
- * Process multiple documents through a pipeline
- * @param {Array} documents - Array of documents to process
- * @param {string} pipelineName - Name of the pipeline to use
- * @param {Object} req - Express request object
- * @param {Function} next - Express next function
- * @returns {Array} Array of processed documents
- */
 export const processBatch = asyncHandler(async (documents, pipelineName, req, next) => {
   // Validate pipeline exists
   try {
@@ -398,14 +320,6 @@ export const processBatch = asyncHandler(async (documents, pipelineName, req, ne
 
 // Helper Functions for Common Pipeline Configurations
 
-/**
- * Create a text processing pipeline with common text transformations
- * @param {string} pipelineName - Name of the pipeline
- * @param {Object} options - Configuration options
- * @param {Object} req - Express request object
- * @param {Function} next - Express next function
- * @returns {Object} Pipeline creation response
- */
 export const createTextProcessingPipeline = asyncHandler(
   async (pipelineName, options = {}, req, next) => {
     const {
@@ -477,14 +391,6 @@ export const createTextProcessingPipeline = asyncHandler(
   }
 );
 
-/**
- * Create an embedding pipeline for semantic search
- * @param {string} pipelineName - Name of the pipeline
- * @param {Object} options - Configuration options
- * @param {Object} req - Express request object
- * @param {Function} next - Express next function
- * @returns {Object} Pipeline creation response
- */
 export const createEmbeddingPipeline = asyncHandler(
   async (pipelineName, options = {}, req, next) => {
     const {
@@ -547,14 +453,6 @@ export const createEmbeddingPipeline = asyncHandler(
   }
 );
 
-/**
- * Create a data enrichment pipeline
- * @param {string} pipelineName - Name of the pipeline
- * @param {Object} options - Configuration options
- * @param {Object} req - Express request object
- * @param {Function} next - Express next function
- * @returns {Object} Pipeline creation response
- */
 export const createDataEnrichmentPipeline = asyncHandler(
   async (pipelineName, options = {}, req, next) => {
     const {
@@ -634,14 +532,6 @@ export const createDataEnrichmentPipeline = asyncHandler(
   }
 );
 
-/**
- * Create a validation pipeline that checks required fields
- * @param {string} pipelineName - Name of the pipeline
- * @param {Object} options - Configuration options
- * @param {Object} req - Express request object
- * @param {Function} next - Express next function
- * @returns {Object} Pipeline creation response
- */
 export const createValidationPipeline = asyncHandler(
   async (pipelineName, options = {}, req, next) => {
     const {
@@ -714,12 +604,6 @@ export const createValidationPipeline = asyncHandler(
   }
 );
 
-/**
- * Get all available pipelines
- * @param {Object} req - Express request object
- * @param {Function} next - Express next function
- * @returns {Object} List of all pipelines
- */
 export const getAllPipelines = asyncHandler(async () => {
   const response = await client.ingest.getPipeline();
 
@@ -733,14 +617,6 @@ export const getAllPipelines = asyncHandler(async () => {
   return pipelines;
 });
 
-/**
- * Test pipeline with sample document
- * @param {string} pipelineName - Name of the pipeline to test
- * @param {Object} sampleDocument - Sample document to test with
- * @param {Object} req - Express request object
- * @param {Function} next - Express next function
- * @returns {Object} Test results
- */
 export const testPipeline = asyncHandler(async (pipelineName, sampleDocument, req, next) => {
   // Validate pipeline exists
   try {

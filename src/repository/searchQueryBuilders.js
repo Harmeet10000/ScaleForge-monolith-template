@@ -175,7 +175,8 @@ export const buildSemanticQuery = (vector, options) => {
     script_score: {
       query: { match_all: {} },
       script: {
-        source: "cosineSimilarity(params.query_vector, 'embedding') + 1.0",
+        source:
+          "doc['embedding'].isEmpty() ? 0 : dotProduct(params.query_vector, 'embedding') + 1.0",
         params: {
           query_vector: vector
         }

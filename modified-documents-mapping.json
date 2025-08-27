@@ -1,0 +1,93 @@
+{
+  "name": "documents",
+  "mappings": {
+    "properties": {
+      "title": {
+        "type": "text",
+        "analyzer": "standard",
+        "fields": {
+          "keyword": {"type": "keyword"},
+          "ngram": {"type": "text", "analyzer": "ngram_analyzer"},
+          "edge_ngram": {"type": "text", "analyzer": "edge_ngram_analyzer"},
+          "fuzzy": {"type": "text", "analyzer": "fuzzy_analyzer"}
+        }
+      },
+      "content": {
+        "type": "text",
+        "analyzer": "standard",
+        "fields": {
+          "ngram": {"type": "text", "analyzer": "ngram_analyzer"},
+          "semantic": {"type": "text", "analyzer": "semantic_analyzer"}
+        }
+      },
+      "authors": {
+        "type": "text",
+        "analyzer": "standard",
+        "fields": {
+          "keyword": {"type": "keyword"},
+          "ngram": {"type": "text", "analyzer": "ngram_analyzer"},
+          "edge_ngram": {"type": "text", "analyzer": "edge_ngram_analyzer"},
+          "fuzzy": {"type": "text", "analyzer": "fuzzy_analyzer"}
+        }
+      },
+      "explanation": {
+        "type": "text",
+        "analyzer": "standard",
+        "fields": {
+          "ngram": {"type": "text", "analyzer": "ngram_analyzer"}
+        }
+      },
+      "embedding": {
+        "type": "dense_vector",
+        "dims": 768,
+        "similarity": "cosine"
+      },
+      "author": {"type": "keyword"},
+      "category": {"type": "keyword"},
+      "tags": {"type": "keyword"},
+      "difficulty": {"type": "keyword"},
+      "rating": {"type": "float"},
+      "published": {"type": "boolean"},
+      "date": {"type": "date"},
+      "image_url": {"type": "keyword"},
+      "created_at": {"type": "date"},
+      "updated_at": {"type": "date"}
+    }
+  },
+  "settings": {
+    "analysis": {
+      "analyzer": {
+        "ngram_analyzer": {
+          "type": "custom",
+          "tokenizer": "standard",
+          "filter": ["lowercase", "ngram_filter"]
+        },
+        "edge_ngram_analyzer": {
+          "type": "custom",
+          "tokenizer": "standard",
+          "filter": ["lowercase", "edge_ngram_filter"]
+        },
+        "fuzzy_analyzer": {
+          "type": "custom",
+          "tokenizer": "standard",
+          "filter": ["lowercase", "asciifolding"]
+        },
+        "semantic_analyzer": {
+          "type": "standard"
+        }
+      },
+      "filter": {
+        "ngram_filter": {
+          "type": "ngram",
+          "min_gram": 2,
+          "max_gram": 4
+        },
+        "edge_ngram_filter": {
+          "type": "edge_ngram",
+          "min_gram": 2,
+          "max_gram": 10
+        }
+      }
+    }
+  }
+}
