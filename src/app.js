@@ -22,6 +22,8 @@ import healthRoutes from './routes/healthRoutes.js';
 import permissionsRoutes from './routes/permissionsRoutes.js';
 import searchRoutes from './routes/searchRoutes.js';
 import paymentsRoutes from './routes/paymentsRoutes.js';
+import notificationRoutes from './routes/notificationRoutes.js';
+import s3Routes from './routes/s3Routes.js';
 
 const app = express();
 
@@ -125,6 +127,8 @@ app.use('/api/v1/health', healthRoutes);
 app.use('/api/v1/permissions', permissionsRoutes);
 app.use('/api/v1/search', searchRoutes);
 app.use('/api/v1/payments', paymentsRoutes);
+app.use('/api/v1/notifications', notificationRoutes);
+app.use('/api/v1/upload', s3Routes);
 
 // 4) CATCHES ALL ROUTES THAT ARE NOT DEFINED
 app.all('*', (req, res, next) => {

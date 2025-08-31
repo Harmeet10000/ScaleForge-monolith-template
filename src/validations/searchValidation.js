@@ -379,23 +379,3 @@ export const validateJoiSchema = (schema, value) => {
     error: result.error
   };
 };
-
-// Export all validation schemas for easy access
-export const searchValidationSchemas = {
-  search: validateSearchRequest,
-  semanticSearch: validateSemanticSearchRequest,
-  knnSearch: validateKNNSearchRequest,
-  ngramSearch: validateNgramSearchRequest,
-  fuzzySearch: validateFuzzySearchRequest,
-  aggregation: validateAggregationRequest,
-  indexDocument: validateIndexDocumentRequest,
-  bulkIndex: validateBulkIndexRequest,
-  updateDocument: validateUpdateDocumentRequest,
-  deleteDocument: validateDeleteDocumentRequest,
-  createIndex: validateCreateIndexRequest,
-  updateIndexMapping: validateUpdateIndexMappingRequest,
-  deleteIndex: validateDeleteIndexRequest,
-  createPipeline: validateCreatePipelineRequest,
-  updatePipeline: validateUpdatePipelineRequest,
-  deletePipeline: validateDeletePipelineRequest
-};

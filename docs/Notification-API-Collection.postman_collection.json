@@ -1,0 +1,676 @@
+{
+  "info": {
+    "name": "Notification API Testing Collection",
+    "description": "Complete testing collection for the notification system API endpoints",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8000",
+      "type": "string"
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "userId",
+      "value": "user_123456789",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Authentication",
+      "item": [
+        {
+          "name": "1.1 Register User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"John Doe\",\n  \"email\": \"john.doe@example.com\",\n  \"password\": \"SecurePass123!\",\n  \"confirmPassword\": \"SecurePass123!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "register"
+              ]
+            }
+          }
+        },
+        {
+          "name": "1.2 Login User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.data && response.data.accessToken) {",
+                  "        pm.environment.set('accessToken', response.data.accessToken);",
+                  "        console.log('Access token saved to environment');",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"john.doe@example.com\",\n  \"password\": \"SecurePass123!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "login"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Device Management",
+      "item": [
+        {
+          "name": "2.1 Register Web Push Device",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"deviceId\": \"web_device_123\",\n  \"deviceType\": \"web\",\n  \"token\": \"fcm_token_xyz789_web_push_example\",\n  \"endpoint\": \"https://fcm.googleapis.com/fcm/send/dQkKOHUoA5o:APA91bHun4MxP5egoKMwt2KZFBaFUH-1RYqx\",\n  \"keys\": {\n    \"p256dh\": \"BNcRdreALRFXTkOOUHK1EtK2wtaz5Ry4YfYCA_0QTpQtUbVlUls0VJXg7A8nq4HLRxf9b3P-VgVvSrlFtMnkrn4\",\n    \"auth\": \"tBHItJI5svbpez7KI4CCXg\"\n  },\n  \"userAgent\": \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/notifications/devices/{{userId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "notifications",
+                "devices",
+                "{{userId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "2.2 Register iOS Device",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"deviceId\": \"ios_device_456\",\n  \"deviceType\": \"ios\",\n  \"token\": \"apns_token_abc123_ios_device_example\",\n  \"userAgent\": \"MyApp/1.0 (iPhone; iOS 15.0)\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/notifications/devices/{{userId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "notifications",
+                "devices",
+                "{{userId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "2.3 Register Android Device",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"deviceId\": \"android_device_789\",\n  \"deviceType\": \"android\",\n  \"token\": \"fcm_token_def456_android_device_example\",\n  \"userAgent\": \"MyApp/1.0 (Android 12; SM-G991B)\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/notifications/devices/{{userId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "notifications",
+                "devices",
+                "{{userId}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Notification Preferences",
+      "item": [
+        {
+          "name": "3.1 Get User Preferences",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/notifications/preferences/{{userId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "notifications",
+                "preferences",
+                "{{userId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "3.2 Update User Preferences",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"channels\": {\n    \"sms\": {\n      \"enabled\": true,\n      \"workflows\": [\"order-updates\", \"security-alerts\", \"two-factor-auth\"]\n    },\n    \"email\": {\n      \"enabled\": true,\n      \"workflows\": [\"welcome-email\", \"newsletter\", \"order-updates\", \"password-reset\"]\n    },\n    \"web_push\": {\n      \"enabled\": true,\n      \"workflows\": [\"breaking-news\", \"order-updates\", \"system-alerts\"]\n    },\n    \"mobile_push\": {\n      \"enabled\": true,\n      \"workflows\": [\"breaking-news\", \"order-updates\", \"chat-messages\"]\n    },\n    \"in_app\": {\n      \"enabled\": true,\n      \"workflows\": [\"system-alerts\", \"messages\", \"notifications\"]\n    }\n  },\n  \"globalSettings\": {\n    \"doNotDisturb\": {\n      \"enabled\": true,\n      \"startTime\": \"22:00\",\n      \"endTime\": \"08:00\"\n    },\n    \"timezone\": \"America/New_York\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/notifications/preferences/{{userId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "notifications",
+                "preferences",
+                "{{userId}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Send Notifications",
+      "item": [
+        {
+          "name": "4.1 Send Welcome Email",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"{{userId}}\",\n  \"workflowId\": \"welcome-email\",\n  \"payload\": {\n    \"userName\": \"John Doe\",\n    \"verificationUrl\": \"https://example.com/verify?token=abc123xyz\",\n    \"companyName\": \"Acme Corporation\",\n    \"supportEmail\": \"support@acme.com\"\n  },\n  \"channels\": [\"email\", \"in_app\"],\n  \"priority\": \"high\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/notifications/send",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "notifications",
+                "send"
+              ]
+            }
+          }
+        },
+        {
+          "name": "4.2 Send Order Update",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"{{userId}}\",\n  \"workflowId\": \"order-updates\",\n  \"payload\": {\n    \"userName\": \"John Doe\",\n    \"orderId\": \"ORD-2024-001\",\n    \"orderStatus\": \"shipped\",\n    \"trackingNumber\": \"1Z999AA1234567890\",\n    \"estimatedDelivery\": \"2024-01-15\",\n    \"orderTotal\": \"$99.99\"\n  },\n  \"channels\": [\"sms\", \"email\", \"mobile_push\"],\n  \"priority\": \"normal\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/notifications/send",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "notifications",
+                "send"
+              ]
+            }
+          }
+        },
+        {
+          "name": "4.3 Send Security Alert",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"{{userId}}\",\n  \"workflowId\": \"security-alerts\",\n  \"payload\": {\n    \"userName\": \"John Doe\",\n    \"alertType\": \"login_attempt\",\n    \"location\": \"New York, NY\",\n    \"ipAddress\": \"192.168.1.100\",\n    \"timestamp\": \"2024-01-10T14:30:00Z\",\n    \"deviceInfo\": \"Chrome on Windows\"\n  },\n  \"channels\": [\"sms\", \"email\", \"mobile_push\", \"in_app\"],\n  \"priority\": \"critical\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/notifications/send",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "notifications",
+                "send"
+              ]
+            }
+          }
+        },
+        {
+          "name": "4.4 Send Password Reset",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"{{userId}}\",\n  \"workflowId\": \"password-reset\",\n  \"payload\": {\n    \"userName\": \"John Doe\",\n    \"resetUrl\": \"https://example.com/reset-password?token=reset123xyz\",\n    \"expiryTime\": \"1 hour\",\n    \"requestTime\": \"2024-01-10T14:30:00Z\",\n    \"ipAddress\": \"192.168.1.100\"\n  },\n  \"channels\": [\"email\"],\n  \"priority\": \"high\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/notifications/send",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "notifications",
+                "send"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Bulk Notifications",
+      "item": [
+        {
+          "name": "5.1 Send Bulk Welcome Notifications",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"notifications\": [\n    {\n      \"userId\": \"{{userId}}\",\n      \"workflowId\": \"welcome-email\",\n      \"payload\": {\n        \"userName\": \"John Doe\",\n        \"verificationUrl\": \"https://example.com/verify?token=abc123\",\n        \"companyName\": \"Acme Corp\"\n      },\n      \"priority\": \"normal\"\n    },\n    {\n      \"userId\": \"user_987654321\",\n      \"workflowId\": \"welcome-email\",\n      \"payload\": {\n        \"userName\": \"Jane Smith\",\n        \"verificationUrl\": \"https://example.com/verify?token=def456\",\n        \"companyName\": \"Acme Corp\"\n      },\n      \"priority\": \"normal\"\n    },\n    {\n      \"userId\": \"user_555666777\",\n      \"workflowId\": \"welcome-email\",\n      \"payload\": {\n        \"userName\": \"Bob Johnson\",\n        \"verificationUrl\": \"https://example.com/verify?token=ghi789\",\n        \"companyName\": \"Acme Corp\"\n      },\n      \"priority\": \"normal\"\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/notifications/bulk",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "notifications",
+                "bulk"
+              ]
+            }
+          }
+        },
+        {
+          "name": "5.2 Send Bulk Newsletter",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"notifications\": [\n    {\n      \"userId\": \"{{userId}}\",\n      \"workflowId\": \"newsletter\",\n      \"payload\": {\n        \"userName\": \"John Doe\",\n        \"newsletterTitle\": \"Weekly Tech Updates\",\n        \"unsubscribeUrl\": \"https://example.com/unsubscribe?token=abc123\",\n        \"articles\": [\n          {\n            \"title\": \"AI Trends 2024\",\n            \"url\": \"https://example.com/articles/ai-trends-2024\"\n          },\n          {\n            \"title\": \"Cloud Computing Best Practices\",\n            \"url\": \"https://example.com/articles/cloud-best-practices\"\n          }\n        ]\n      },\n      \"channels\": [\"email\"],\n      \"priority\": \"low\"\n    },\n    {\n      \"userId\": \"user_987654321\",\n      \"workflowId\": \"newsletter\",\n      \"payload\": {\n        \"userName\": \"Jane Smith\",\n        \"newsletterTitle\": \"Weekly Tech Updates\",\n        \"unsubscribeUrl\": \"https://example.com/unsubscribe?token=def456\",\n        \"articles\": [\n          {\n            \"title\": \"AI Trends 2024\",\n            \"url\": \"https://example.com/articles/ai-trends-2024\"\n          },\n          {\n            \"title\": \"Cloud Computing Best Practices\",\n            \"url\": \"https://example.com/articles/cloud-best-practices\"\n          }\n        ]\n      },\n      \"channels\": [\"email\"],\n      \"priority\": \"low\"\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/notifications/bulk",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "notifications",
+                "bulk"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "6. Notification History",
+      "item": [
+        {
+          "name": "6.1 Get All History",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/notifications/history/{{userId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "notifications",
+                "history",
+                "{{userId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "6.2 Get Email History",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/notifications/history/{{userId}}?channel=email&status=delivered&page=1&limit=10",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "notifications",
+                "history",
+                "{{userId}}"
+              ],
+              "query": [
+                {
+                  "key": "channel",
+                  "value": "email"
+                },
+                {
+                  "key": "status",
+                  "value": "delivered"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "6.3 Get History with Date Range",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/notifications/history/{{userId}}?startDate=2024-01-01&endDate=2024-01-31&page=1&limit=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "notifications",
+                "history",
+                "{{userId}}"
+              ],
+              "query": [
+                {
+                  "key": "startDate",
+                  "value": "2024-01-01"
+                },
+                {
+                  "key": "endDate",
+                  "value": "2024-01-31"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "6.4 Get Failed Notifications",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/notifications/history/{{userId}}?status=failed",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "notifications",
+                "history",
+                "{{userId}}"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "failed"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "7. Device Cleanup",
+      "item": [
+        {
+          "name": "7.1 Unregister Web Device",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/notifications/devices/{{userId}}/web_device_123",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "notifications",
+                "devices",
+                "{{userId}}",
+                "web_device_123"
+              ]
+            }
+          }
+        },
+        {
+          "name": "7.2 Unregister iOS Device",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/notifications/devices/{{userId}}/ios_device_456",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "notifications",
+                "devices",
+                "{{userId}}",
+                "ios_device_456"
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

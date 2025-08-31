@@ -1,24 +1,20 @@
 import { CredentialsMethod, OpenFgaClient } from '@openfga/sdk';
+
 // who so ever is reading this please tell me if process.env is working beacuse the APIs dont work
 // I have tried hard coding the values and it works
 // process.env throws empty variable passed in client and  write/check calls
+
 export const fgaClient = new OpenFgaClient({
-  apiUrl: 'https://api.au1.fga.dev',
-  storeId: '01K2CQ74ZEC8BXT52N5QJ3D7MJ',
-  authorizationModelId: '01K2M2XK88QZ9H6797FM5QYVVZ',
+  apiUrl: process.env.OPENFGA_API_URL,
+  storeId: process.env.OPENFGA_STORE_ID,
+  authorizationModelId: process.env.OPENFGA_MODEL_ID,
   credentials: {
     method: CredentialsMethod.ClientCredentials,
     config: {
-      apiTokenIssuer: 'auth.fga.dev',
-      apiAudience: 'https://api.au1.fga.dev/',
-      clientId: 'vXQcPdX3rvQtxujk9ycc2GjvtNjWkdQA',
-      clientSecret: 'umXePzM94gAsZctE0lZvjoA15xbSYVcoqUum6yQGOAJfv0XKPWL8ynp8Ncd95thu'
+      apiTokenIssuer: process.env.OPENFGA_API_TOKEN_ISSUER,
+      apiAudience: process.env.OPENFGA_API_AUDIENCE,
+      clientId: process.env.AUTH0_CLIENT_ID,
+      clientSecret: process.env.AUTH0_CLIENT_SECRET
     }
   }
 });
-// const { allowed } = await fgaClient.check({
-//   user: 'user:harmeet',
-//   relation: 'owner',
-//   object: 'organization:org123'
-// });
-// console.log(allowed); // true or false based on the relationship

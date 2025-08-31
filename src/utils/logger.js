@@ -5,7 +5,7 @@ import { EApplicationEnvironment } from '../constants/application.js';
 import { red, blue, yellow, green, magenta, cyan } from 'colorette';
 // import { ConsoleTransportInstance, FileTransportInstance } from 'winston/lib/winston/transports'
 // import { MongoDBTransportInstance } from 'winston-mongodb'
-import LokiTransport from 'winston-loki';
+// import LokiTransport from 'winston-loki';
 import * as sourceMapSupport from 'source-map-support';
 import path, { dirname } from 'path';
 import { fileURLToPath } from 'url';
@@ -133,29 +133,29 @@ const FileTransport = () => [
 //     ]
 // }
 
-const LokiTransportConfig = () => {
-  if (
-    process.env.NODE_ENV === EApplicationEnvironment.DEVELOPMENT ||
-    process.env.NODE_ENV === EApplicationEnvironment.PRODUCTION
-  ) {
-    return [
-      new LokiTransport({
-        host: process.env.LOKI_HOST,
-        labels: {
-          app: 'auth-service',
-          environment: process.env.NODE_ENV
-        },
-        json: true,
-        format: format.json(),
-        replaceTimestamp: true,
-        onConnectionError: (err) => {
-          logger.error('Loki transport error:', { meta: { error: err } });
-        }
-      })
-    ];
-  }
-  return [];
-};
+// const LokiTransportConfig = () => {
+//   if (
+//     process.env.NODE_ENV === EApplicationEnvironment.DEVELOPMENT ||
+//     process.env.NODE_ENV === EApplicationEnvironment.PRODUCTION
+//   ) {
+//     return [
+//       new LokiTransport({
+//         host: process.env.LOKI_HOST,
+//         labels: {
+//           app: 'auth-service',
+//           environment: process.env.NODE_ENV
+//         },
+//         json: true,
+//         format: format.json(),
+//         replaceTimestamp: true,
+//         onConnectionError: (err) => {
+//           logger.error('Loki transport error:', { meta: { error: err } });
+//         }
+//       })
+//     ];
+//   }
+//   return [];
+// };
 
 // Adding custom levels configuration with debug level
 const levels = {

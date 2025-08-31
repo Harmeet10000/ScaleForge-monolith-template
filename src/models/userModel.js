@@ -103,9 +103,54 @@ const userSchema = new Schema(
     consent: {
       type: Boolean,
       required: true
-    }
+    },
+    // Notification-related fields
+    novuSubscriberId: {
+      type: String,
+      unique: true,
+      sparse: true,
+      index: true
+    },
+    notificationPreferences: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'NotificationPreferences'
+    },
+    devices: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Device'
+      }
+    ]
   },
   { timestamps: true }
 );
+
+// Instance methods for notification management
+userSchema.methods.generateNovuSubscriberId = function () {
+  if (!this.novuSubscriberId) {
+    this.novuSubscriberId = `user_${this._id}`;
+  }
+  return this.novuSubscriberId;
+};
+
+userSchema.methods.addDevice = function (deviceId) {
+  if (!this.devices.includes(deviceId)) {
+    this.devices.push(deviceId);
+  }
+  return this.save();
+};
+
+userSchema.methods.removeDevice = function (deviceId) {
+  this.devices = this.devices.filter((id) => !id.equals(deviceId));
+  return this.save();
+};
+
+// Pre-save middleware to generate Novu subscriber ID if not present
+userSchema.pre('save', function (next) {
+  if (this.isNew && !this.novuSubscriberId) {
+    this.generateNovuSubscriberId();
+  }
+  next();
+});
 
 export const User = mongoose.model('User', userSchema);

@@ -9,8 +9,6 @@ import {
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import asyncHandler from 'express-async-handler';
-import { httpError } from '../utils/httpError.js';
-import { httpResponse } from '../utils/httpResponse.js';
 import { logger } from '../utils/logger.js';
 
 const s3Client = new S3Client({
@@ -21,24 +19,18 @@ const s3Client = new S3Client({
   }
 });
 
-export const getS3URL = asyncHandler(async (fileName) => {
+export const getS3URL = asyncHandler(async (fileName, destination) => {
   const getObjectParams = {
     Bucket: process.env.BUCKET_NAME,
-    Key: `material/${fileName}`
+    Key: `${destination}/${fileName}`
   };
 
   const signedUrl = await getSignedUrl(s3Client, new GetObjectCommand(getObjectParams));
-  logger.debug('Generated Signed URL for file', { meta: { fileName } });
+  logger.debug('Generated Signed URL for file', { meta: { fileName, destination } });
   return signedUrl;
 });
 
-export const getUploadS3URL = asyncHandler(async (req, res, next) => {
-  const { filename, contentType, destination } = req.body;
-
-  if (!filename || !contentType) {
-    return httpError(next, new Error('Filename and ContentType are required'), req, 400);
-  }
-
+export const getUploadS3URL = async (filename, contentType, destination = 'uploads') => {
   const path = `${destination}/${Date.now()}-${filename}`;
 
   const params = {
@@ -47,22 +39,15 @@ export const getUploadS3URL = asyncHandler(async (req, res, next) => {
     ContentType: contentType
   };
 
-  const signedUrl = await getSignedUrl(
-    s3Client,
-    new PutObjectCommand(params),
-    { expiresIn: 60 * 15 } // URL valid for 15 minutes
-  );
+  const signedUrl = await getSignedUrl(s3Client, new PutObjectCommand(params), {
+    expiresIn: 60 * 15
+  });
 
-  httpResponse(req, res, 200, 'Upload URL generated successfully', { signedUrl, path });
-});
+  logger.debug('Generated upload URL', { meta: { filename, path } });
+  return { signedUrl, path };
+};
 
-export const deleteS3Object = asyncHandler(async (req, res, next) => {
-  const { path } = req.body;
-
-  if (!path) {
-    return httpError(next, new Error('Object path is required'), req, 400);
-  }
-
+export const deleteS3Object = async (path) => {
   const params = {
     Bucket: process.env.BUCKET_NAME,
     Key: path
@@ -70,13 +55,9 @@ export const deleteS3Object = asyncHandler(async (req, res, next) => {
 
   await s3Client.send(new DeleteObjectCommand(params));
   logger.debug('Deleted object from S3', { meta: { path } });
+};
 
-  httpResponse(req, res, 200, 'Object deleted successfully');
-});
-
-export const listS3Objects = asyncHandler(async (req, res) => {
-  const { prefix = '', maxKeys = 1000 } = req.query;
-
+export const listS3Objects = async (prefix = '', maxKeys = 1000) => {
   const params = {
     Bucket: process.env.BUCKET_NAME,
     Prefix: prefix,
@@ -87,22 +68,16 @@ export const listS3Objects = asyncHandler(async (req, res) => {
     new ListObjectsV2Command(params)
   );
 
-  logger.debug('Listed objects from S3', { meta: { prefix, count: Contents.length } });
+  logger.debug('Listed objects from S3', { meta: { prefix, count: Contents?.length || 0 } });
 
-  httpResponse(req, res, 200, 'Objects listed successfully', {
+  return {
     objects: Contents,
     isTruncated: IsTruncated,
     nextContinuationToken: NextContinuationToken
-  });
-});
+  };
+};
 
-export const copyS3Object = asyncHandler(async (req, res, next) => {
-  const { sourcePath, destinationPath } = req.body;
-
-  if (!sourcePath || !destinationPath) {
-    return httpError(next, new Error('Source and destination paths are required'), req, 400);
-  }
-
+export const copyS3Object = async (sourcePath, destinationPath) => {
   const params = {
     Bucket: process.env.BUCKET_NAME,
     CopySource: `${process.env.BUCKET_NAME}/${sourcePath}`,
@@ -112,16 +87,10 @@ export const copyS3Object = asyncHandler(async (req, res, next) => {
   await s3Client.send(new CopyObjectCommand(params));
   logger.debug('Copied object in S3', { meta: { sourcePath, destinationPath } });
 
-  httpResponse(req, res, 200, 'Object copied successfully', { path: destinationPath });
-});
+  return { path: destinationPath };
+};
 
-export const checkS3ObjectExists = asyncHandler(async (req, res, next) => {
-  const { path } = req.query;
-
-  if (!path) {
-    return httpError(next, new Error('Object path is required'), req, 400);
-  }
-
+export const checkS3ObjectExists = async (path) => {
   const params = {
     Bucket: process.env.BUCKET_NAME,
     Key: path
@@ -130,24 +99,16 @@ export const checkS3ObjectExists = asyncHandler(async (req, res, next) => {
   try {
     await s3Client.send(new HeadObjectCommand(params));
     logger.debug('Object exists in S3', { meta: { path } });
-
-    httpResponse(req, res, 200, 'Object existence checked', { exists: true });
+    return { exists: true };
   } catch (error) {
     if (error.name === 'NotFound') {
-      httpResponse(req, res, 200, 'Object existence checked', { exists: false });
-    } else {
-      throw error;
+      return { exists: false };
     }
+    throw error;
   }
-});
+};
 
-export const getS3ObjectMetadata = asyncHandler(async (req, res, next) => {
-  const { path } = req.query;
-
-  if (!path) {
-    return httpError(next, new Error('Object path is required'), req, 400);
-  }
-
+export const getS3ObjectMetadata = async (path) => {
   const params = {
     Bucket: process.env.BUCKET_NAME,
     Key: path
@@ -156,7 +117,7 @@ export const getS3ObjectMetadata = asyncHandler(async (req, res, next) => {
   const response = await s3Client.send(new HeadObjectCommand(params));
   logger.debug('Retrieved object metadata from S3', { meta: { path } });
 
-  httpResponse(req, res, 200, 'Object metadata retrieved', {
+  return {
     metadata: {
       contentType: response.ContentType,
       contentLength: response.ContentLength,
@@ -164,5 +125,5 @@ export const getS3ObjectMetadata = asyncHandler(async (req, res, next) => {
       eTag: response.ETag,
       ...response.Metadata
     }
-  });
-});
+  };
+};

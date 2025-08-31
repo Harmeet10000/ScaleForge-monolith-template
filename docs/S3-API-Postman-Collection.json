@@ -1,0 +1,149 @@
+{
+  "info": {
+    "name": "S3 Storage API",
+    "description": "Collection for testing S3 storage endpoints",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000/api/v1/s3"
+    },
+    {
+      "key": "access_token",
+      "value": "YOUR_ACCESS_TOKEN_HERE"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{access_token}}"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "Generate Upload URL",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"filename\": \"document.pdf\",\n  \"contentType\": \"application/pdf\",\n  \"destination\": \"documents\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/upload-url",
+          "host": ["{{base_url}}"],
+          "path": ["upload-url"]
+        }
+      }
+    },
+    {
+      "name": "Delete Object",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"path\": \"documents/1640995200000-document.pdf\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/objects",
+          "host": ["{{base_url}}"],
+          "path": ["objects"]
+        }
+      }
+    },
+    {
+      "name": "List Objects",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/objects?prefix=documents/&maxKeys=100",
+          "host": ["{{base_url}}"],
+          "path": ["objects"],
+          "query": [
+            {
+              "key": "prefix",
+              "value": "documents/"
+            },
+            {
+              "key": "maxKeys",
+              "value": "100"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Copy Object",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"sourcePath\": \"documents/original.pdf\",\n  \"destinationPath\": \"backups/original-copy.pdf\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/objects/copy",
+          "host": ["{{base_url}}"],
+          "path": ["objects", "copy"]
+        }
+      }
+    },
+    {
+      "name": "Check Object Exists",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/objects/exists?path=documents/file.pdf",
+          "host": ["{{base_url}}"],
+          "path": ["objects", "exists"],
+          "query": [
+            {
+              "key": "path",
+              "value": "documents/file.pdf"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Get Object Metadata",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/objects/metadata?path=documents/file.pdf",
+          "host": ["{{base_url}}"],
+          "path": ["objects", "metadata"],
+          "query": [
+            {
+              "key": "path",
+              "value": "documents/file.pdf"
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

@@ -14,13 +14,6 @@ import * as pipelineService from './pipelineService.js';
 
 // Core Search Functions
 
-/**
- * Perform multi-field search with advanced features
- * @param {Object} searchParams - Search parameters
- * @param {Object} req - Express request object
- * @param {Function} next - Express next function
- * @returns {Object} Formatted search results
- */
 export const performSearch = asyncHandler(async (searchParams) => {
   // Build multi-field query
   const query = searchQueryBuilder.buildMultiFieldQuery(searchParams);
@@ -43,13 +36,6 @@ export const performSearch = asyncHandler(async (searchParams) => {
   return formattedResults;
 });
 
-/**
- * Perform semantic search using vector embeddings
- * @param {Object} searchParams - Semantic search parameters
- * @param {Object} req - Express request object
- * @param {Function} next - Express next function
- * @returns {Object} Formatted semantic search results
- */
 export const performSemanticSearch = asyncHandler(async (searchParams) => {
   // Generate embedding for the query text
   const embedding = await embeddingService.generateEmbedding(
@@ -87,13 +73,6 @@ export const performSemanticSearch = asyncHandler(async (searchParams) => {
   return formattedResults;
 });
 
-/**
- * Perform KNN (K-Nearest Neighbors) search for similarity matching
- * @param {Object} searchParams - KNN search parameters
- * @param {Object} req - Express request object
- * @param {Function} next - Express next function
- * @returns {Object} Formatted KNN search results
- */
 export const performKNNSearch = asyncHandler(async (searchParams) => {
   let queryVector = searchParams.vector;
 
@@ -130,13 +109,6 @@ export const performKNNSearch = asyncHandler(async (searchParams) => {
   return formattedResults;
 });
 
-/**
- * Perform n-gram search for partial matching and typo tolerance
- * @param {Object} searchParams - N-gram search parameters
- * @param {Object} req - Express request object
- * @param {Function} next - Express next function
- * @returns {Object} Formatted n-gram search results
- */
 export const performNgramSearch = asyncHandler(async (searchParams) => {
   // Build n-gram query
   const query = searchQueryBuilder.buildNgramQuery({
@@ -170,13 +142,6 @@ export const performNgramSearch = asyncHandler(async (searchParams) => {
   return formattedResults;
 });
 
-/**
- * Perform fuzzy search with advanced typo tolerance
- * @param {Object} searchParams - Fuzzy search parameters
- * @param {Object} req - Express request object
- * @param {Function} next - Express next function
- * @returns {Object} Formatted fuzzy search results
- */
 export const performFuzzySearch = asyncHandler(async (searchParams) => {
   // Build fuzzy query
   const query = searchQueryBuilder.buildFuzzyQuery({
@@ -209,13 +174,6 @@ export const performFuzzySearch = asyncHandler(async (searchParams) => {
   return formattedResults;
 });
 
-/**
- * Perform aggregated search for analytics operations
- * @param {Object} searchParams - Aggregation search parameters
- * @param {Object} req - Express request object
- * @param {Function} next - Express next function
- * @returns {Object} Formatted aggregation results
- */
 export const performAggregatedSearch = asyncHandler(async (searchParams) => {
   // Build base query (can be empty for match_all)
   const baseQuery = searchParams.query
@@ -249,13 +207,6 @@ export const performAggregatedSearch = asyncHandler(async (searchParams) => {
 
 // Document Management Functions
 
-/**
- * Index a single document with pipeline processing integration
- * @param {Object} documentData - Document data with metadata
- * @param {Object} req - Express request object
- * @param {Function} next - Express next function
- * @returns {Object} Indexing result
- */
 export const indexDocument = asyncHandler(async (documentData) => {
   let processedDoc = documentData.document;
 
@@ -324,13 +275,6 @@ export const indexDocument = asyncHandler(async (documentData) => {
   };
 });
 
-/**
- * Bulk index multiple documents with efficient processing
- * @param {Object} bulkData - Bulk indexing data
- * @param {Object} req - Express request object
- * @param {Function} next - Express next function
- * @returns {Object} Bulk indexing result
- */
 export const bulkIndexDocuments = asyncHandler(async (bulkData) => {
   let processedDocs = bulkData.documents;
 
@@ -444,13 +388,6 @@ export const bulkIndexDocuments = asyncHandler(async (bulkData) => {
 
 // Index and Pipeline Management Service Functions
 
-/**
- * Create a search index with proper mappings and settings
- * @param {Object} indexData - Index configuration data
- * @param {Object} req - Express request object
- * @param {Function} next - Express next function
- * @returns {Object} Index creation result
- */
 export const createSearchIndex = asyncHandler(async (indexData) => {
   // Use default mappings and settings if not provided
   const defaultMapping = {
@@ -530,13 +467,6 @@ export const createSearchIndex = asyncHandler(async (indexData) => {
   };
 });
 
-/**
- * Create an ingest pipeline for data processing
- * @param {Object} pipelineData - Pipeline configuration data
- * @param {Object} req - Express request object
- * @param {Function} next - Express next function
- * @returns {Object} Pipeline creation result
- */
 export const createIngestPipeline = asyncHandler(async (pipelineData) => {
   // Create the pipeline
   const result = await pipelineService.createPipeline(pipelineData.name, pipelineData.processors);
@@ -557,13 +487,6 @@ export const createIngestPipeline = asyncHandler(async (pipelineData) => {
 
 // Additional Helper Functions
 
-/**
- * Update document with new data
- * @param {Object} updateData - Update data
- * @param {Object} req - Express request object
- * @param {Function} next - Express next function
- * @returns {Object} Update result
- */
 export const updateDocument = asyncHandler(async (updateData) => {
   // Add update timestamp
   const documentWithTimestamp = {
@@ -596,13 +519,6 @@ export const updateDocument = asyncHandler(async (updateData) => {
   };
 });
 
-/**
- * Delete document by ID
- * @param {Object} deleteData - Delete data
- * @param {Object} req - Express request object
- * @param {Function} next - Express next function
- * @returns {Object} Delete result
- */
 export const deleteDocument = asyncHandler(async (deleteData) => {
   const result = await searchRepository.deleteDocument(deleteData.id, deleteData.index);
 
@@ -621,13 +537,6 @@ export const deleteDocument = asyncHandler(async (deleteData) => {
   };
 });
 
-/**
- * Delete a search index
- * @param {Object} deleteData - Index deletion data
- * @param {Object} req - Express request object
- * @param {Function} next - Express next function
- * @returns {Object} Index deletion result
- */
 export const deleteSearchIndex = asyncHandler(async (deleteData) => {
   const result = await searchRepository.deleteIndex(deleteData.index);
 
@@ -648,13 +557,6 @@ export const deleteSearchIndex = asyncHandler(async (deleteData) => {
   };
 });
 
-/**
- * Update an ingest pipeline
- * @param {Object} pipelineData - Pipeline update data
- * @param {Object} req - Express request object
- * @param {Function} next - Express next function
- * @returns {Object} Pipeline update result
- */
 export const updateIngestPipeline = asyncHandler(async (pipelineData) => {
   // logger.debug('pipeline', { meta: { pipelineData } });
   const result = await pipelineService.updatePipeline(pipelineData.id, pipelineData.processors);
@@ -669,13 +571,6 @@ export const updateIngestPipeline = asyncHandler(async (pipelineData) => {
   return result;
 });
 
-/**
- * Delete an ingest pipeline
- * @param {Object} pipelineData - Pipeline deletion data
- * @param {Object} req - Express request object
- * @param {Function} next - Express next function
- * @returns {Object} Pipeline deletion result
- */
 export const deleteIngestPipeline = asyncHandler(async (pipelineData) => {
   const result = await pipelineService.deletePipeline(pipelineData.id);
 
@@ -696,13 +591,6 @@ export const deleteIngestPipeline = asyncHandler(async (pipelineData) => {
   };
 });
 
-/**
- * Get pipeline information
- * @param {string} pipelineId - Pipeline ID
- * @param {Object} req - Express request object
- * @param {Function} next - Express next function
- * @returns {Object} Pipeline information
- */
 export const getPipelineInfo = asyncHandler(async (pipelineId) => {
   // logger.debug('pipeline', { meta: { pipelineId } });
 
@@ -713,12 +601,6 @@ export const getPipelineInfo = asyncHandler(async (pipelineId) => {
   return result;
 });
 
-/**
- * Check search system health
- * @param {Object} req - Express request object
- * @param {Function} next - Express next function
- * @returns {Object} Health check result
- */
 export const checkSearchHealth = asyncHandler(async () => {
   // Check Elasticsearch connection
   const esHealth = await searchRepository.checkElasticsearchHealth();
@@ -749,12 +631,6 @@ export const checkSearchHealth = asyncHandler(async () => {
 
 // Helper Functions for Result Formatting
 
-/**
- * Format standard search results
- * @param {Object} results - Raw Elasticsearch results
- * @param {Object} params - Search parameters
- * @returns {Object} Formatted search results
- */
 const formatSearchResults = (results, params) => {
   // logger.debug('result', { meta: { results } });
   const pagination = calculatePagination(results.hits.total.value, params);
@@ -777,12 +653,6 @@ const formatSearchResults = (results, params) => {
   };
 };
 
-/**
- * Format semantic search results
- * @param {Object} results - Raw Elasticsearch results
- * @param {Object} params - Search parameters
- * @returns {Object} Formatted semantic search results
- */
 const formatSemanticSearchResults = (results, params) => {
   const pagination = calculatePagination(results.hits.total.value, params);
 
@@ -807,12 +677,6 @@ const formatSemanticSearchResults = (results, params) => {
   };
 };
 
-/**
- * Format KNN search results
- * @param {Object} results - Raw Elasticsearch results
- * @param {Object} params - Search parameters
- * @returns {Object} Formatted KNN results
- */
 const formatKNNResults = (results, params) => ({
   hits: results.hits?.hits.map((hit) => ({
     id: hit._id,
@@ -832,12 +696,6 @@ const formatKNNResults = (results, params) => ({
   maxScore: results.hits.max_score
 });
 
-/**
- * Format aggregation results
- * @param {Object} results - Raw Elasticsearch results
- * @param {Object} params - Search parameters
- * @returns {Object} Formatted aggregation results
- */
 const formatAggregationResults = (results, params) => {
   const pagination = calculatePagination(results.hits.total.value, params);
 
@@ -859,12 +717,6 @@ const formatAggregationResults = (results, params) => {
   };
 };
 
-/**
- * Format n-gram search results
- * @param {Object} results - Raw Elasticsearch results
- * @param {Object} params - Search parameters
- * @returns {Object} Formatted n-gram search results
- */
 const formatNgramSearchResults = (results, params) => {
   const pagination = calculatePagination(results.hits.total.value, params);
 
@@ -889,12 +741,6 @@ const formatNgramSearchResults = (results, params) => {
   };
 };
 
-/**
- * Format fuzzy search results
- * @param {Object} results - Raw Elasticsearch results
- * @param {Object} params - Search parameters
- * @returns {Object} Formatted fuzzy search results
- */
 const formatFuzzySearchResults = (results, params) => {
   const pagination = calculatePagination(results.hits.total.value, params);
 
@@ -921,11 +767,6 @@ const formatFuzzySearchResults = (results, params) => {
   };
 };
 
-/**
- * Format aggregation buckets and metrics
- * @param {Object} aggregations - Raw aggregation results
- * @returns {Object} Formatted aggregations
- */
 const formatAggregations = (aggregations) => {
   const formatted = {};
 
@@ -971,12 +812,6 @@ const formatAggregations = (aggregations) => {
   return formatted;
 };
 
-/**
- * Calculate pagination metadata
- * @param {number} total - Total number of results
- * @param {Object} params - Search parameters
- * @returns {Object} Pagination metadata
- */
 const calculatePagination = (total, params) => {
   const page = params.pagination?.page || 1;
   const limit = params.pagination?.limit || 20;

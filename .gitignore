@@ -6,6 +6,7 @@ node_modules
 .github/prompts
 .amazonq/*
 .kiro
+.gemini
 
 # Package-lock files
 # package-lock.json
