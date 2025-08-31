@@ -41,15 +41,8 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/v1/auth/register",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "auth",
-                "register"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "register"]
             }
           }
         },
@@ -85,15 +78,8 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/v1/auth/login",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "auth",
-                "login"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "login"]
             }
           }
         }
@@ -122,16 +108,8 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/v1/notifications/devices/{{userId}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "notifications",
-                "devices",
-                "{{userId}}"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "notifications", "devices", "{{userId}}"]
             }
           }
         },
@@ -155,16 +133,8 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/v1/notifications/devices/{{userId}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "notifications",
-                "devices",
-                "{{userId}}"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "notifications", "devices", "{{userId}}"]
             }
           }
         },
@@ -188,16 +158,8 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/v1/notifications/devices/{{userId}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "notifications",
-                "devices",
-                "{{userId}}"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "notifications", "devices", "{{userId}}"]
             }
           }
         }
@@ -218,16 +180,8 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/api/v1/notifications/preferences/{{userId}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "notifications",
-                "preferences",
-                "{{userId}}"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "notifications", "preferences", "{{userId}}"]
             }
           }
         },
@@ -251,16 +205,8 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/v1/notifications/preferences/{{userId}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "notifications",
-                "preferences",
-                "{{userId}}"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "notifications", "preferences", "{{userId}}"]
             }
           }
         }
@@ -289,15 +235,8 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/v1/notifications/send",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "notifications",
-                "send"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "notifications", "send"]
             }
           }
         },
@@ -321,15 +260,8 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/v1/notifications/send",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "notifications",
-                "send"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "notifications", "send"]
             }
           }
         },
@@ -353,15 +285,8 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/v1/notifications/send",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "notifications",
-                "send"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "notifications", "send"]
             }
           }
         },
@@ -385,15 +310,8 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/v1/notifications/send",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "notifications",
-                "send"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "notifications", "send"]
             }
           }
         }
@@ -422,15 +340,8 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/v1/notifications/bulk",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "notifications",
-                "bulk"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "notifications", "bulk"]
             }
           }
         },
@@ -454,15 +365,8 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/v1/notifications/bulk",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "notifications",
-                "bulk"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "notifications", "bulk"]
             }
           }
         }
@@ -483,16 +387,8 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/api/v1/notifications/history/{{userId}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "notifications",
-                "history",
-                "{{userId}}"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "notifications", "history", "{{userId}}"]
             }
           }
         },
@@ -508,16 +404,8 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/api/v1/notifications/history/{{userId}}?channel=email&status=delivered&page=1&limit=10",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "notifications",
-                "history",
-                "{{userId}}"
-              ],
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "notifications", "history", "{{userId}}"],
               "query": [
                 {
                   "key": "channel",
@@ -551,16 +439,8 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/api/v1/notifications/history/{{userId}}?startDate=2024-01-01&endDate=2024-01-31&page=1&limit=20",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "notifications",
-                "history",
-                "{{userId}}"
-              ],
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "notifications", "history", "{{userId}}"],
               "query": [
                 {
                   "key": "startDate",
@@ -594,16 +474,8 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/api/v1/notifications/history/{{userId}}?status=failed",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "notifications",
-                "history",
-                "{{userId}}"
-              ],
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "notifications", "history", "{{userId}}"],
               "query": [
                 {
                   "key": "status",
@@ -630,17 +502,8 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/api/v1/notifications/devices/{{userId}}/web_device_123",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "notifications",
-                "devices",
-                "{{userId}}",
-                "web_device_123"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "notifications", "devices", "{{userId}}", "web_device_123"]
             }
           }
         },
@@ -656,17 +519,8 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/api/v1/notifications/devices/{{userId}}/ios_device_456",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "notifications",
-                "devices",
-                "{{userId}}",
-                "ios_device_456"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "notifications", "devices", "{{userId}}", "ios_device_456"]
             }
           }
         }

@@ -13,15 +13,19 @@ This guide provides a complete testing sequence for the notification system API 
 ### 1. Authentication (Required First)
 
 #### 1.1 Register User
+
 **Method**: `POST`  
 **URL**: `{{baseUrl}}/api/v1/auth/register`  
-**Headers**: 
+**Headers**:
+
 ```json
 {
   "Content-Type": "application/json"
 }
 ```
+
 **Body**:
+
 ```json
 {
   "name",
@@ -32,21 +36,26 @@ This guide provides a complete testing sequence for the notification system API 
 ```
 
 #### 1.2 Login User
+
 **Method**: `POST`  
 **URL**: `{{baseUrl}}/api/v1/auth/login`  
-**Headers**: 
+**Headers**:
+
 ```json
 {
   "Content-Type": "application/json"
 }
 ```
+
 **Body**:
+
 ```json
 {
   "email": "john.doe@example.com",
   "password": "SecurePass123!"
 }
 ```
+
 **Response**: Save the `accessToken` from response for subsequent requests.
 
 ---
@@ -56,16 +65,20 @@ This guide provides a complete testing sequence for the notification system API 
 ### 2. Device Management
 
 #### 2.1 Register Web Push Device
+
 **Method**: `POST`  
 **URL**: `{{baseUrl}}/api/v1/notifications/devices/user_123456789`  
-**Headers**: 
+**Headers**:
+
 ```json
 {
   "Content-Type": "application/json",
   "Authorization": "Bearer {{accessToken}}"
 }
 ```
+
 **Body**:
+
 ```json
 {
   "deviceId": "web_device_123",
@@ -81,16 +94,20 @@ This guide provides a complete testing sequence for the notification system API 
 ```
 
 #### 2.2 Register Mobile Device (iOS)
+
 **Method**: `POST`  
 **URL**: `{{baseUrl}}/api/v1/notifications/devices/user_123456789`  
-**Headers**: 
+**Headers**:
+
 ```json
 {
   "Content-Type": "application/json",
   "Authorization": "Bearer {{accessToken}}"
 }
 ```
+
 **Body**:
+
 ```json
 {
   "deviceId": "ios_device_456",
@@ -101,16 +118,20 @@ This guide provides a complete testing sequence for the notification system API 
 ```
 
 #### 2.3 Register Android Device
+
 **Method**: `POST`  
 **URL**: `{{baseUrl}}/api/v1/notifications/devices/user_123456789`  
-**Headers**: 
+**Headers**:
+
 ```json
 {
   "Content-Type": "application/json",
   "Authorization": "Bearer {{accessToken}}"
 }
 ```
+
 **Body**:
+
 ```json
 {
   "deviceId": "android_device_789",
@@ -123,9 +144,11 @@ This guide provides a complete testing sequence for the notification system API 
 ### 3. Notification Preferences
 
 #### 3.1 Get User Preferences
+
 **Method**: `GET`  
 **URL**: `{{baseUrl}}/api/v1/notifications/preferences/user_123456789`  
-**Headers**: 
+**Headers**:
+
 ```json
 {
   "Authorization": "Bearer {{accessToken}}"
@@ -133,16 +156,20 @@ This guide provides a complete testing sequence for the notification system API 
 ```
 
 #### 3.2 Update User Preferences
+
 **Method**: `PUT`  
 **URL**: `{{baseUrl}}/api/v1/notifications/preferences/user_123456789`  
-**Headers**: 
+**Headers**:
+
 ```json
 {
   "Content-Type": "application/json",
   "Authorization": "Bearer {{accessToken}}"
 }
 ```
+
 **Body**:
+
 ```json
 {
   "channels": {
@@ -181,16 +208,20 @@ This guide provides a complete testing sequence for the notification system API 
 ### 4. Send Notifications
 
 #### 4.1 Send Welcome Email Notification
+
 **Method**: `POST`  
 **URL**: `{{baseUrl}}/api/v1/notifications/send`  
-**Headers**: 
+**Headers**:
+
 ```json
 {
   "Content-Type": "application/json",
   "Authorization": "Bearer {{accessToken}}"
 }
 ```
+
 **Body**:
+
 ```json
 {
   "userId": "user_123456789",
@@ -207,16 +238,20 @@ This guide provides a complete testing sequence for the notification system API 
 ```
 
 #### 4.2 Send Order Update Notification
+
 **Method**: `POST`  
 **URL**: `{{baseUrl}}/api/v1/notifications/send`  
-**Headers**: 
+**Headers**:
+
 ```json
 {
   "Content-Type": "application/json",
   "Authorization": "Bearer {{accessToken}}"
 }
 ```
+
 **Body**:
+
 ```json
 {
   "userId": "user_123456789",
@@ -235,16 +270,20 @@ This guide provides a complete testing sequence for the notification system API 
 ```
 
 #### 4.3 Send Security Alert
+
 **Method**: `POST`  
 **URL**: `{{baseUrl}}/api/v1/notifications/send`  
-**Headers**: 
+**Headers**:
+
 ```json
 {
   "Content-Type": "application/json",
   "Authorization": "Bearer {{accessToken}}"
 }
 ```
+
 **Body**:
+
 ```json
 {
   "userId": "user_123456789",
@@ -263,16 +302,20 @@ This guide provides a complete testing sequence for the notification system API 
 ```
 
 #### 4.4 Send Password Reset Notification
+
 **Method**: `POST`  
 **URL**: `{{baseUrl}}/api/v1/notifications/send`  
-**Headers**: 
+**Headers**:
+
 ```json
 {
   "Content-Type": "application/json",
   "Authorization": "Bearer {{accessToken}}"
 }
 ```
+
 **Body**:
+
 ```json
 {
   "userId": "user_123456789",
@@ -292,16 +335,20 @@ This guide provides a complete testing sequence for the notification system API 
 ### 5. Bulk Notifications
 
 #### 5.1 Send Bulk Welcome Notifications
+
 **Method**: `POST`  
 **URL**: `{{baseUrl}}/api/v1/notifications/bulk`  
-**Headers**: 
+**Headers**:
+
 ```json
 {
   "Content-Type": "application/json",
   "Authorization": "Bearer {{accessToken}}"
 }
 ```
+
 **Body**:
+
 ```json
 {
   "notifications": [
@@ -340,16 +387,20 @@ This guide provides a complete testing sequence for the notification system API 
 ```
 
 #### 5.2 Send Bulk Newsletter Notifications
+
 **Method**: `POST`  
 **URL**: `{{baseUrl}}/api/v1/notifications/bulk`  
-**Headers**: 
+**Headers**:
+
 ```json
 {
   "Content-Type": "application/json",
   "Authorization": "Bearer {{accessToken}}"
 }
 ```
+
 **Body**:
+
 ```json
 {
   "notifications": [
@@ -402,9 +453,11 @@ This guide provides a complete testing sequence for the notification system API 
 ### 6. Notification History
 
 #### 6.1 Get All Notification History
+
 **Method**: `GET`  
 **URL**: `{{baseUrl}}/api/v1/notifications/history/user_123456789`  
-**Headers**: 
+**Headers**:
+
 ```json
 {
   "Authorization": "Bearer {{accessToken}}"
@@ -412,9 +465,11 @@ This guide provides a complete testing sequence for the notification system API 
 ```
 
 #### 6.2 Get Filtered Notification History (Email Only)
+
 **Method**: `GET`  
 **URL**: `{{baseUrl}}/api/v1/notifications/history/user_123456789?channel=email&status=delivered&page=1&limit=10`  
-**Headers**: 
+**Headers**:
+
 ```json
 {
   "Authorization": "Bearer {{accessToken}}"
@@ -422,9 +477,11 @@ This guide provides a complete testing sequence for the notification system API 
 ```
 
 #### 6.3 Get Notification History with Date Range
+
 **Method**: `GET`  
 **URL**: `{{baseUrl}}/api/v1/notifications/history/user_123456789?startDate=2024-01-01&endDate=2024-01-31&page=1&limit=20`  
-**Headers**: 
+**Headers**:
+
 ```json
 {
   "Authorization": "Bearer {{accessToken}}"
@@ -432,9 +489,11 @@ This guide provides a complete testing sequence for the notification system API 
 ```
 
 #### 6.4 Get Failed Notifications
+
 **Method**: `GET`  
 **URL**: `{{baseUrl}}/api/v1/notifications/history/user_123456789?status=failed`  
-**Headers**: 
+**Headers**:
+
 ```json
 {
   "Authorization": "Bearer {{accessToken}}"
@@ -444,9 +503,11 @@ This guide provides a complete testing sequence for the notification system API 
 ### 7. Device Management (Cleanup)
 
 #### 7.1 Unregister Web Device
+
 **Method**: `DELETE`  
 **URL**: `{{baseUrl}}/api/v1/notifications/devices/user_123456789/web_device_123`  
-**Headers**: 
+**Headers**:
+
 ```json
 {
   "Authorization": "Bearer {{accessToken}}"
@@ -454,9 +515,11 @@ This guide provides a complete testing sequence for the notification system API 
 ```
 
 #### 7.2 Unregister Mobile Device
+
 **Method**: `DELETE`  
 **URL**: `{{baseUrl}}/api/v1/notifications/devices/user_123456789/ios_device_456`  
-**Headers**: 
+**Headers**:
+
 ```json
 {
   "Authorization": "Bearer {{accessToken}}"
@@ -488,6 +551,7 @@ Create these environment variables in Postman:
 ## Expected Response Format
 
 All successful responses follow this format:
+
 ```json
 {
   "success": true,
@@ -500,6 +564,7 @@ All successful responses follow this format:
 ```
 
 Error responses follow this format:
+
 ```json
 {
   "success": false,
@@ -514,6 +579,7 @@ Error responses follow this format:
 ## Workflow IDs for Testing
 
 Use these workflow IDs in your notification payloads:
+
 - `welcome-email`
 - `order-updates`
 - `security-alerts`
@@ -535,20 +601,20 @@ Use these workflow IDs in your notification payloads:
 
 POST /api/v1/notifications/broadcast
 {
-  "workflowId": "system-maintenance",
-  "payload": {
-    "customKey": "customValue",
-    "customKey1": {
-      "nestedkey1": "nestedValue1"
-    },
-    "maintenanceTime": "2024-02-01T02:00:00Z",
-    "duration": "2 hours"
-  },
-  "overrides": {
-    "email": {
-      "from": "support@novu.co"
-    }
-  },
-  "tenant": "tenantIdentifier",
-  "priority": "high"
+"workflowId": "system-maintenance",
+"payload": {
+"customKey": "customValue",
+"customKey1": {
+"nestedkey1": "nestedValue1"
+},
+"maintenanceTime": "2024-02-01T02:00:00Z",
+"duration": "2 hours"
+},
+"overrides": {
+"email": {
+"from": "support@novu.co"
+}
+},
+"tenant": "tenantIdentifier",
+"priority": "high"
 }

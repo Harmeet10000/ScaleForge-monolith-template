@@ -1,46 +1,27 @@
-# 🔐 Production-Grade Authentication Template
+# 🔐 Production-Grade Authentication & Microservices Template
+
 
 <div align="center">
-  <!-- Core Technologies -->
-  <img src="https://img.shields.io/badge/node.js-22.14.0-brightgreen" alt="Node.js Version" />
-  <img src="https://img.shields.io/badge/express-4.21.2-blue" alt="Express Version" />
-  <img src="https://img.shields.io/badge/mongoose-8.10.1-green" alt="MongoDB" />
-  <img src="https://img.shields.io/badge/ioredis-5.6.1-red" alt="Redis" />
-  <br/>
-  <img src="https://img.shields.io/badge/docker-ready-blue" alt="Docker Ready" />
-  <img src="https://img.shields.io/badge/license-ISC-lightgrey" alt="License" />
-</div>
-
-<div align="center">
-  <h3>Key Dependencies</h3>
-  <img src="https://img.shields.io/badge/typescript-types-blue" alt="TypeScript" />
-  <img src="https://img.shields.io/badge/winston-3.17.0-orange" alt="Winston" />
-  <img src="https://img.shields.io/badge/joi-17.13.3-yellow" alt="Joi" />
+  <h3>Key Integrations</h3>
+  <img src="https://img.shields.io/badge/novu-notifications-purple" alt="Novu" />
+  <img src="https://img.shields.io/badge/razorpay-payments-blue" alt="Razorpay" />
+  <img src="https://img.shields.io/badge/openFGA-permissions-orange" alt="OpenFGA" />
+  <img src="https://img.shields.io/badge/aws--s3-storage-yellow" alt="AWS S3" />
   <br/>
   <img src="https://img.shields.io/badge/swagger--ui--express-5.0.1-green" alt="Swagger UI" />
-  <img src="https://img.shields.io-badge/helmet-8.0.0-lightgrey" alt="Helmet" />
+  <img src="https://img.shields.io/badge/helmet-8.0.0-lightgrey" alt="Helmet" />
   <img src="https://img.shields.io/badge/cors-2.8.5-orange" alt="CORS" />
   <br/>
   <img src="https://img.shields.io/badge/amqplib-0.10.7-purple" alt="RabbitMQ" />
-  <img src="https://img.shields.io/badge/aws--sdk-3.797.0-yellow" alt="AWS SDK" />
+  <img src="https://img.shields.io/badge/gemini--ai-1.11.0-red" alt="Google Gemini" />
   <img src="https://img.shields.io/badge/jsonwebtoken-9.0.2-blue" alt="JWT" />
   <br/>
   <img src="https://img.shields.io/badge/compression-1.8.0-lightgrey" alt="Compression" />
   <img src="https://img.shields.io/badge/prom--client-15.1.3-orange" alt="Prometheus" />
 </div>
 
-<div align="center">
-  <h3>Development Tools</h3>
-  <img src="https://img.shields.io/badge/eslint-9.24.0-purple" alt="ESLint" />
-  <img src="https://img.shields.io/badge/prettier-3.5.2-pink" alt="Prettier" />
-  <img src="https://img.shields.io/badge/husky-9.1.7-brown" alt="Husky" />
-  <br/>
-  <img src="https://img.shields.io/badge/nodemon-3.1.9-green" alt="Nodemon" />
-  <img src="https://img.shields.io/badge/webpack--cli-6.0.1-blue" alt="Webpack" />
-  <img src="https://img.shields.io/badge/commitlint-19.7.1-orange" alt="Commitlint" />
-</div>
 
-<p align="center">A robust, secure, and scalable authentication service template built with Node.js, Express, MongoDB, and Redis.</p>
+<p align="center">A comprehensive, production-ready microservices template with authentication, search, notifications, payments, and fine-grained permissions built with Node.js, Express, MongoDB, Redis, and Elasticsearch.</p>
 
 <details open>
 <summary>📑 Table of Contents</summary>
@@ -51,8 +32,15 @@
 - [📊 Project Structure](#-project-structure)
 - [⚙️ Configuration](#️-configuration)
 - [🛠️ Available Scripts](#️-available-scripts)
+- [� Search y& Analytics](#-search--analytics)
+- [🔔 Notifications](#-notifications)
+- [💳 Payment Integration](#-payment-integration)
+- [� Permissi(ons & Authorization](#-permissions--authorization)
+- [☁️ Cloud Storage](#️-cloud-storage)
+- [📚 API Documentation](#-api-documentation)
 - [🔒 Security Features](#-security-features)
 - [🧪 Testing](#-testing)
+- [🔄 API Endpoints](#-api-endpoints)
 - [🤝 Contributing](#-contributing)
 - [📄 License](#-license)
 
@@ -90,19 +78,89 @@
 </details>
 
 <details open>
+<summary><b>🔍 Advanced Search & Analytics</b></summary>
+<br/>
+
+- ✅ Elasticsearch integration with semantic search
+- ✅ Vector embeddings with Google Gemini AI
+- ✅ Full-text search with fuzzy matching
+- ✅ Search analytics and performance metrics
+- ✅ Custom search pipelines and aggregations
+- ✅ Real-time indexing and data synchronization
+- ✅ Search suggestions and autocomplete
+
+</details>
+
+<details open>
+<summary><b>🔔 Smart Notifications</b></summary>
+<br/>
+
+- ✅ Multi-channel notifications (Email, SMS, Push, In-App)
+- ✅ Novu integration for notification workflows
+- ✅ User notification preferences management
+- ✅ Device management for push notifications
+- ✅ Notification templates and personalization
+- ✅ Delivery tracking and analytics
+- ✅ Scheduled and triggered notifications
+
+</details>
+
+<details open>
+<summary><b>💳 Payment Processing</b></summary>
+<br/>
+
+- ✅ Razorpay integration for secure payments
+- ✅ Subscription management and billing
+- ✅ Payment webhooks and event handling
+- ✅ Invoice generation and management
+- ✅ Refund and dispute handling
+- ✅ Payment analytics and reporting
+- ✅ Multi-currency support
+
+</details>
+
+<details open>
+<summary><b>🔐 Fine-Grained Permissions</b></summary>
+<br/>
+
+- ✅ OpenFGA integration for relationship-based access control
+- ✅ Role-based and attribute-based permissions
+- ✅ Dynamic permission evaluation
+- ✅ Permission inheritance and delegation
+- ✅ Audit trails for permission changes
+- ✅ Real-time permission updates
+- ✅ Custom authorization policies
+
+</details>
+
+<details open>
+<summary><b>☁️ Cloud Storage & CDN</b></summary>
+<br/>
+
+- ✅ AWS S3 integration for file storage
+- ✅ Secure file upload with presigned URLs
+- ✅ Image processing and optimization
+- ✅ CDN integration for fast delivery
+- ✅ File versioning and backup
+- ✅ Access control and permissions
+- ✅ Automatic database backups to S3
+
+</details>
+
+<details open>
 <summary><b>🏭 Production Ready</b></summary>
 <br/>
 
-- ✅ Dockerized deployment with separate dev/prod configs
+- ✅ Dockerized deployment with HMR in development
+- ✅ Request timeout configuration for reliability
 - ✅ Webpack bundling for optimized builds
 - ✅ Environment-specific configurations
-- ✅ Comprehensive error handling
-- ✅ API documentation with Swagger
-- ✅ Structured logging system
-- ✅ Health check endpoints
-- ✅ Database backup to S3
-- ✅ Response compression
-- ✅ RabbitMQ integration for microservice communication
+- ✅ Comprehensive error handling with correlation IDs
+- ✅ Interactive API documentation at `/api-docs`
+- ✅ Structured logging with Loki integration
+- ✅ Health check endpoints with dependency monitoring
+- ✅ Prometheus metrics and Grafana dashboards
+- ✅ RabbitMQ and Kafka for event-driven architecture
 
 </details>
 
@@ -133,15 +191,19 @@
   </tr>
   <tr>
     <td>MongoDB</td>
-    <td>Latest</td>
+    <td>≥ 7.0</td>
   </tr>
   <tr>
     <td>Redis</td>
-    <td>Latest</td>
+    <td>≥ 7.0</td>
   </tr>
   <tr>
-    <td>Docker</td>
-    <td>Optional for containerized deployment</td>
+    <td>Elasticsearch</td>
+    <td>≥ 8.0</td>
+  </tr>
+  <tr>
+    <td>Docker & Docker Compose</td>
+    <td>For containerized deployment with HMR</td>
   </tr>
 </table>
 
@@ -166,7 +228,7 @@ npm install
 
 3. **Set up environment variables**
 
-Create a `.env.dev` file in the root directory with the following variables:
+Create a `.env.development` file in the root directory with the following variables:
 
 ```env
 # Server

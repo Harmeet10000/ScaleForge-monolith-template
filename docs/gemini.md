@@ -7,7 +7,7 @@ A quick reference guide for using the `@google/genai` SDK to interact with the G
 Always import `GoogleGenAI` and initialize the client with a named `apiKey` parameter from `process.env`.
 
 ```typescript
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenAI } from '@google/genai';
 
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 ```
@@ -18,11 +18,11 @@ const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 Use the appropriate model for your task:
 
--   **General Text:** `'gemini-2.5-flash'`
--   **Image Generation:** `'imagen-4.0-generate-001'`
--   **Image Editing:** `'gemini-2.5-flash-image-preview'`
--   **Video Generation:** `'veo-2.0-generate-001'`
--   **Text Embeddings:** `'text-embedding-004'` (Note: Check official documentation for the latest embedding models).
+- **General Text:** `'gemini-2.5-flash'`
+- **Image Generation:** `'imagen-4.0-generate-001'`
+- **Image Editing:** `'gemini-2.5-flash-image-preview'`
+- **Video Generation:** `'veo-2.0-generate-001'`
+- **Text Embeddings:** `'text-embedding-004'` (Note: Check official documentation for the latest embedding models).
 
 ## 3. Generate Content
 
@@ -31,7 +31,7 @@ Use the appropriate model for your task:
 ```typescript
 const response = await ai.models.generateContent({
   model: 'gemini-2.5-flash',
-  contents: 'Why is the sky blue?',
+  contents: 'Why is the sky blue?'
 });
 
 const text = response.text; // Correct way to access text
@@ -42,8 +42,8 @@ console.log(text);
 
 ```typescript
 const responseStream = await ai.models.generateContentStream({
-   model: "gemini-2.5-flash",
-   contents: "Tell me a long story about a brave robot.",
+  model: 'gemini-2.5-flash',
+  contents: 'Tell me a long story about a brave robot.'
 });
 
 for await (const chunk of responseStream) {
@@ -58,16 +58,16 @@ for await (const chunk of responseStream) {
 const imagePart = {
   inlineData: {
     mimeType: 'image/png',
-    data: base64EncodeString,
-  },
+    data: base64EncodeString
+  }
 };
 const textPart = {
-  text: "What is in this picture?"
+  text: 'What is in this picture?'
 };
 
 const response = await ai.models.generateContent({
   model: 'gemini-2.5-flash',
-  contents: { parts: [imagePart, textPart] },
+  contents: { parts: [imagePart, textPart] }
 });
 
 console.log(response.text);
@@ -80,20 +80,20 @@ For conversational interactions, create a chat session.
 ### Standard Chat
 
 ```typescript
-import { GoogleGenAI, Chat, GenerateContentResponse } from "@google/genai";
+import { GoogleGenAI, Chat, GenerateContentResponse } from '@google/genai';
 
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 const chat: Chat = ai.chats.create({
   model: 'gemini-2.5-flash',
   config: {
-    systemInstruction: 'You are a helpful assistant.',
-  },
+    systemInstruction: 'You are a helpful assistant.'
+  }
 });
 
-let response: GenerateContentResponse = await chat.sendMessage({ message: "Hello!" });
+let response: GenerateContentResponse = await chat.sendMessage({ message: 'Hello!' });
 console.log(response.text);
 
-response = await chat.sendMessage({ message: "What can you do?" });
+response = await chat.sendMessage({ message: 'What can you do?' });
 console.log(response.text);
 ```
 
@@ -102,7 +102,7 @@ console.log(response.text);
 ```typescript
 const chat: Chat = ai.chats.create({ model: 'gemini-2.5-flash' });
 
-const responseStream = await chat.sendMessageStream({ message: "Tell me a story in 100 words." });
+const responseStream = await chat.sendMessageStream({ message: 'Tell me a story in 100 words.' });
 for await (const chunk of responseStream) {
   console.log(chunk.text);
 }
@@ -114,8 +114,8 @@ Embeddings create numerical vector representations of text, which is useful for 
 
 ```typescript
 const response = await ai.models.embedContent({
-  model: "text-embedding-004", // Specific model for embeddings
-  content: "What is the meaning of life?",
+  model: 'text-embedding-004', // Specific model for embeddings
+  content: 'What is the meaning of life?'
 });
 
 const embedding = response.embedding.values;
@@ -127,28 +127,28 @@ console.log(embedding); // Outputs an array of numbers, e.g., [0.01, -0.02, ...]
 Force the model to output a JSON object that matches a specified schema.
 
 ```typescript
-import { GoogleGenAI, Type } from "@google/genai";
+import { GoogleGenAI, Type } from '@google/genai';
 
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 const response = await ai.models.generateContent({
-   model: "gemini-2.5-flash",
-   contents: "List three popular cookie recipes with ingredients.",
-   config: {
-     responseMimeType: "application/json",
-     responseSchema: {
-        type: Type.ARRAY,
-        items: {
-          type: Type.OBJECT,
-          properties: {
-            recipeName: { type: Type.STRING },
-            ingredients: {
-              type: Type.ARRAY,
-              items: { type: Type.STRING },
-            },
-          },
-        },
-      },
-   },
+  model: 'gemini-2.5-flash',
+  contents: 'List three popular cookie recipes with ingredients.',
+  config: {
+    responseMimeType: 'application/json',
+    responseSchema: {
+      type: Type.ARRAY,
+      items: {
+        type: Type.OBJECT,
+        properties: {
+          recipeName: { type: Type.STRING },
+          ingredients: {
+            type: Type.ARRAY,
+            items: { type: Type.STRING }
+          }
+        }
+      }
+    }
+  }
 });
 
 const jsonOutput = JSON.parse(response.text);
@@ -161,13 +161,13 @@ Use the `imagen-4.0-generate-001` model.
 
 ```typescript
 const response = await ai.models.generateImages({
-    model: 'imagen-4.0-generate-001',
-    prompt: 'A photo of a majestic lion in the savanna.',
-    config: {
-      numberOfImages: 1,
-      outputMimeType: 'image/jpeg',
-      aspectRatio: '16:9',
-    },
+  model: 'imagen-4.0-generate-001',
+  prompt: 'A photo of a majestic lion in the savanna.',
+  config: {
+    numberOfImages: 1,
+    outputMimeType: 'image/jpeg',
+    aspectRatio: '16:9'
+  }
 });
 
 const base64ImageBytes: string = response.generatedImages[0].image.imageBytes;
@@ -180,7 +180,7 @@ const imageUrl = `data:image/jpeg;base64,${base64ImageBytes}`;
 Use the `gemini-2.5-flash-image-preview` model.
 
 ```typescript
-import { GoogleGenAI, Modality } from "@google/genai";
+import { GoogleGenAI, Modality } from '@google/genai';
 
 // Assumes base64ImageData is a Base64 encoded image string
 const response = await ai.models.generateContent({
@@ -188,14 +188,14 @@ const response = await ai.models.generateContent({
   contents: {
     parts: [
       {
-        inlineData: { data: base64ImageData, mimeType: 'image/png' },
+        inlineData: { data: base64ImageData, mimeType: 'image/png' }
       },
-      { text: 'make the background a starry night' },
-    ],
+      { text: 'make the background a starry night' }
+    ]
   },
   config: {
-      responseModalities: [Modality.IMAGE, Modality.TEXT],
-  },
+    responseModalities: [Modality.IMAGE, Modality.TEXT]
+  }
 });
 
 for (const part of response.candidates[0].content.parts) {
@@ -220,8 +220,8 @@ let operation = await ai.models.generateVideos({
 
 while (!operation.done) {
   console.log('Waiting for video generation...');
-  await new Promise(resolve => setTimeout(resolve, 10000));
-  operation = await ai.operations.getVideosOperation({operation: operation});
+  await new Promise((resolve) => setTimeout(resolve, 10000));
+  operation = await ai.operations.getVideosOperation({ operation: operation });
 }
 
 const downloadLink = operation.response?.generatedVideos?.[0]?.video?.uri;
@@ -238,11 +238,11 @@ For up-to-date information, ground the model with Google Search. **You must disp
 
 ```typescript
 const response = await ai.models.generateContent({
-   model: "gemini-2.5-flash",
-   contents: "Who won the latest Formula 1 race?",
-   config: {
-     tools: [{googleSearch: {}}],
-   },
+  model: 'gemini-2.5-flash',
+  contents: 'Who won the latest Formula 1 race?',
+  config: {
+    tools: [{ googleSearch: {} }]
+  }
 });
 
 console.log(response.text);
@@ -250,8 +250,8 @@ console.log(response.text);
 // Extract and display source URLs
 const citations = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
 if (citations) {
-  console.log("Sources:");
-  citations.forEach(citation => {
+  console.log('Sources:');
+  citations.forEach((citation) => {
     if (citation.web) {
       console.log(`- ${citation.web.title}: ${citation.web.uri}`);
     }
@@ -265,8 +265,8 @@ You can control the model's behavior using the `config` object.
 
 ```typescript
 const response = await ai.models.generateContent({
-  model: "gemini-2.5-flash",
-  contents: "Write a short, creative story about a wizard who loves programming.",
+  model: 'gemini-2.5-flash',
+  contents: 'Write a short, creative story about a wizard who loves programming.',
   config: {
     // Controls randomness. Lower values are more deterministic.
     // Range: 0.0 - 1.0. Default is 0.95.
@@ -280,25 +280,25 @@ const response = await ai.models.generateContent({
     // The maximum number of tokens to consider for sampling.
     // Limits the selection of tokens to the most likely K tokens.
     topK: 64,
-    
+
     // Maximum number of output tokens.
     maxOutputTokens: 8192,
 
-    systemInstruction: "You are a creative writing assistant.",
-  },
+    systemInstruction: 'You are a creative writing assistant.'
+  }
 });
 ```
 
 ### Thinking Config (`gemini-2.5-flash` only)
 
--   **Omit `thinkingConfig`** for most tasks to let the model use its default (enabled) for higher quality.
--   **Disable thinking** for low-latency tasks like game AI.
+- **Omit `thinkingConfig`** for most tasks to let the model use its default (enabled) for higher quality.
+- **Disable thinking** for low-latency tasks like game AI.
 
 ```typescript
 // Disable thinking for faster, lower-latency response
 const response = await ai.models.generateContent({
-  model: "gemini-2.5-flash",
-  contents: "Is the player cheating?",
+  model: 'gemini-2.5-flash',
+  contents: 'Is the player cheating?',
   config: {
     thinkingConfig: { thinkingBudget: 0 }
   }
@@ -326,8 +326,8 @@ async function handler(req, res) {
     const { prompt } = req.body;
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const responseStream = await ai.models.generateContentStream({
-      model: "gemini-2.5-flash",
-      contents: prompt,
+      model: 'gemini-2.5-flash',
+      contents: prompt
     });
 
     for await (const chunk of responseStream) {
@@ -336,7 +336,7 @@ async function handler(req, res) {
     res.end(); // End the stream when done
   } catch (error) {
     console.error(error);
-    res.status(500).send("An error occurred.");
+    res.status(500).send('An error occurred.');
   }
 }
 ```
@@ -350,7 +350,7 @@ async function streamResponse() {
   const response = await fetch('/api/generate', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ prompt: "Tell me a story..." }),
+    body: JSON.stringify({ prompt: 'Tell me a story...' })
   });
 
   const reader = response.body.getReader();
@@ -373,7 +373,6 @@ API calls can fail. Wrap your SDK calls in `try...catch` blocks to handle errors
 ### API Key Security
 
 **Never** expose your API key on the client-side. The SDK should always be used on a server (backend) where the key can be securely loaded from environment variables (`process.env.API_KEY`).
-
 
 Context URLs Retrieved:
 https://ai.google.dev/gemini-api/docs/rate-limitsSUCCESS
