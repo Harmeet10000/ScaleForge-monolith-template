@@ -9,10 +9,10 @@ export const redisClient = new Redis({
   maxRetriesPerRequest: 3,
   retryDelayOnFailover: 100,
   lazyConnect: true,
-  keepAlive: 30000,
+  keepAlive: 120000,
   family: 4,
   db: 0,
-  connectTimeout: 10000,
+  connectTimeout: 120000,
   commandTimeout: 5000,
   maxmemoryPolicy: 'allkeys-lru'
 });

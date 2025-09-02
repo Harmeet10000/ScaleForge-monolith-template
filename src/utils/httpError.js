@@ -1,5 +1,5 @@
-import { EApplicationEnvironment } from '../constants/application.js';
-import { SOMETHING_WENT_WRONG } from '../constants/responseMessage.js';
+import { EApplicationEnvironment } from '../helpers/application.js';
+import { SOMETHING_WENT_WRONG } from '../features/auth/authConstants.js';
 import { logger } from './logger.js';
 
 export const httpError = (next, err, req, errorStatusCode = 500) => {
@@ -19,10 +19,10 @@ const errorObject = (err, req, errorStatusCode = 500) => {
     success: false,
     statusCode: errorStatusCode,
     request: {
-      ip: req.ip || null,
-      method: req.method,
-      url: req.originalUrl,
-      correlationId: req.correlationId || null
+      ip: req?.ip || null,
+      method: req?.method || null,
+      url: req?.originalUrl || null,
+      correlationId: req?.correlationId || null
     },
     message: err instanceof Error ? err.message || SOMETHING_WENT_WRONG : SOMETHING_WENT_WRONG,
     data: null,

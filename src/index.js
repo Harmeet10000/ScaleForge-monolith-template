@@ -7,6 +7,7 @@ import { createConnection, closeConnection } from './connections/connectRabbitMQ
 // import { connectKafkaProducer, consumer, producer } from './connections/connectKafka.js';
 import { logger } from './utils/logger.js';
 import asyncHandler from 'express-async-handler';
+import recurringBillingService from './services/recurringBillingService.js';
 
 Promise.all([connectDB(), connectRedis(), createConnection()])
   .then(() => {
@@ -14,6 +15,15 @@ Promise.all([connectDB(), connectRedis(), createConnection()])
       logger.info(
         `Server is running at port: ${process.env.PORT}, in ${process.env.NODE_ENV} mode`
       );
+
+      // Start recurring billing service
+      if (
+        process.env.NODE_ENV === 'production' ||
+        process.env.ENABLE_RECURRING_BILLING === 'true'
+      ) {
+        recurringBillingService.start();
+        logger.info('Recurring billing service started');
+      }
     });
 
     // Graceful shutdown function
@@ -21,6 +31,9 @@ Promise.all([connectDB(), connectRedis(), createConnection()])
       logger.info(`${signal} received. Shutting down gracefully...`);
       server.close(async () => {
         logger.info('HTTP server closed.');
+
+        // Stop recurring billing service
+        recurringBillingService.stop();
 
         await Promise.all([
           disconnectRedis(),

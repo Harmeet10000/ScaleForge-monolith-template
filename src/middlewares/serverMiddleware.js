@@ -66,6 +66,13 @@ export const limiter = rateLimit({
   handler: rateLimitHandler
 });
 
+// Limit requests from same API
+// export const limiter = rateLimit({
+//   max: 100,
+//   windowMs: 15 * 60 * 1000,
+//   message: 'Too many requests from this IP, please try again in an hour!'
+// });
+
 // Enhanced helmet configuration
 export const securityHeaders = helmet({
   contentSecurityPolicy: {
@@ -90,7 +97,6 @@ export const securityHeaders = helmet({
   // },
   noSniff: true,
   frameguard: { action: 'deny' },
-  xssFilter: true,
   referrerPolicy: { policy: 'same-origin' }
 });
 

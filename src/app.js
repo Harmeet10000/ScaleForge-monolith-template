@@ -1,7 +1,6 @@
 import express from 'express';
 import mongoSanitize from 'express-mongo-sanitize';
 import compression from 'compression';
-import xss from 'xss-clean';
 import hpp from 'hpp';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
@@ -22,6 +21,8 @@ import healthRoutes from './routes/healthRoutes.js';
 import permissionsRoutes from './routes/permissionsRoutes.js';
 import searchRoutes from './routes/searchRoutes.js';
 import paymentsRoutes from './routes/paymentsRoutes.js';
+import subscriptionRoutes from './routes/subscriptionRoutes.js';
+import billingRoutes from './routes/billingRoutes.js';
 import notificationRoutes from './routes/notificationRoutes.js';
 import s3Routes from './routes/s3Routes.js';
 
@@ -38,7 +39,7 @@ app.use(
   })
 );
 
-// Set security HTTP headers
+// Set security HTTP headers and  Data sanitization against XSS
 app.use(securityHeaders);
 
 // Add compression middleware
@@ -56,7 +57,7 @@ app.use(
   })
 );
 
-app.use('/api', limiter);
+// app.use('/api', limiter);
 
 // Body parser, reading data from body into req.body
 app.use(express.json({ limit: '16kb' }));
@@ -69,9 +70,6 @@ app.use(cookieParser());
 
 // Data sanitization against NoSQL query injection
 app.use(mongoSanitize());
-
-// Data sanitization against XSS
-app.use(xss());
 
 // Prevent parameter pollution
 app.use(
@@ -127,6 +125,8 @@ app.use('/api/v1/health', healthRoutes);
 app.use('/api/v1/permissions', permissionsRoutes);
 app.use('/api/v1/search', searchRoutes);
 app.use('/api/v1/payments', paymentsRoutes);
+app.use('/api/v1/subscriptions', subscriptionRoutes);
+app.use('/api/v1/billing', billingRoutes);
 app.use('/api/v1/notifications', notificationRoutes);
 app.use('/api/v1/upload', s3Routes);
 

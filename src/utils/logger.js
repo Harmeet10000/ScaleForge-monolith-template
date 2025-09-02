@@ -1,7 +1,7 @@
 import util from 'util';
 import 'winston-mongodb';
 import { createLogger, format, transports } from 'winston';
-import { EApplicationEnvironment } from '../constants/application.js';
+import { EApplicationEnvironment } from '../helpers/application.js';
 import { red, blue, yellow, green, magenta, cyan } from 'colorette';
 // import { ConsoleTransportInstance, FileTransportInstance } from 'winston/lib/winston/transports'
 // import { MongoDBTransportInstance } from 'winston-mongodb'
@@ -165,10 +165,18 @@ const levels = {
   debug: 3
 };
 
-export const logger = createLogger({
+const baseLogger = createLogger({
   levels,
   defaultMeta: {
     meta: {}
   },
   transports: [...FileTransport(), ...consoleTransport()]
 });
+
+// Async logger wrapper
+export const logger = {
+  info: (message, meta) => setImmediate(() => baseLogger.info(message, meta)),
+  error: (message, meta) => setImmediate(() => baseLogger.error(message, meta)),
+  warn: (message, meta) => setImmediate(() => baseLogger.warn(message, meta)),
+  debug: (message, meta) => setImmediate(() => baseLogger.debug(message, meta))
+};
