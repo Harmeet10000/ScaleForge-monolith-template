@@ -16,15 +16,15 @@ import {
   metricsMiddleware,
   securityHeaders
 } from './middlewares/serverMiddleware.js';
-import authRoutes from './routes/authRoutes.js';
-import healthRoutes from './routes/healthRoutes.js';
-import permissionsRoutes from './routes/permissionsRoutes.js';
-import searchRoutes from './routes/searchRoutes.js';
-import paymentsRoutes from './routes/paymentsRoutes.js';
-import subscriptionRoutes from './routes/subscriptionRoutes.js';
-import billingRoutes from './routes/billingRoutes.js';
-import notificationRoutes from './routes/notificationRoutes.js';
-import s3Routes from './routes/s3Routes.js';
+import authRoutes from './features/auth/authRoutes.js';
+import healthRoutes from './features/health/healthRoutes.js';
+import permissionsRoutes from './features/permissions/permissionsRoutes.js';
+import searchRoutes from './features/search/searchRoutes.js';
+import paymentsRoutes from './features/payments/paymentsRoutes.js';
+import subscriptionRoutes from './features/subscription/subscriptionRoutes.js';
+import billingRoutes from './features/billing/billingRoutes.js';
+import notificationRoutes from './features/notifications/notificationRoutes.js';
+import s3Routes from './features/storage/s3Routes.js';
 
 const app = express();
 
@@ -57,7 +57,7 @@ app.use(
   })
 );
 
-// app.use('/api', limiter);
+app.use('/api', limiter);
 
 // Body parser, reading data from body into req.body
 app.use(express.json({ limit: '16kb' }));

@@ -1,4 +1,4 @@
-import { User } from '../../models/userModel.js';
+import { User } from './userModel.js';
 import asyncHandler from 'express-async-handler';
 
 export const registerUser = asyncHandler(async (payload) => await User.create(payload));

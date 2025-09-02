@@ -1,7 +1,7 @@
 import { Payment } from './paymentModel.js';
 import asyncHandler from 'express-async-handler';
 import { httpError } from '../../utils/httpError.js';
-import { EPaymentStatus } from '../constants/paymentConstants.js';
+import { EPaymentStatus } from './paymentConstants.js';
 
 /**
  * Create a new payment with idempotency support

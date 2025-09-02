@@ -1,12 +1,12 @@
-import { client } from '../connections/connectElasticSearch.js';
+import { client } from '../../connections/connectElasticSearch.js';
 import asyncHandler from 'express-async-handler';
-import { httpError } from '../utils/httpError.js';
-import { logger } from '../utils/logger.js';
+import { httpError } from '../../utils/httpError.js';
+import { logger } from '../../utils/logger.js';
 import {
   // SEARCH_ERROR_CODES,
   // SEARCH_MESSAGES,
   PIPELINE_PROCESSORS
-} from '../constants/searchConstants.js';
+} from './searchConstants.js';
 
 /**
  * Pipeline Service for Elasticsearch Ingest Pipelines

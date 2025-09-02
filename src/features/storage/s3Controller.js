@@ -1,11 +1,11 @@
 import { httpError } from '../../utils/httpError.js';
-import { validateJoiSchema } from '../validations/authNValidation.js';
 import {
   validateUploadUrl,
   validateDeleteObject,
   validateCopyObject,
   validateObjectPath,
-  validateListObjects
+  validateListObjects,
+  validateJoiSchema
 } from './s3Validation.js';
 import {
   getUploadS3URL,
@@ -14,7 +14,7 @@ import {
   copyS3Object,
   checkS3ObjectExists,
   getS3ObjectMetadata
-} from '../helpers/s3.js';
+} from './s3.js';
 import asyncHandler from 'express-async-handler';
 import { httpResponse } from '../../utils/httpResponse.js';
 

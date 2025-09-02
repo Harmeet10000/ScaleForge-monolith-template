@@ -9,8 +9,8 @@ import {
   processRenewals,
   renewSubscription,
   updateSubscription
-} from '../controllers/subscriptionController.js';
-import { protect } from '../middlewares/authNMiddleware.js';
+} from './subscriptionController.js';
+import { protect } from '../auth/authMiddleware.js';
 
 const router = express.Router();
 

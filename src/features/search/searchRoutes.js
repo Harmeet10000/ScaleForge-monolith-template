@@ -1,5 +1,4 @@
 import express from 'express';
-import { authorize } from '../middlewares/authRMiddleware.js';
 import {
   search,
   semanticSearch,
@@ -18,8 +17,7 @@ import {
   deletePipeline,
   getPipeline,
   searchHealthCheck
-} from '../controllers/searchController.js';
-import { protect } from '../middlewares/authNMiddleware.js';
+} from './searchController.js';
 
 const router = express.Router();
 

@@ -8,8 +8,8 @@ import {
   registerDevice,
   unregisterDevice,
   getNotificationHistory
-} from '../../controllers/notificationController.js';
-import { protect } from '../middlewares/authNMiddleware.js';
+} from './notificationController.js';
+import { protect } from '../auth/authMiddleware.js';
 
 const router = express.Router();
 

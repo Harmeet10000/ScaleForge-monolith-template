@@ -25,7 +25,7 @@ import {
   transferOwnershipValidation,
   unshareDocumentValidation,
   validateJoiSchema
-} from '../validations/authRValidation.js';
+} from './permissionValidation.js';
 import {
   ACCESS_CHECK_COMPLETED,
   ALL_RESOURCE_PERMISSIONS_REMOVED,
@@ -49,7 +49,7 @@ import {
   USER_REMOVED_FROM_PROJECT,
   USERS_ADDED_TO_ORGANIZATION,
   USERS_REMOVED_FROM_ORGANIZATION
-} from '../constants/responseMessage.js';
+} from './permissionConstants.js';
 import asyncHandler from 'express-async-handler';
 
 // Organization permissions

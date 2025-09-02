@@ -1,4 +1,4 @@
-import { RefreshToken } from '../models/refreshToken.js';
+import { RefreshToken } from './refreshToken.js';
 
 export const createRefreshToken = async (tokenData) => await RefreshToken.create(tokenData);
 

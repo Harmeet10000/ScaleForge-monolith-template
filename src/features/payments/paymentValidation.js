@@ -1,5 +1,5 @@
 import Joi from 'joi';
-import { EPaymentStatus, ECurrency } from '../constants/paymentConstants.js';
+import { EPaymentStatus, ECurrency } from './paymentConstants.js';
 
 export const validateCheckout = Joi.object({
   amount: Joi.number().positive().precision(2).required(),

@@ -1,6 +1,6 @@
-import { NotificationLog } from '../models/notificationLogModel.js';
-import { NotificationPreferences } from '../models/notificationPreferencesModel.js';
-import { Device } from '../models/deviceModel.js';
+import { NotificationLog } from './notificationLogModel.js';
+import { NotificationPreferences } from './notificationPreferencesModel.js';
+import { Device } from './deviceModel.js';
 import APIFeatures from '../../utils/apiFeatures.js';
 import asyncHandler from 'express-async-handler';
 

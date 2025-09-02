@@ -1,17 +1,16 @@
 import { httpError } from '../../utils/httpError.js';
-import { validateJoiSchema } from '../validations/authNValidation.js';
 import {
   validateCheckout,
   validatePaymentVerification,
   validatePaymentHistory,
   validatePaymentId,
-  validateRefund
+  validateRefund,
+  validateJoiSchema
 } from './paymentValidation.js';
 import * as paymentService from './paymentService.js';
 import * as paymentRepository from './paymentRepository.js';
 import asyncHandler from 'express-async-handler';
 import { httpResponse } from '../../utils/httpResponse.js';
-import { logger } from '../../utils/logger.js';
 
 export const checkout = asyncHandler(async (req, res, next) => {
   const { error, value } = validateJoiSchema(validateCheckout, req.body);

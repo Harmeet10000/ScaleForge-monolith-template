@@ -22,15 +22,15 @@ import {
   shareDocument,
   transferOwnership,
   unshareDocument
-} from '../controllers/permissionsController.js';
+} from './permissionsController.js';
 // import {
 //   authorize,
 //   authorizeOrganization,
 //   authorizeProject,
 //   authorizeDocument,
 //   requireOwnership
-// } from '../middlewares/authRMiddleware.js';
-import { protect } from '../middlewares/authNMiddleware.js';
+// } from './permissionMiddleware.js';
+import { protect } from '../auth/authMiddleware.js';
 
 const router = Router();
 

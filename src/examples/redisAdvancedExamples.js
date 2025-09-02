@@ -10,28 +10,28 @@ import {
   getBloomFilterInfo
 } from '../helpers/redisFunctions.js';
 
-import {
-  createPipeline,
-  pipelineHset,
-  pipelineDel,
-  pipelineGet
-} from '../helpers/redisPipeline.js';
+// import {
+//   createPipeline,
+//   pipelineHset,
+//   pipelineDel,
+//   pipelineGet
+// } from '../helpers/redisPipeline.js';
 
 // Compose operations functionally
-const results = await createPipeline(
-  pipelineHset('user:123', { name: 'John' }, 1800),
-  pipelineHset('session:abc', { userId: '123' }, 3600),
-  pipelineDel('old:key'),
-  pipelineGet('config:app')
-);
+// const results = await createPipeline(
+//   pipelineHset('user:123', { name: 'John' }, 1800),
+//   pipelineHset('session:abc', { userId: '123' }, 3600),
+//   pipelineDel('old:key'),
+//   pipelineGet('config:app')
+// );
 
-const operations = [
-  pipelineHset('user:123', userData, 1800),
-  pipelineGet('config:redis'),
-  pipelineDel('expired:session')
-];
+// const operations = [
+//   pipelineHset('user:123', userData, 1800),
+//   pipelineGet('config:redis'),
+//   pipelineDel('expired:session')
+// ];
 
-const results2 = await createPipeline(...operations);
+// const results2 = await createPipeline(...operations);
 
 /**
  * Example: Using Redis Search for a User Directory

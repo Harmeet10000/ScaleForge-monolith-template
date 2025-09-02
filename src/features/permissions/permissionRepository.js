@@ -1,6 +1,6 @@
-import { logger } from '../utils/logger.js';
+import { logger } from '../../utils/logger.js';
 import asyncHandler from 'express-async-handler';
-import { fgaClient } from '../connections/connectOpenFGA.js';
+import { fgaClient } from '../../connections/connectOpenFGA.js';
 
 // Generic method to write relationship tuples
 export const writeRelationship = asyncHandler(async (tuple) => {

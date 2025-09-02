@@ -2,7 +2,7 @@ import asyncHandler from 'express-async-handler';
 import { httpResponse } from '../../utils/httpResponse.js';
 import { httpError } from '../../utils/httpError.js';
 import { logger } from '../../utils/logger.js';
-import * as billingService from '../../services/billingService.js';
+import * as billingService from './billingService.js';
 
 const getRequestContext = (req) => ({
   ipAddress: req.ip || req.connection.remoteAddress,
@@ -13,13 +13,9 @@ const getRequestContext = (req) => ({
 export const generateInvoice = asyncHandler(async (req, res, next) => {
   const { subscriptionId } = req.params;
   const { dueDays, paymentTerms, notes } = req.body;
-  const correlationId = req.correlationId;
-  const userId = req.user?.id;
+  const { correlationId } = req;
+  const userId = req.user?._id;
   const requestContext = getRequestContext(req);
-
-  if (!subscriptionId) {
-    return httpError(next, new Error('Subscription ID is required'), req, 400);
-  }
 
   const invoiceData = {
     dueDays: dueDays || 30,
@@ -50,8 +46,8 @@ export const generateInvoice = asyncHandler(async (req, res, next) => {
 export const generateProrationInvoice = asyncHandler(async (req, res, next) => {
   const { subscriptionId } = req.params;
   const { planName, amount } = req.body;
-  const correlationId = req.correlationId;
-  const userId = req.user?.id;
+  const { correlationId } = req;
+  const userId = req.user?._id;
   const requestContext = getRequestContext(req);
 
   if (!subscriptionId) {
@@ -85,8 +81,8 @@ export const generateProrationInvoice = asyncHandler(async (req, res, next) => {
 
 export const processRecurringBilling = asyncHandler(async (req, res, next) => {
   const { bufferHours = 24, dryRun = false } = req.body;
-  const correlationId = req.correlationId;
-  const userId = req.user?.id;
+  const { correlationId } = req;
+  const userId = req.user?._id;
 
   const results = await billingService.processRecurringBilling(correlationId, userId, {
     bufferHours,
@@ -105,8 +101,8 @@ export const processRecurringBilling = asyncHandler(async (req, res, next) => {
 export const createBillingProfile = asyncHandler(async (req, res, next) => {
   const { customerId } = req.params;
   const { billingAddress, taxInformation, preferences } = req.body;
-  const correlationId = req.correlationId;
-  const userId = req.user?.id;
+  const { correlationId } = req;
+  const userId = req.user?._id;
   const requestContext = getRequestContext(req);
 
   if (!customerId) {
@@ -135,8 +131,8 @@ export const createBillingProfile = asyncHandler(async (req, res, next) => {
 export const updateBillingProfile = asyncHandler(async (req, res, next) => {
   const { customerId } = req.params;
   const { billingAddress, taxInformation, preferences } = req.body;
-  const correlationId = req.correlationId;
-  const userId = req.user?.id;
+  const { correlationId } = req;
+  const userId = req.user?._id;
   const requestContext = getRequestContext(req);
 
   if (!customerId) {
@@ -144,9 +140,15 @@ export const updateBillingProfile = asyncHandler(async (req, res, next) => {
   }
 
   const updates = {};
-  if (billingAddress) updates.billingAddress = billingAddress;
-  if (taxInformation) updates.taxInformation = taxInformation;
-  if (preferences) updates.preferences = preferences;
+  if (billingAddress) {
+    updates.billingAddress = billingAddress;
+  }
+  if (taxInformation) {
+    updates.taxInformation = taxInformation;
+  }
+  if (preferences) {
+    updates.preferences = preferences;
+  }
 
   if (Object.keys(updates).length === 0) {
     return httpError(next, new Error('No valid updates provided'), req, 400);
@@ -167,8 +169,6 @@ export const updateBillingProfile = asyncHandler(async (req, res, next) => {
 
 export const getBillingProfile = asyncHandler(async (req, res, next) => {
   const { customerId } = req.params;
-  const correlationId = req.correlationId;
-
   if (!customerId) {
     return httpError(next, new Error('Customer ID is required'), req, 400);
   }
@@ -181,7 +181,7 @@ export const getBillingProfile = asyncHandler(async (req, res, next) => {
 export const addPaymentMethod = asyncHandler(async (req, res, next) => {
   const { customerId } = req.params;
   const { methodId, type, details, isDefault } = req.body;
-  const correlationId = req.correlationId;
+  const { correlationId } = req;
   const userId = req.user?.id;
   const requestContext = getRequestContext(req);
 
@@ -215,8 +215,8 @@ export const addPaymentMethod = asyncHandler(async (req, res, next) => {
 
 export const removePaymentMethod = asyncHandler(async (req, res, next) => {
   const { customerId, methodId } = req.params;
-  const correlationId = req.correlationId;
-  const userId = req.user?.id;
+  const { correlationId } = req;
+  const userId = req.user?._id;
   const requestContext = getRequestContext(req);
 
   if (!customerId || !methodId) {
@@ -238,8 +238,8 @@ export const removePaymentMethod = asyncHandler(async (req, res, next) => {
 
 export const setDefaultPaymentMethod = asyncHandler(async (req, res, next) => {
   const { customerId, methodId } = req.params;
-  const correlationId = req.correlationId;
-  const userId = req.user?.id;
+  const { correlationId } = req;
+  const userId = req.user?._id;
   const requestContext = getRequestContext(req);
 
   if (!customerId || !methodId) {
@@ -264,20 +264,25 @@ export const setDefaultPaymentMethod = asyncHandler(async (req, res, next) => {
 export const getCustomerInvoices = asyncHandler(async (req, res, next) => {
   const { customerId } = req.params;
   const { status, dateFrom, dateTo, limit = 10, page = 0 } = req.query;
-  const correlationId = req.correlationId;
 
   if (!customerId) {
     return httpError(next, new Error('Customer ID is required'), req, 400);
   }
 
   const filters = {};
-  if (status) filters.status = status;
-  if (dateFrom) filters.dateFrom = dateFrom;
-  if (dateTo) filters.dateTo = dateTo;
+  if (status) {
+    filters.status = status;
+  }
+  if (dateFrom) {
+    filters.dateFrom = dateFrom;
+  }
+  if (dateTo) {
+    filters.dateTo = dateTo;
+  }
 
   const pagination = {
-    limit: parseInt(limit),
-    skip: parseInt(page) * parseInt(limit)
+    limit: parseInt(limit, 10),
+    skip: parseInt(page, 10) * parseInt(limit, 10)
   };
 
   const result = await billingService.getCustomerInvoices(customerId, filters, pagination);
@@ -291,8 +296,8 @@ export const getCustomerInvoices = asyncHandler(async (req, res, next) => {
 export const handlePaymentFailure = asyncHandler(async (req, res, next) => {
   const { subscriptionId, paymentId } = req.params;
   const { reason, retryable = true } = req.body;
-  const correlationId = req.correlationId;
-  const userId = req.user?.id;
+  const { correlationId } = req;
+  const userId = req.user?._id;
   const requestContext = getRequestContext(req);
 
   if (!subscriptionId || !paymentId) {
@@ -324,12 +329,17 @@ export const handlePaymentFailure = asyncHandler(async (req, res, next) => {
 
 export const getBillingStatistics = asyncHandler(async (req, res, next) => {
   const { customerId, dateFrom, dateTo } = req.query;
-  const correlationId = req.correlationId;
 
   const filters = {};
-  if (customerId) filters.customerId = customerId;
-  if (dateFrom) filters.dateFrom = dateFrom;
-  if (dateTo) filters.dateTo = dateTo;
+  if (customerId) {
+    filters.customerId = customerId;
+  }
+  if (dateFrom) {
+    filters.dateFrom = dateFrom;
+  }
+  if (dateTo) {
+    filters.dateTo = dateTo;
+  }
 
   // This would need to be implemented in the billing service
   // For now, return a placeholder response
@@ -345,9 +355,6 @@ export const getBillingStatistics = asyncHandler(async (req, res, next) => {
 });
 
 export const getOverdueInvoices = asyncHandler(async (req, res, next) => {
-  const { limit = 50 } = req.query;
-  const correlationId = req.correlationId;
-
   // This would need to be implemented in the billing service
   // For now, return a placeholder response
   const overdueInvoices = [];
@@ -361,8 +368,8 @@ export const getOverdueInvoices = asyncHandler(async (req, res, next) => {
 export const sendInvoiceReminder = asyncHandler(async (req, res, next) => {
   const { invoiceId } = req.params;
   const { reminderType = 'standard' } = req.body;
-  const correlationId = req.correlationId;
-  const userId = req.user?.id;
+  const { correlationId } = req;
+  const userId = req.user?._id;
 
   if (!invoiceId) {
     return httpError(next, new Error('Invoice ID is required'), req, 400);

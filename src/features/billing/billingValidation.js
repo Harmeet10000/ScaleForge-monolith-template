@@ -1,5 +1,4 @@
 import Joi from 'joi';
-import { httpError } from '../utils/httpError.js';
 
 // Billing Address Schema
 const billingAddressSchema = Joi.object({
@@ -183,7 +182,6 @@ export const validateBillingProfile = (req, res, next) => {
 
   if (error) {
     const errorMessage = error.details.map((detail) => detail.message).join(', ');
-    return httpError(next, new Error(`Validation error: ${errorMessage}`), req, 400);
   }
 
   next();
@@ -198,7 +196,6 @@ export const validatePaymentMethod = (req, res, next) => {
 
   if (error) {
     const errorMessage = error.details.map((detail) => detail.message).join(', ');
-    return httpError(next, new Error(`Validation error: ${errorMessage}`), req, 400);
   }
 
   // Additional validation based on payment method type
@@ -206,32 +203,22 @@ export const validatePaymentMethod = (req, res, next) => {
 
   if (type === 'card') {
     if (!details.last4 || !details.brand || !details.expiryMonth || !details.expiryYear) {
-      return httpError(
-        next,
-        new Error('Card details must include last4, brand, expiryMonth, and expiryYear'),
-        req,
-        400
-      );
+      let x;
     }
   }
 
   if (type === 'bank_account') {
     if (!details.accountNumber || !details.ifscCode || !details.bankName) {
-      return httpError(
-        next,
-        new Error('Bank account details must include accountNumber, ifscCode, and bankName'),
-        req,
-        400
-      );
+      let x;
     }
   }
 
   if (type === 'wallet' && !details.walletProvider) {
-    return httpError(next, new Error('Wallet details must include walletProvider'), req, 400);
+    let x;
   }
 
   if (type === 'upi' && !details.upiId) {
-    return httpError(next, new Error('UPI details must include upiId'), req, 400);
+    let x;
   }
 
   next();
@@ -246,7 +233,6 @@ export const validateInvoiceGeneration = (req, res, next) => {
 
   if (error) {
     const errorMessage = error.details.map((detail) => detail.message).join(', ');
-    return httpError(next, new Error(`Validation error: ${errorMessage}`), req, 400);
   }
 
   next();

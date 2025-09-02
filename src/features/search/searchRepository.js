@@ -1,7 +1,7 @@
-import { client } from '../connections/connectElasticSearch.js';
-import { logger } from '../utils/logger.js';
-import { httpError } from '../utils/httpError.js';
-import { SEARCH_ERROR_CODES } from '../constants/searchConstants.js';
+import { client } from '../../connections/connectElasticSearch.js';
+import { logger } from '../../utils/logger.js';
+import { httpError } from '../../utils/httpError.js';
+import { SEARCH_ERROR_CODES } from './searchConstants.js';
 import asyncHandler from 'express-async-handler';
 // Core search operations
 export const executeSearch = asyncHandler(async (query, indexName) => {

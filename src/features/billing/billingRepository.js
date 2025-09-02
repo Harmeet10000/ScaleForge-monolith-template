@@ -1,7 +1,6 @@
 import { Invoice } from '../../models/invoiceModel.js';
 import { BillingProfile } from './billingProfileModel.js';
 import { logger } from '../../utils/logger.js';
-import { httpError } from '../../utils/httpError.js';
 
 // Invoice Repository Functions
 export const createInvoice = async (invoiceData) => {

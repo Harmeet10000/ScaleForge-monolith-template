@@ -10,8 +10,8 @@ import {
   resetPassword,
   googleOAuthSignupHandler,
   googleOAuthLoginHandler
-} from '../controllers/authController.js';
-import { protect } from '../../middlewares/authNMiddleware.js';
+} from './authController.js';
+import { protect } from './authMiddleware.js';
 
 const router = express.Router();
 

@@ -11,14 +11,14 @@ import {
   validateGoogleSignup
 } from './authValidation.js';
 import * as authService from './authService.js';
+import { getDomainFromUrl } from '../../helpers/generalHelper.js';
+import asyncHandler from 'express-async-handler';
+import { EApplicationEnvironment } from '../../helpers/application.js';
 import {
   GOOGLE_OAUTH_LOGIN_SUCCESS,
   GOOGLE_OAUTH_SIGNUP_SUCCESS,
   SUCCESS
-} from '../../constants/responseMessage.js';
-import { EApplicationEnvironment } from '../../constants/application.js';
-import { getDomainFromUrl } from '../../helpers/generalHelper.js';
-import asyncHandler from 'express-async-handler';
+} from './authConstants.js';
 
 export const register = asyncHandler(async (req, res, next) => {
   const { error, value } = validateJoiSchema(validateRegisterBody, req.body);

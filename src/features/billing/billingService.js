@@ -1,10 +1,10 @@
-import { httpError } from '../utils/httpError.js';
-import { logger } from '../utils/logger.js';
+import { httpError } from '../../utils/httpError.js';
+import { logger } from '../../utils/logger.js';
 import crypto from 'crypto';
 import asyncHandler from 'express-async-handler';
-import * as subscriptionRepository from '../repository/subscriptionRepository.js';
-import * as paymentRepository from '../repository/paymentRepository.js';
-import { BillingProfile } from '../models/billingProfileModel.js';
+import * as subscriptionRepository from '../subscription/subscriptionRepository.js';
+import * as paymentRepository from '../payments/paymentRepository.js';
+import { BillingProfile } from './billingProfileModel.js';
 
 const generateInvoiceNumber = () => {
   const timestamp = Date.now().toString(36);
@@ -13,7 +13,7 @@ const generateInvoiceNumber = () => {
 };
 
 const generateIdempotencyKey = (correlationId, operationType) => {
-  return `${correlationId}_${operationType}`;
+  `${correlationId}_${operationType}`;
 };
 
 const generateRequestHash = (data) => {
@@ -21,9 +21,7 @@ const generateRequestHash = (data) => {
   return crypto.createHash('sha256').update(hashData).digest('hex');
 };
 
-const calculateTaxAmount = (amount, taxRate = 0.18) => {
-  return Math.round(amount * taxRate * 100) / 100;
-};
+const calculateTaxAmount = (amount, taxRate = 0.18) => Math.round(amount * taxRate * 100) / 100;
 
 const calculateProrationAmount = (subscription, changes) => {
   const now = new Date();

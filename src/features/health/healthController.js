@@ -7,8 +7,8 @@ import {
   getApplicationHealth,
   getSystemHealth
 } from '../../utils/quicker.js';
-import { SUCCESS } from '../constants/responseMessage.js';
 import asyncHandler from 'express-async-handler';
+import { SUCCESS } from '../auth/authConstants.js';
 
 export const self = (req, res) => {
   const serverInfo = {

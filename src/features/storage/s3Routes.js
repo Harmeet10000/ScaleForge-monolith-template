@@ -6,8 +6,8 @@ import {
   copyObject,
   checkObjectExists,
   getObjectMetadata
-} from '../controllers/s3Controller.js';
-import { protect } from '../middlewares/authNMiddleware.js';
+} from './s3Controller.js';
+import { protect } from '../auth/authMiddleware.js';
 
 const router = express.Router();
 

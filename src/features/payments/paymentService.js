@@ -9,7 +9,7 @@ import {
   EAuditStatus,
   RETRY_CONFIG,
   DEFAULT_VALUES
-} from '../constants/paymentConstants.js';
+} from './paymentConstants.js';
 import * as paymentRepository from './paymentRepository.js';
 
 // Initialize Razorpay instance

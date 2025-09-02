@@ -1,17 +1,17 @@
 import asyncHandler from 'express-async-handler';
-import { httpError } from '../utils/httpError.js';
+import { httpError } from '../../utils/httpError.js';
 import jwt from 'jsonwebtoken';
 import { promisify } from 'util';
-import { User } from '../models/userModel.js';
-import { getHash, setHash } from '../helpers/cache/redisFunctions.js';
-import { logger } from '../utils/logger.js';
+import { User } from './userModel.js';
+import { getHash, setHash } from '../../helpers/cache/redisFunctions.js';
+import { logger } from '../../utils/logger.js';
 import {
   NO_PERMISSION,
   NOT_LOGGED_IN,
   TOKEN_INVALID_FOR_IP,
   USER_CHANGED_PASSWORD,
   USER_NO_LONGER_EXISTS
-} from '../constants/responseMessage.js';
+} from './authConstants.js';
 
 export const protect = asyncHandler(async (req, res, next) => {
   let token;

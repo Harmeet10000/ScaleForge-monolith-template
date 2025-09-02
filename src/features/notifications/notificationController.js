@@ -1,8 +1,8 @@
 import asyncHandler from 'express-async-handler';
 import { httpResponse } from '../../utils/httpResponse.js';
 import { httpError } from '../../utils/httpError.js';
-import * as notificationService from '../services/notificationService.js';
-import { NOTIFICATION_MESSAGES } from '../constants/notificationConstants.js';
+import * as notificationService from './notificationService.js';
+import { NOTIFICATION_MESSAGES } from './notificationConstants.js';
 import {
   broadcastNotificationSchema,
   bulkNotificationSchema,

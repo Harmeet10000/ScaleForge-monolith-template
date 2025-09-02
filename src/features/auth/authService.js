@@ -12,10 +12,9 @@ import {
   hashPassword,
   verifyToken
 } from '../../helpers/generalHelper.js';
-import { Resendmail } from '../helpers/email.js';
+import { Resendmail } from '../../helpers/email.js';
 import { logger } from '../../utils/logger.js';
 import { httpError } from '../../utils/httpError.js';
-import { EUserRole } from '../../constants/application.js';
 import {
   ACCOUNT_ALREADY_CONFIRMED,
   ACCOUNT_CONFIRMATION_REQUIRED,
@@ -30,9 +29,10 @@ import {
   NOT_FOUND,
   PASSWORD_MATCHING_WITH_OLD_PASSWORD,
   UNAUTHORIZED
-} from '../../constants/responseMessage.js';
-import * as authRepository from '../repository/authRepository.js';
-import * as tokenRepository from '../../repository/tokenRepository.js';
+} from './authConstants.js';
+import { EUserRole } from '../../helpers/application.js';
+import * as authRepository from './authRepository.js';
+import * as tokenRepository from './tokenRepository.js';
 import { deleteHash, getHash, setHash } from '../../helpers/cache/redisFunctions.js';
 import asyncHandler from 'express-async-handler';
 

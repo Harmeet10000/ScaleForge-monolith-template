@@ -23,3 +23,17 @@ export const validateListObjects = Joi.object({
   prefix: Joi.string().max(200).optional().default(''),
   maxKeys: Joi.number().integer().min(1).max(1000).optional().default(1000)
 });
+
+// Reusable validation function (consistent with existing pattern)
+export const validateJoiSchema = (schema, value) => {
+  const result = schema.validate(value, {
+    abortEarly: false,
+    allowUnknown: false,
+    stripUnknown: true
+  });
+
+  return {
+    value: result.value,
+    error: result.error
+  };
+};

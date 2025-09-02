@@ -5,7 +5,7 @@ import {
   AGGREGATION_TYPES,
   INDEX_NAMES,
   FIELD_NAMES
-} from '../constants/searchConstants.js';
+} from './searchConstants.js';
 
 // Common validation schemas
 const paginationSchema = Joi.object({

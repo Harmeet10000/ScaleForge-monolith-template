@@ -1,4 +1,4 @@
-import * as permissionRepository from '../repository/permissionRepository.js';
+import * as permissionRepository from './permissionRepository.js';
 import { logger } from '../../utils/logger.js';
 import asyncHandler from 'express-async-handler';
 

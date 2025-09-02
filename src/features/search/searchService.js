@@ -2,8 +2,8 @@ import asyncHandler from 'express-async-handler';
 // import { httpError } from '../utils/httpError.js';
 // import { SEARCH_ERROR_CODES } from '../constants/searchConstants.js';
 import { logger } from '../../utils/logger.js';
-import * as searchRepository from '../repository/searchRepository.js';
-import * as searchQueryBuilder from '../repository/searchQueryBuilders.js';
+import * as searchRepository from './searchRepository.js';
+import * as searchQueryBuilder from './searchQueryBuilders.js';
 import * as embeddingService from './embeddingService.js';
 import * as pipelineService from './pipelineService.js';
 

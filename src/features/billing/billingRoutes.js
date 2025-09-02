@@ -1,11 +1,11 @@
 import express from 'express';
-import * as billingController from '../controllers/billingController.js';
-import { protect } from '../middlewares/authNMiddleware.js';
+import * as billingController from './billingController.js';
+import { protect } from '../auth/authMiddleware.js';
 import {
   validateBillingProfile,
   validateInvoiceGeneration,
   validatePaymentMethod
-} from '../../validations/billingValidation.js';
+} from './billingValidation.js';
 
 const router = express.Router();
 

@@ -1,10 +1,9 @@
-import { logger } from '../utils/logger.js';
-import { httpError } from '../utils/httpError.js';
-import * as novuHelper from '../helpers/novu.js';
-import * as notificationRepository from '../repository/notificationRepository.js';
-import { User } from '../models/userModel.js';
-import { NotificationPreferences } from '../models/notificationPreferencesModel.js';
-import { v4 as uuidv4 } from 'uuid';
+import { logger } from '../../utils/logger.js';
+import { httpError } from '../../utils/httpError.js';
+import * as novuHelper from '../../helpers/novu.js';
+import * as notificationRepository from './notificationRepository.js';
+import { User } from '../auth/userModel.js';
+import { NotificationPreferences } from './notificationPreferencesModel.js';
 import asyncHandler from 'express-async-handler';
 
 // ===== CORE NOTIFICATION SENDING FUNCTIONS =====

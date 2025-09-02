@@ -7,8 +7,8 @@ import {
   processRefundController,
   retryPaymentController,
   getRazorpayKey
-} from '../controllers/paymentController.js';
-import { protect } from '../middlewares/authNMiddleware.js';
+} from './paymentController.js';
+import { protect } from '../auth/authMiddleware.js';
 
 const router = express.Router();
 

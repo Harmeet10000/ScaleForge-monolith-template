@@ -1,7 +1,6 @@
 import { Subscription } from './subscriptionModel.js';
 import asyncHandler from 'express-async-handler';
 import { httpError } from '../../utils/httpError.js';
-import { logger } from '../../utils/logger.js';
 
 export const createSubscriptionWithIdempotency = asyncHandler(
   async (subscriptionData, idempotencyKey, requestHash) =>

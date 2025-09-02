@@ -18,9 +18,9 @@ import {
   validateUpdatePipelineRequest,
   validateDeletePipelineRequest,
   validateDeleteIndexRequest
-} from '../../validations/searchValidation.js';
+} from './searchValidation.js';
 import * as searchService from './searchService.js';
-import { SEARCH_MESSAGES } from '../constants/searchConstants.js';
+import { SEARCH_MESSAGES } from './searchConstants.js';
 
 export const search = asyncHandler(async (req, res, next) => {
   const { error, value } = validateJoiSchema(validateSearchRequest, req.query);
