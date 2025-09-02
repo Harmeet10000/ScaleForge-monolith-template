@@ -72,39 +72,11 @@ const options = {
             statusCode: { type: 'integer', example: 400 }
           }
         }
-        // User: {
-        //   type: 'object',
-        //   properties: {
-        //     id: { type: 'string', example: '507f1f77bcf86cd799439011' },
-        //     email: { type: 'string', format: 'email', example: 'user@example.com' },
-        //     username: { type: 'string', example: 'john_doe' },
-        //     firstName: { type: 'string', example: 'John' },
-        //     lastName: { type: 'string', example: 'Doe' },
-        //     role: { type: 'string', enum: ['user', 'admin', 'moderator'], example: 'user' },
-        //     isVerified: { type: 'boolean', example: true },
-        //     isActive: { type: 'boolean', example: true },
-        //     createdAt: { type: 'string', format: 'date-time', example: '2024-01-01T00:00:00.000Z' },
-        //     updatedAt: { type: 'string', format: 'date-time', example: '2024-01-01T00:00:00.000Z' }
-        //   }
-        // },
       }
     },
-    tags: [
-      {
-        name: 'Authentication',
-        description:
-          'User authentication and authorization endpoints including login, registration, password reset, and token management'
-      },
-      { name: 'Health', description: 'System health check and status monitoring endpoints' },
-      {
-        name: 'Permissions',
-        description: 'Role-based access control and permission management endpoints'
-      },
-      { name: 'Search', description: 'Search using Elasticsearch' }
-    ],
     security: [{ bearerAuth: [] }, { cookieAuth: [] }]
   },
-  apis: [path.join(__dirname, '../src/routes/*.js')]
+  apis: [path.join(__dirname, '../src/features/*/*Routes.js')]
 };
 
 // Generate swagger specification

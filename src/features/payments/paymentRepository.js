@@ -46,7 +46,8 @@ export const findPaymentByCorrelationId = asyncHandler(
  * @returns {Promise<Object|null>} Payment or null
  */
 export const findPaymentByRazorpayOrderId = asyncHandler(async (razorpayOrderId) => {
-  await Payment.findOne({ razorpayOrderId });
+ const payment = await Payment.findOne({ razorpayOrderId });
+ return payment;
 });
 
 /**

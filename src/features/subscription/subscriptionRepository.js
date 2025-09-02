@@ -67,8 +67,7 @@ export const updateSubscriptionById = asyncHandler(async (subscriptionId, update
     new: true,
     runValidators: true
   });
-  // logger.debug('subscription', { meta: { subscription } });
-  if (!subscription) {
+    if (!subscription) {
     return httpError(next, new Error('Subscription not found'), req, 404);
   }
 

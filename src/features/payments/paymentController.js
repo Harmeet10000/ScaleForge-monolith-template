@@ -136,7 +136,7 @@ export const getPaymentStatusController = asyncHandler(async (req, res, next) =>
   }
 
   // Check if user owns this payment
-  if (payment.customerId.toString() !== req.user.id) {
+  if (payment.customerId.toString() !== req.user._id) {
     return httpError(next, new Error('Unauthorized access to payment'), req, 403);
   }
 

@@ -331,10 +331,6 @@ export const verifyPayment = asyncHandler(
   async (verificationData, correlationId, userId, requestContext = {}, req, next) => {
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = verificationData;
 
-    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
-      return httpError(next, new Error('Incomplete payment verification data'), req, 400);
-    }
-
     // Find payment by Razorpay order ID
     const payment = await paymentRepository.findPaymentByRazorpayOrderId(razorpay_order_id);
     if (!payment) {

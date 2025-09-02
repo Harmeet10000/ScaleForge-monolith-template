@@ -1,4 +1,3 @@
-import { logger } from '../../utils/logger.js';
 import asyncHandler from 'express-async-handler';
 import { fgaClient } from '../../connections/connectOpenFGA.js';
 
@@ -12,8 +11,7 @@ export const writeRelationship = asyncHandler(async (tuple) => {
       authorizationModelId: '01K2M2XK88QZ9H6797FM5QYVVZ'
     }
   );
-  logger.info(`Relationship written: ${tuple.user} ${tuple.relation} ${tuple.object}`);
-  return true;
+    return true;
 });
 
 // Generic method to delete relationship tuples
@@ -24,8 +22,7 @@ export const deleteRelationship = asyncHandler(async (tuple) => {
       authorizationModelId: '01K2M2XK88QZ9H6797FM5QYVVZ'
     }
   );
-  logger.info(`Relationship deleted: ${tuple.user} ${tuple.relation} ${tuple.object}`);
-  return true;
+    return true;
 });
 
 // Generic method to check authorization
@@ -39,8 +36,7 @@ export const check = asyncHandler(async (tuple) => {
 // Batch operations for better performance
 export const batchWriteRelationships = asyncHandler(async (tuples) => {
   await fgaClient.write({ writes: tuples }, { authorizationModelId: '01K2M2XK88QZ9H6797FM5QYVVZ' });
-  logger.info(`Batch relationships written: ${tuples.length} tuples`);
-  return true;
+    return true;
 });
 
 export const batchDeleteRelationships = asyncHandler(async (tuples) => {
@@ -48,8 +44,7 @@ export const batchDeleteRelationships = asyncHandler(async (tuples) => {
     { deletes: tuples },
     { authorizationModelId: '01K2M2XK88QZ9H6797FM5QYVVZ' }
   );
-  logger.info(`Batch relationships deleted: ${tuples.length} tuples`);
-  return true;
+    return true;
 });
 
 // List objects a user has access to

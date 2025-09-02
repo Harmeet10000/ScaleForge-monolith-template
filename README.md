@@ -1,6 +1,5 @@
 # 🔐 Production-Grade Authentication & Microservices Template
 
-
 <div align="center">
   <h3>Key Integrations</h3>
   <img src="https://img.shields.io/badge/novu-notifications-purple" alt="Novu" />
@@ -19,7 +18,6 @@
   <img src="https://img.shields.io/badge/compression-1.8.0-lightgrey" alt="Compression" />
   <img src="https://img.shields.io/badge/prom--client-15.1.3-orange" alt="Prometheus" />
 </div>
-
 
 <p align="center">A comprehensive, production-ready microservices template with authentication, search, notifications, payments, and fine-grained permissions built with Node.js, Express, MongoDB, Redis, and Elasticsearch.</p>
 

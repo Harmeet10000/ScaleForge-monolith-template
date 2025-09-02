@@ -6,6 +6,10 @@
 1. make AI-driven features for enhanced user experience and personalization using Gemini API - Undergoing
 1. add Novu for push notifications - DONE
 1. Add LangChain, LangGraph, LangSmith, LangServe
+1. Improve the idempotency in payments
+1. Figure out what will be subscription id in payments 
+1. Shift audit trail to new model 
+1.     message: 'Cannot modify cancelled subscription except to reactivate', actually changed to suspended
 1. add ELK stack for logging and monitoring - ABANDONED
 1. add recommendation system using Convex or AWS personalise/GCP equivalent
 1. properly implement RabbitMQ for message queuing for modularity and decoupling
@@ -32,16 +36,25 @@ to de done now
 # FGA API Validation Error: post write : Error Invalid tuple &#39;document:doc789#project@user:project123&#39;. Reason: type &#39;user&#39; is not an allowed type restriction for &#39;document#project&#39
 
 # FGA API Validation Error: post check : Error type &#39;undefined&#39; not found',
+
 # error: "Cannot read properties of undefined (reading 'length')",
+
 # ES pipeline already exists
+
 # **Endpoint:** `POST /api/v1/search/bulk` if pipeline specifed empty result given back
+
 # check why is res.ERROR being sent after res.RESPONSE
 
 # ERROR [2025-08-23T15:58:43.252Z] Pipeline creation failed
+
 # META {
+
 # pipelineName: 'content_processing_pipeline',
+
 # error: "Pipeline 'content_processing_pipeline' already exists",
+
 # statusCode: undefined
+
 # }
 
 # stack: "TypeError: Cannot read properties of undefined (reading 'acknowledged')\n" +
@@ -53,52 +66,88 @@ to de done now
 # }
 
 # WARN [2025-08-23T16:07:10.722Z] Index already exists
+
 # META { indexName: 'documents' }
 
 # ERROR [2025-08-21T07:49:36.133Z] Document processing failed
+
 # META {
+
 # pipelineName: 'content_processing_pipeline',
+
 # error: 'Cannot convert undefined or null to object',
+
 # statusCode: undefined
+
 # }
 
 # ERROR [2025-08-21T07:51:37.124Z] Document processing failed
+
 # META {
+
 # pipelineName: 'text_processing',
+
 # error: "Pipeline 'text_processing' not found",
+
 # statusCode: undefined
+
 # }
 
 # ERROR [2025-08-21T08:09:46.920Z] Batch processing failed
+
 # META {
+
 # pipelineName: 'content_processing_pipeline',
+
 # error: 'illegal_argument_exception\n' +
+
 # '\tRoot causes:\n' +
+
 # '\t\tillegal_argument_exception: unexpected metadata [_id:js-advanced-001, _index:documents] in source',
+
 # statusCode: 400
+
 # }
 
 # ERROR [2025-08-21T08:21:29.967Z] Bulk index completed with errors
+
 # META {
+
 # indexName: 'vectors',
+
 # errorCount: 2,
+
 # totalItems: 2,
+
 # errors: [
+
 # {
+
 # type: 'document_parsing_exception',
+
 # reason: "[1:11] failed to parse field [_index] of type [_index] in document with id 'IXG3y5gBzQaABWNK_gks'. Preview of field's value: 'vectors'",
+
 # caused_by: {
+
 # type: 'document_parsing_exception',
-# reason: '[1:11] Field [_index] is a metadata field and cannot be added inside a document. Use the index API request parameters.'
-# }
-# },
-# {
-# type: 'document_parsing_exception',
-# reason: "[1:11] failed to parse field [_index] of type [_index] in document with id 'InG3y5gBzQaABWNK_gks'. Preview of field's value: 'vectors'",
-# caused_by: {
-# type: 'document_parsing_exception',
+
 # reason: '[1:11] Field [_index] is a metadata field and cannot be added inside a document. Use the index API request parameters.'
 
+# }
+
+# },
+
+# {
+
+# type: 'document_parsing_exception',
+
+# reason: "[1:11] failed to parse field [_index] of type [_index] in document with id 'InG3y5gBzQaABWNK_gks'. Preview of field's value: 'vectors'",
+
+# caused_by: {
+
+# type: 'document_parsing_exception',
+
+# reason: '[1:11] Field [_index] is a metadata field and cannot be added inside a document. Use the index API request parameters.'
 
 **Current Architecture:**
 
