@@ -37,7 +37,6 @@ const sendErrorDev = (err, res) => {
   res.status(err.statusCode || 500).json({
     success: false,
     status: err.status,
-    error: err,
     message: err.message,
     stack: err.stack,
     request: err.request

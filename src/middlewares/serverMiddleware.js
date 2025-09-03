@@ -57,7 +57,7 @@ export const limiter = rateLimit({
   store: new RedisStore({
     sendCommand: (...args) => redisClient.call(...args)
   }),
-  max: 100,
+  max: 500,
   windowMs: 15 * 60 * 1000,
   message: 'Too many requests from this IP, please try again in 15 minutes!',
   standardHeaders: true,

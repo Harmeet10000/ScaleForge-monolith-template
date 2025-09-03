@@ -1,4 +1,4 @@
-# 🔐 Production-Grade Authentication & Microservices Template
+# 🔐 Production-Grade Authentication & Monolith Template
 
 <div align="center">
   <h3>Key Integrations</h3>
@@ -19,7 +19,7 @@
   <img src="https://img.shields.io/badge/prom--client-15.1.3-orange" alt="Prometheus" />
 </div>
 
-<p align="center">A comprehensive, production-ready microservices template with authentication, search, notifications, payments, and fine-grained permissions built with Node.js, Express, MongoDB, Redis, and Elasticsearch.</p>
+<p align="center">A comprehensive, production-ready Monolith template with authentication, search, notifications, payments, and fine-grained permissions built with Node.js, Express, MongoDB, Redis, and Elasticsearch.</p>
 
 <details open>
 <summary>📑 Table of Contents</summary>
@@ -396,25 +396,37 @@ backend/
 │   └── docker.sh
 ├── src/                   # Source code
 │   ├── config/            # Configuration files
-│   ├── constant/          # Constants and enums
-│   ├── controllers/       # Request handlers
-│   ├── connections/       # Database and more connection modules
+│   ├── connections/       # Database and external service connections
+│   ├── examples/          # Code examples for various integrations
+│   ├── features/          # Feature-based modules
+│   │   ├── auth/          # Authentication feature
+│   │   │   ├── authController.js
+│   │   │   ├── authService.js
+│   │   │   ├── authRepository.js
+│   │   │   ├── authRoutes.js
+│   │   │   ├── authValidation.js
+│   │   │   ├── authMiddleware.js
+│   │   │   ├── userModel.js
+│   │   │   └── refreshToken.js
+│   │   ├── health/        # Health check feature
+│   │   ├── notifications/ # Notification system
+│   │   ├── payments/      # Payment processing
+│   │   ├── permissions/   # Authorization & permissions
+│   │   ├── search/        # Search & analytics
+│   │   ├── storage/       # File storage (S3)
+│   │   └── subscription/  # Subscription management
 │   ├── helpers/           # Helper utilities
+│   │   ├── cache/         # Redis caching utilities
+│   │   └── messaging/     # Message queue utilities
 │   ├── middlewares/       # Express middlewares
-│   ├── models/            # Mongoose models
-│   ├── repository/        # Data access layer
-│   ├── routes/            # API routes
-│   ├── services/          # Business logic layer
-│   ├── types/             # TypeScript type definitions
-│   ├── utils/             # Utility functions
-│   ├── validations/       # Input validation schemas
+│   ├── utils/             # General utility functions
 │   ├── app.js             # Express application setup
 │   └── index.js           # Application entry point
 └── test/                  # Test files
     ├── e2e/               # End-to-end tests
     ├── unit/              # Unit tests
     ├── integration/       # Integration tests
-    └── performance/       # Performance   tests
+    └── performance/       # Performance tests
 ```
 
 </details>
@@ -501,32 +513,6 @@ npm run test:coverage
 
 </details>
 
-## 🔄 API Endpoints
-
-<details>
-<summary><b>🔑 Authentication Routes</b></summary>
-<br/>
-
-- `POST /api/v1/auth/register` - Register new user
-- `PUT /api/v1/auth/confirmation/:token` - Confirm user account
-- `POST /api/v1/auth/login` - Login user
-- `PUT /api/v1/auth/logout` - Logout user
-- `POST /api/v1/auth/refresh-token` - Generate new access token
-- `PUT /api/v1/auth/forgot-password` - Request password reset
-- `PUT /api/v1/auth/reset-password/:token` - Reset password
-- `PUT /api/v1/auth/change-password` - Change password (authenticated)
-
-</details>
-
-<details>
-<summary><b>🩺 Health Routes</b></summary>
-<br/>
-
-- `GET /api/v1/health` - Check API health
-- `GET /api/v1/health/db` - Check database connection
-- `GET /api/v1/health/redis` - Check Redis connection
-
-</details>
 
 ## 🤝 Contributing
 
@@ -536,7 +522,7 @@ npm run test:coverage
 
 1. Fork the repository
 2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'feat: add some amazing feature'`)
+3. Commit your changes (`git commit -m 'feat: Add some amazing feature'`)
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 

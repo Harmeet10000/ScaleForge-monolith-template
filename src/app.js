@@ -29,7 +29,7 @@ import s3Routes from './features/storage/s3Routes.js';
 const app = express();
 
 // 1) GLOBAL MIDDLEWARES
-// Set request timeout to 10 seconds
+// Set request timeout to 20 seconds
 app.use(
   timeout.handler({
     timeout: 20000,
@@ -75,15 +75,15 @@ app.use(mongoSanitize());
 app.use(
   hpp({
     whitelist: [
-      // 'sort',
-      // 'fields',
-      // 'page',
-      // 'limit',
-      // 'filter',
-      // 'search',
-      // 'category',
-      // 'tags',
-      // 'status'
+      'sort',
+      'fields',
+      'page',
+      'limit',
+      'filter',
+      'search',
+      'category',
+      'tags',
+      'status'
     ]
   })
 );

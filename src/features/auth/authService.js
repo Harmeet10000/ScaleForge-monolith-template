@@ -38,28 +38,28 @@ import asyncHandler from 'express-async-handler';
 
 dayjs.extend(utc);
 
-export const registerUser = asyncHandler(async (userData) => {
+export const registerUser = asyncHandler(async (userData, req, next) => {
   const { name, emailAddress, password, phoneNumber, consent } = userData;
 
   const { countryCode, isoCode, internationalNumber } = extractInfoPhoneNumber(`+${phoneNumber}`);
   if (!countryCode || !isoCode || !internationalNumber) {
-    throw new Error(INVALID_PHONE_NUMBER);
+    return httpError(next, new Error(INVALID_PHONE_NUMBER), req, 404);
   }
 
   const timezone = countryTimezone(isoCode);
   if (!timezone || timezone.length === 0) {
-    throw new Error(INVALID_TIMEZONE);
+    return httpError(next, new Error(INVALID_TIMEZONE), req, 404);
   }
 
   const cachedUser = await getHash('user', `email:${emailAddress}`);
   if (cachedUser) {
-    throw new Error(ALREADY_EXIST('user', emailAddress));
+    return httpError(next, new Error(ALREADY_EXIST('user', emailAddress)), req, 409);
   }
 
   const user = await authRepository.findUserByEmailAddress(emailAddress);
   if (user) {
-    await setHash('user', `email:${emailAddress}`, user.toObject(), 3600);
-    throw new Error(ALREADY_EXIST('user', emailAddress));
+    await setHash('user', `email:${emailAddress}`, user.toObject(), 1800);
+    return httpError(next, new Error(ALREADY_EXIST('user', emailAddress)), req, 409);
   }
 
   const encryptedPassword = await hashPassword(password);
