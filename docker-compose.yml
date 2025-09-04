@@ -76,6 +76,17 @@ services:
       retries: 3
       start_period: 40s
 
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    networks:
+    - auth-network
+
   # loki:
   #   image: grafana/loki:2.8.2
   #   container_name: loki
@@ -114,6 +125,7 @@ services:
   #   volumes:
   #     - grafana_data:/var/lib/grafana
 
+
   # dragonfly:
   #   image: docker.dragonflydb.io/dragonflydb/dragonfly:v1.27.1
   #   container_name: dragonfly
@@ -131,6 +143,8 @@ networks:
     driver: bridge
 
 volumes:
+  redis_data:
+    driver: local
   dragonfly_data:
     driver: local
   grafana_data:

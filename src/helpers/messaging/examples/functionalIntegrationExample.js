@@ -1,7 +1,14 @@
 import * as AuthProducer from '../services/authProducer.js';
 import * as AuthConsumer from '../services/authConsumer.js';
 import * as BaseService from '../core/baseService.js';
-import * as MessageBroker from '../core/messageBroker.js';
+import * as authService from '../../../features/auth/authService.js';
+import * as authRepository from '../../../features/auth/authRepository.js';
+import { generateRandomId, generateResetPasswordExpiry } from '../../../utils/helpers.js';
+import { connectDB, disconnectMongo } from '../../../config/mongo.js';
+import { connectRedis, disconnectRedis } from '../../../config/redis.js';
+import { createConnection, disconnectRabbitMQ } from '../../../config/rabbitmq.js';
+import { app } from '../../../app.js';
+import { checkDatabaseHealth, checkRedisHealth } from '../../../utils/healthChecks.js';
 import { logger } from '../../../utils/logger.js';
 import { httpError } from '../../../utils/httpError.js';
 import { httpResponse } from '../../../utils/httpResponse.js';
@@ -92,7 +99,7 @@ export const loginUserController = asyncHandler(async (req, res, next) => {
  */
 export const logoutUserController = async (req, res, next) => {
   try {
-    const refreshToken = req.cookies.refreshToken;
+    const {refreshToken} = req.cookies;
 
     // Your existing logout logic
     await authService.logoutUser(refreshToken);
@@ -149,7 +156,7 @@ export const complexUserOperationController = async (req, res, next) => {
     }
 
     httpResponse(req, res, 201, 'Complex operation completed', {
-      user: user,
+      user,
       eventsPublished: results.length,
       eventsFailed: errors.length
     });
@@ -170,7 +177,7 @@ export const complexUserOperationController = async (req, res, next) => {
  */
 export const functionalRegisterUser = async (userData) => {
   // Your existing registration logic
-  const newUser = await authRepository.registerUser(payload);
+  const newUser = await authRepository.registerUser(userData);
 
   // NEW: Functional event publishing (no side effects in service)
   return {
@@ -519,81 +526,81 @@ export const testFunctionalProcessing = async () => {
   }
 };
 
-// ==================== FUNCTIONAL COMPOSITION EXAMPLES ====================
+// ==================== SIMPLE OPERATION EXAMPLES ====================
 
 /**
- * Compose multiple auth operations
+ * Execute multiple auth operations
  */
-export const composeAuthOperations = MessageBroker.pipe(
+export const executeAuthOperations = asyncHandler(async () => {
   // Initialize producer
-  AuthProducer.createProducerState,
+  const producerState = AuthProducer.createProducerState();
+
   // Initialize consumer
-  (producerState) => ({
-    producer: producerState,
-    consumer: AuthConsumer.createConsumerState()
-  }),
+  const consumerState = AuthConsumer.createConsumerState();
+
   // Start services
-  async ({ producer, consumer }) => ({
-    producer: await AuthProducer.initializeProducer(producer),
-    consumer: await AuthConsumer.startConsumers(consumer)
-  })
-);
+  const producer = await AuthProducer.initializeProducer(producerState);
+  const consumer = await AuthConsumer.startConsumers(consumerState);
+
+  return { producer, consumer };
+});
 
 /**
- * Create a user registration pipeline
+ * Execute user registration process
  */
-export const createUserRegistrationPipeline = MessageBroker.pipe(
+export const executeUserRegistration = asyncHandler(async (userData) => {
   // Validate user data
-  (userData) => validateUserData(userData),
+  const validatedData = validateUserData(userData);
+
   // Create user
-  (validatedData) => authRepository.registerUser(validatedData),
+  const user = await authRepository.registerUser(validatedData);
+
   // Publish registration event
-  async (user) => {
-    const producerState = AuthProducer.getGlobalProducerState();
-    await AuthProducer.publishUserRegistered(
-      producerState,
-      user,
-      {
-        token: user.accountConfirmation.token,
-        code: user.accountConfirmation.code
-      }
-    );
-    return user;
-  }
-);
+  const producerState = AuthProducer.getGlobalProducerState();
+  await AuthProducer.publishUserRegistered(
+    producerState,
+    user,
+    {
+      token: user.accountConfirmation.token,
+      code: user.accountConfirmation.code
+    }
+  );
+
+  return user;
+});
 
 /**
- * Create a security event pipeline
+ * Execute security event process
  */
-export const createSecurityEventPipeline = MessageBroker.pipe(
+export const executeSecurityEventProcess = asyncHandler(async (activityData) => {
   // Detect suspicious activity
-  (activityData) => detectSuspiciousActivity(activityData),
+  const suspiciousActivity = detectSuspiciousActivity(activityData);
+
   // Assess threat level
-  (suspiciousActivity) => assessThreatLevel(suspiciousActivity),
+  const threatAssessment = assessThreatLevel(suspiciousActivity);
+
   // Take appropriate action
-  async (threatAssessment) => {
-    const producerState = AuthProducer.getGlobalProducerState();
+  const producerState = AuthProducer.getGlobalProducerState();
 
-    if (threatAssessment.shouldAlert) {
-      await AuthProducer.publishSuspiciousActivity(
-        producerState,
-        threatAssessment.user,
-        threatAssessment.activityData
-      );
-    }
-
-    if (threatAssessment.shouldLock) {
-      await AuthProducer.publishAccountLocked(
-        producerState,
-        threatAssessment.user,
-        threatAssessment.lockReason,
-        threatAssessment.lockDuration
-      );
-    }
-
-    return threatAssessment;
+  if (threatAssessment.shouldAlert) {
+    await AuthProducer.publishSuspiciousActivity(
+      producerState,
+      threatAssessment.user,
+      threatAssessment.activityData
+    );
   }
-);
+
+  if (threatAssessment.shouldLock) {
+    await AuthProducer.publishAccountLocked(
+      producerState,
+      threatAssessment.user,
+      threatAssessment.lockReason,
+      threatAssessment.lockDuration
+    );
+  }
+
+  return threatAssessment;
+});
 
 // ==================== MONITORING EXAMPLES ====================
 
@@ -665,12 +672,12 @@ export const functionalAlertCheck = async (threshold = 100) => {
  */
 const validateUserData = (userData) => {
   // Your validation logic
-  return userData;
+   userData;
 };
 
 const detectSuspiciousActivity = (activityData) => {
   // Your detection logic
-  return activityData;
+  activityData;
 };
 
 const assessThreatLevel = (suspiciousActivity) => {
@@ -751,12 +758,11 @@ export const FunctionalAuthMessaging = {
 
   // Utility functions
   utils: {
-    pipe: MessageBroker.pipe,
-    curry: MessageBroker.curry,
-    compose: composeAuthOperations,
+    executeOperations: executeAuthOperations,
+    executeUserRegistration,
+    executeSecurityProcess: executeSecurityEventProcess,
     withEventPublishing,
-    withMetricsCollection: BaseService.withMetricsCollection,
-    withRetry: BaseService.withRetry,
-    withLogging: BaseService.withLogging
+    retryOperation: BaseService.retryOperation,
+    logExecution: BaseService.logFunctionExecution
   }
 };

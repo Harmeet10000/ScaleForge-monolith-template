@@ -22,7 +22,7 @@ export const createProducerState = () => ({
  * Initialize producer
  */
 const initializeProducer = asyncHandler(async (producerState) => {
-  if (producerState.initialized) return producerState;
+  if (producerState.initialized) {return producerState;}
 
   const serviceState = await AuthMessagingService.initializeAuthService();
 
@@ -38,7 +38,7 @@ const initializeProducer = asyncHandler(async (producerState) => {
  * Ensure producer is initialized
  */
 const ensureInitialized = asyncHandler(async (producerState) => {
-  return producerState.initialized ? producerState : await initializeProducer(producerState);
+   producerState.initialized ? producerState : await initializeProducer(producerState);
 });
 
 // ==================== CORE PUBLISHING FUNCTIONS ====================
@@ -410,8 +410,8 @@ export const createRetryPublisher = (producerState, maxRetries = 3, delay = 1000
   const publisher = createPublisher(producerState);
 
   const retryWrapper = (fn) => {
-    return async (...args) => {
-      return BaseService.retryOperation(() => fn(...args), maxRetries, delay);
+    async (...args) => {
+      await BaseService.retryOperation(() => fn(...args), maxRetries, delay);
     };
   };
 
@@ -436,8 +436,8 @@ export const createLoggedPublisher = (producerState, logLevel = 'info') => {
   const publisher = createPublisher(producerState);
 
   const logWrapper = (fn) => {
-    return async (...args) => {
-      return BaseService.logFunctionExecution(fn, logLevel, ...args);
+     async (...args) => {
+       await BaseService.logFunctionExecution(fn, logLevel, ...args);
     };
   };
 

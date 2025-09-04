@@ -473,48 +473,53 @@ export const createResilientConsumer = (consumerState, maxRestarts = 3, restartD
   };
 };
 
-// ==================== FUNCTIONAL COMPOSITION ====================
+// ==================== UTILITY FUNCTIONS ====================
 
 /**
- * Compose consumer operations
+ * Execute consumer operations in sequence
  */
-export const composeConsumerOperations = (...operations) =>
-  asyncHandler(async (consumerState) => {
-    let currentState = consumerState;
+export const executeConsumerOperations = asyncHandler(async (consumerState, operations) => {
+  let currentState = consumerState;
 
-    for (const operation of operations) {
-      currentState = await operation(currentState);
+  for (const operation of operations) {
+    currentState = await operation(currentState);
+  }
+
+  return currentState;
+});
+
+/**
+ * Execute consumer operations in pipeline
+ */
+export const executeConsumerPipeline = asyncHandler(async (consumerState, operations) => {
+  let currentState = consumerState;
+
+  for (const operation of operations) {
+    currentState = await operation(currentState);
+  }
+
+  return currentState;
+});
+
+/**
+ * Execute operation with metrics collection
+ */
+export const executeWithMetrics = asyncHandler(async (operation, consumerState, ...args) => {
+  const startTime = Date.now();
+
+  const result = await operation(consumerState, ...args);
+  const duration = Date.now() - startTime;
+
+  logger.info('Consumer operation completed', {
+    meta: {
+      operation: operation.name,
+      duration,
+      success: true
     }
-
-    return currentState;
   });
 
-/**
- * Create a consumer pipeline
- */
-export const createConsumerPipeline = (...operations) =>
-  MessageBroker.pipe(...operations);
-
-/**
- * Add automatic metrics collection to any consumer operation
- */
-export const withMetricsCollection = (operation) =>
-  asyncHandler(async (consumerState, ...args) => {
-    const startTime = Date.now();
-
-    const result = await operation(consumerState, ...args);
-    const duration = Date.now() - startTime;
-
-    logger.info('Consumer operation completed', {
-      meta: {
-        operation: operation.name,
-        duration,
-        success: true
-      }
-    });
-
-    return result;
-  });
+  return result;
+});
 
 // ==================== GRACEFUL SHUTDOWN ====================
 
@@ -542,31 +547,52 @@ export const setupShutdownHandlers = (consumerState) => {
   return consumerState;
 };
 
-// ==================== MONADIC ERROR HANDLING ====================
+// ==================== SAFE OPERATIONS ====================
 
 /**
- * Safe consumer operations using Result monad
+ * Safe consumer operations
  */
-export const safeStartConsumers = BaseService.safeAsync(startConsumers);
-export const safeStopConsumers = BaseService.safeAsync(stopConsumers);
-export const safeRestartConsumers = BaseService.safeAsync(restartConsumers);
-export const safeProcessMessage = BaseService.safeAsync(processMessage);
-export const safeProcessBatch = BaseService.safeAsync(processBatch);
+export const safeStartConsumers = asyncHandler(async (consumerState) => {
+  const result = await BaseService.safeAsyncOperation(startConsumers, consumerState);
+  return result;
+});
+
+export const safeStopConsumers = asyncHandler(async (consumerState) => {
+  const result = await BaseService.safeAsyncOperation(stopConsumers, consumerState);
+  return result;
+});
+
+export const safeRestartConsumers = asyncHandler(async (consumerState) => {
+  const result = await BaseService.safeAsyncOperation(restartConsumers, consumerState);
+  return result;
+});
+
+export const safeProcessMessage = asyncHandler(async (consumerState, messageType, messageData, metadata) => {
+  const result = await BaseService.safeAsyncOperation(processMessage, consumerState, messageType, messageData, metadata);
+  return result;
+});
+
+export const safeProcessBatch = asyncHandler(async (consumerState, messages) => {
+  const result = await BaseService.safeAsyncOperation(processBatch, consumerState, messages);
+  return result;
+});
 
 /**
- * Chain safe consumer operations
+ * Execute safe consumer operations in sequence
  */
-export const chainSafeConsumerOps = (...operations) =>
-  asyncHandler(async (consumerState) => {
-    let currentResult = BaseService.Result.ok(consumerState);
+export const executeSafeConsumerOperations = asyncHandler(async (consumerState, operations) => {
+  const results = [];
 
-    for (const operation of operations) {
-      currentResult = await BaseService.Result.flatMap(operation)(currentResult);
-      if (!currentResult.success) break;
+  for (const operation of operations) {
+    const result = await operation(consumerState);
+    results.push(result);
+    if (!result.success) {
+      break;
     }
+  }
 
-    return currentResult;
-  });
+  return results;
+});
 
 // ==================== SINGLETON STATE MANAGEMENT ====================
 

@@ -1,5 +1,6 @@
 import amqplib from 'amqplib';
 import { logger } from '../utils/logger.js';
+import asyncHandler from 'express-async-handler';
 
 let connection = null;
 let connectionAttempts = 0;
@@ -71,14 +72,7 @@ export const createConnection = async () => {
   return retryWithBackoff(connect, MAX_RETRY_ATTEMPTS, RETRY_INTERVAL);
 };
 
-export const getConnection = async () => {
-  if (!connection) {
-    return createConnection();
-  }
-  return connection;
-};
-
-export const closeConnection = async () => {
+export const closeConnection = asyncHandler(async () => {
   if (!connection) {
     logger.info('No active RabbitMQ connection to close');
     return;
@@ -89,35 +83,8 @@ export const closeConnection = async () => {
     return;
   }
 
-  try {
-    isClosing = true;
-    await connection.close();
-    connection = null;
-    // logger.info('RabbitMQ connection closed successfully');
-  } catch (err) {
-    if (err.message && err.message.includes('Connection closing')) {
-      logger.warn('RabbitMQ connection already closing', {
-        meta: {
-          message: err.message,
-          name: err.name
-        }
-      });
-      // Still mark the connection as null since it's going to be closed
-      connection = null;
-    } else {
-      logger.error('Error closing RabbitMQ connection', {
-        meta: {
-          error: err.message,
-          stack: err.stack,
-          name: err.name
-        }
-      });
-      // In case of unexpected errors, we should still set the connection to null
-      // to avoid potential issues on next connection attempt
-      connection = null;
-      throw err;
-    }
-  } finally {
-    isClosing = false;
-  }
-};
+  isClosing = true;
+  await connection.close();
+  connection = null;
+  isClosing = false;
+});

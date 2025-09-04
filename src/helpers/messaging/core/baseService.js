@@ -154,10 +154,15 @@ export const setupServiceInfrastructure = asyncHandler(async (state, customSetup
  * Initialize service
  */
 export const initializeService = asyncHandler(async (state, customSetup = null) => {
-  if (state.initialized) return state;
+  if (state.initialized) {
+    return state;
+  }
 
   const stateWithInfrastructure = await setupServiceInfrastructure(state, customSetup);
-  const initializedState = markInitialized(stateWithInfrastructure, stateWithInfrastructure.brokerState);
+  const initializedState = markInitialized(
+    stateWithInfrastructure,
+    stateWithInfrastructure.brokerState
+  );
 
   logger.info(`${state.serviceName} messaging service initialized`, {
     meta: {
@@ -174,65 +179,68 @@ export const initializeService = asyncHandler(async (state, customSetup = null) 
 /**
  * Publish message with validation and routing
  */
-export const publishServiceMessage = asyncHandler(async (state, messageType, data, options = {}) => {
-  const initializedState = state.initialized ? state : await initializeService(state);
+export const publishServiceMessage = asyncHandler(
+  async (state, messageType, data, options = {}) => {
+    const initializedState = state.initialized ? state : await initializeService(state);
 
-  // Validate message
-  const validation = validateMessage(initializedState, messageType, data);
-  if (validation.error) {
-    const error = new Error(`Message validation failed: ${validation.error.message}`);
-    throw error;
-  }
-
-  const routingKey = createRoutingKey(initializedState, messageType, options.routingKey);
-  const publishOptions = createServicePublishOptions(initializedState, options);
-
-  const result = await MessageBroker.publishMessage(
-    initializedState.brokerState,
-    initializedState.config.exchangeName,
-    routingKey,
-    validation.value,
-    publishOptions
-  );
-
-  logger.info(`${initializedState.serviceName} message published`, {
-    meta: {
-      messageType,
-      routingKey,
-      messageId: result.messageId
+    // Validate message
+    const validation = validateMessage(initializedState, messageType, data);
+    if (validation.error) {
+      const error = new Error(`Message validation failed: ${validation.error.message}`);
+      throw error;
     }
-  });
 
-  return { result, state: initializedState };
-});
+    const routingKey = createRoutingKey(initializedState, messageType, options.routingKey);
+    const publishOptions = createServicePublishOptions(initializedState, options);
+
+    const result = await MessageBroker.publishMessage(
+      initializedState.brokerState,
+      initializedState.config.exchangeName,
+      routingKey,
+      validation.value,
+      publishOptions
+    );
+
+    logger.info(`${initializedState.serviceName} message published`, {
+      meta: {
+        messageType,
+        routingKey,
+        messageId: result.messageId
+      }
+    });
+
+    return { result, state: initializedState };
+  }
+);
 
 // ==================== CONSUMER SETUP ====================
 
 /**
  * Create message handler wrapper with service context
  */
-const createServiceMessageHandler = (state, messageType, handler) => asyncHandler(async (message, rawMsg) => {
-  const startTime = Date.now();
+const createServiceMessageHandler = (state, messageType, handler) =>
+  asyncHandler(async (message, rawMsg) => {
+    const startTime = Date.now();
 
-  logger.debug(`Processing ${state.serviceName} message`, {
-    meta: {
-      messageType,
-      messageId: message.id,
-      correlationId: message.metadata?.correlationId
-    }
+    logger.debug(`Processing ${state.serviceName} message`, {
+      meta: {
+        messageType,
+        messageId: message.id,
+        correlationId: message.metadata?.correlationId
+      }
+    });
+
+    await handler(message.data, message.metadata, rawMsg);
+
+    const duration = Date.now() - startTime;
+    logger.info(`${state.serviceName} message processed successfully`, {
+      meta: {
+        messageType,
+        messageId: message.id,
+        duration
+      }
+    });
   });
-
-  await handler(message.data, message.metadata, rawMsg);
-
-  const duration = Date.now() - startTime;
-  logger.info(`${state.serviceName} message processed successfully`, {
-    meta: {
-      messageType,
-      messageId: message.id,
-      duration
-    }
-  });
-});
 
 /**
  * Setup consumer for message type
@@ -266,7 +274,11 @@ export const setupServiceConsumer = asyncHandler(async (state, messageType, opti
   }
 
   // Create wrapped handler
-  const wrappedHandler = createServiceMessageHandler(initializedState, messageType, handlerInfo.handler);
+  const wrappedHandler = createServiceMessageHandler(
+    initializedState,
+    messageType,
+    handlerInfo.handler
+  );
 
   // Start consumer
   const { consumerTag, state: newBrokerState } = await MessageBroker.consume(
@@ -301,13 +313,13 @@ export const setupServiceConsumer = asyncHandler(async (state, messageType, opti
 export const startAllServiceConsumers = asyncHandler(async (state) => {
   const initializedState = state.initialized ? state : await initializeService(state);
 
-  const consumerPromises = Array.from(initializedState.handlers.keys()).map(messageType => {
+  const consumerPromises = Array.from(initializedState.handlers.keys()).map((messageType) => {
     const handlerInfo = initializedState.handlers.get(messageType);
     return setupServiceConsumer(initializedState, messageType, handlerInfo.options);
   });
 
   const results = await Promise.all(consumerPromises);
-  const consumers = results.map(r => r.consumerTag);
+  const consumers = results.map((r) => r.consumerTag);
   const finalState = results[results.length - 1]?.state || initializedState;
 
   logger.info(`All ${initializedState.serviceName} consumers started`, {
@@ -356,10 +368,15 @@ export const publishBatch = asyncHandler(async (state, messages) => {
  * Service health check
  */
 export const serviceHealthCheck = asyncHandler(async (state) => {
-  const { result } = await publishServiceMessage(state, 'health.check', {
-    timestamp: new Date().toISOString(),
-    service: state.serviceName
-  }, { priority: 1 });
+  const { result } = await publishServiceMessage(
+    state,
+    'health.check',
+    {
+      timestamp: new Date().toISOString(),
+      service: state.serviceName
+    },
+    { priority: 1 }
+  );
 
   return {
     status: 'healthy',
@@ -374,23 +391,24 @@ export const serviceHealthCheck = asyncHandler(async (state) => {
 /**
  * Create a service-specific publisher function
  */
-export const createServicePublisher = (state) =>
+export const createServicePublisher =
+  (state) =>
   (messageType, data, options = {}) =>
     publishServiceMessage(state, messageType, data, options);
 
 /**
  * Create a service-specific consumer setup function
  */
-export const createServiceConsumerSetup = (state) =>
+export const createServiceConsumerSetup =
+  (state) =>
   (messageType, options = {}) =>
     setupServiceConsumer(state, messageType, options);
 
 /**
  * Create a message type validator
  */
-export const createMessageValidator = (state) =>
-  (messageType, data) =>
-    validateMessage(state, messageType, data);
+export const createMessageValidator = (state) => (messageType, data) =>
+  validateMessage(state, messageType, data);
 
 /**
  * Compose service operations
@@ -435,14 +453,14 @@ export const addMultipleHandlers = (state, handlers) => {
  * Create a service with configuration
  */
 export const configureService = (serviceName, config = {}) => {
-  return createServiceState(serviceName, config);
+  createServiceState(serviceName, config);
 };
 
 /**
  * Transform message data before publishing
  */
 export const transformMessageData = (data, transformer) => {
-  return transformer(data);
+  transformer(data);
 };
 
 /**
@@ -452,14 +470,12 @@ export const retryOperation = asyncHandler(async (fn, maxRetries = 3, delay = 10
   let attempt = 1;
 
   while (attempt <= maxRetries) {
-    const result = await fn().catch(async (error) => {
+    const result = await fn().catch((error) => {
       if (attempt === maxRetries) {
         throw error;
       }
 
-      await new Promise(resolve => setTimeout(resolve, delay * attempt));
-      attempt++;
-      return null;
+      return new Promise((resolve) => setTimeout(resolve, delay * attempt));
     });
 
     if (result !== null) {
@@ -467,7 +483,6 @@ export const retryOperation = asyncHandler(async (fn, maxRetries = 3, delay = 10
     }
   }
 });
-
 /**
  * Add logging to function execution
  */

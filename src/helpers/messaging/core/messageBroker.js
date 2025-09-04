@@ -142,27 +142,29 @@ export const getChannel = asyncHandler(async (state, channelId = 'default') => {
 /**
  * Ensure exchange exists
  */
-export const ensureExchange = asyncHandler(async (state, exchangeName, exchangeType = 'topic', options = {}) => {
-  const exchangeKey = `${exchangeName}:${exchangeType}`;
+export const ensureExchange = asyncHandler(
+  async (state, exchangeName, exchangeType = 'topic', options = {}) => {
+    const exchangeKey = `${exchangeName}:${exchangeType}`;
 
-  if (state.exchanges.has(exchangeKey)) {
-    return state;
+    if (state.exchanges.has(exchangeKey)) {
+      return state;
+    }
+
+    const { channel, state: newState } = await getChannel(state);
+    await channel.assertExchange(exchangeName, exchangeType, {
+      durable: true,
+      ...options
+    });
+
+    const finalState = addExchangeToState(newState, exchangeName, exchangeType);
+
+    logger.debug('Exchange ensured', {
+      meta: { exchangeName, exchangeType, options }
+    });
+
+    return finalState;
   }
-
-  const { channel, state: newState } = await getChannel(state);
-  await channel.assertExchange(exchangeName, exchangeType, {
-    durable: true,
-    ...options
-  });
-
-  const finalState = addExchangeToState(newState, exchangeName, exchangeType);
-
-  logger.debug('Exchange ensured', {
-    meta: { exchangeName, exchangeType, options }
-  });
-
-  return finalState;
-});
+);
 
 /**
  * Ensure queue exists
@@ -191,49 +193,53 @@ export const ensureQueue = asyncHandler(async (state, queueName, options = {}) =
 /**
  * Bind queue to exchange
  */
-export const bindQueue = asyncHandler(async (state, queueName, exchangeName, routingKey = '#', options = {}) => {
-  const { channel, state: newState } = await getChannel(state);
-  await channel.bindQueue(queueName, exchangeName, routingKey, options);
+export const bindQueue = asyncHandler(
+  async (state, queueName, exchangeName, routingKey = '#', options = {}) => {
+    const { channel, state: newState } = await getChannel(state);
+    await channel.bindQueue(queueName, exchangeName, routingKey, options);
 
-  logger.debug('Queue bound to exchange', {
-    meta: { queueName, exchangeName, routingKey }
-  });
+    logger.debug('Queue bound to exchange', {
+      meta: { queueName, exchangeName, routingKey }
+    });
 
-  return newState;
-});
+    return newState;
+  }
+);
 
 // ==================== MESSAGE PUBLISHING ====================
 
 /**
  * Publish single message attempt
  */
-const publishMessageAttempt = asyncHandler(async (state, exchangeName, routingKey, enrichedMessage, publishOptions) => {
-  const { channel } = await getChannel(state);
-  const messageBuffer = createMessageBuffer(enrichedMessage);
+const publishMessageAttempt = asyncHandler(
+  async (state, exchangeName, routingKey, enrichedMessage, publishOptions) => {
+    const { channel } = await getChannel(state);
+    const messageBuffer = createMessageBuffer(enrichedMessage);
 
-  return new Promise((resolve, reject) => {
-    channel.publish(
-      exchangeName,
-      routingKey,
-      messageBuffer,
-      publishOptions,
-      (err) => {
-        if (err) reject(err);
-        else resolve(true);
-      }
-    );
-  });
-});
+    return new Promise((resolve, reject) => {
+      channel.publish(exchangeName, routingKey, messageBuffer, publishOptions, (err) => {
+        if (err) {reject(err);}
+        else {resolve(true);}
+      });
+    });
+  }
+);
 
 /**
  * Publish message with retries (recursive functional approach)
  */
-const publishWithRetries = asyncHandler(async (state, exchangeName, routingKey, enrichedMessage, publishOptions, attempt = 1) => {
-  const maxAttempts = state.config.retryAttempts;
+const publishWithRetries = asyncHandler(
+  async (state, exchangeName, routingKey, enrichedMessage, publishOptions, attempt = 1) => {
+    const maxAttempts = state.config.retryAttempts;
 
-  if (attempt <= maxAttempts) {
-    const result = await publishMessageAttempt(state, exchangeName, routingKey, enrichedMessage, publishOptions)
-      .catch(async (error) => {
+    if (attempt <= maxAttempts) {
+      const result = await publishMessageAttempt(
+        state,
+        exchangeName,
+        routingKey,
+        enrichedMessage,
+        publishOptions
+      ).catch(async (error) => {
         if (attempt >= maxAttempts) {
           logger.error('Failed to publish message after retries', {
             meta: {
@@ -252,62 +258,73 @@ const publishWithRetries = asyncHandler(async (state, exchangeName, routingKey, 
         });
 
         const delay = calculateRetryDelay(attempt, state.config.retryDelay);
-        await new Promise(resolve => setTimeout(resolve, delay));
+        await new Promise((resolve) => setTimeout(resolve, delay));
 
-        return publishWithRetries(state, exchangeName, routingKey, enrichedMessage, publishOptions, attempt + 1);
+        return publishWithRetries(
+          state,
+          exchangeName,
+          routingKey,
+          enrichedMessage,
+          publishOptions,
+          attempt + 1
+        );
       });
 
-    logger.info('Message published successfully', {
-      meta: {
-        messageId: enrichedMessage.id,
-        exchangeName,
-        routingKey,
-        size: createMessageBuffer(enrichedMessage).length,
-        attempt
-      }
-    });
+      logger.info('Message published successfully', {
+        meta: {
+          messageId: enrichedMessage.id,
+          exchangeName,
+          routingKey,
+          size: createMessageBuffer(enrichedMessage).length,
+          attempt
+        }
+      });
 
-    return { success: true, messageId: enrichedMessage.id, attempt };
+      return { success: true, messageId: enrichedMessage.id, attempt };
+    }
+
+    throw new Error('Max retry attempts exceeded');
   }
-
-  throw new Error('Max retry attempts exceeded');
-});
+);
 
 /**
  * Main publish function
  */
-export const publishMessage = asyncHandler(async (state, exchangeName, routingKey, message, options = {}) => {
-  const enrichedMessage = createEnrichedMessage(message, options);
-  const publishOptions = createPublishOptions(enrichedMessage, options);
+export const publishMessage = asyncHandler(
+  async (state, exchangeName, routingKey, message, options = {}) => {
+    const enrichedMessage = createEnrichedMessage(message, options);
+    const publishOptions = createPublishOptions(enrichedMessage, options);
 
-  return publishWithRetries(state, exchangeName, routingKey, enrichedMessage, publishOptions);
-});
+    return publishWithRetries(state, exchangeName, routingKey, enrichedMessage, publishOptions);
+  }
+);
 
 // ==================== MESSAGE CONSUMPTION ====================
 
 /**
  * Create message handler wrapper
  */
-const createMessageHandler = (handler, options = {}) => asyncHandler(async (msg) => {
-  if (!msg) return;
+const createMessageHandler = (handler, options = {}) =>
+  asyncHandler(async (msg) => {
+    if (!msg) { return; }
 
-  const messageId = msg.properties.messageId || 'unknown';
-  const correlationId = msg.properties.correlationId || 'unknown';
+    const messageId = msg.properties.messageId || 'unknown';
+    const correlationId = msg.properties.correlationId || 'unknown';
 
-  const content = await parseMessageContent(msg);
+    const content = await parseMessageContent(msg);
 
-  logger.debug('Processing message', {
-    meta: { messageId, correlationId }
+    logger.debug('Processing message', {
+      meta: { messageId, correlationId }
+    });
+
+    await handler(content, msg);
+
+    logger.info('Message processed successfully', {
+      meta: { messageId, correlationId }
+    });
+
+    return { success: true, messageId };
   });
-
-  await handler(content, msg);
-
-  logger.info('Message processed successfully', {
-    meta: { messageId, correlationId }
-  });
-
-  return { success: true, messageId };
-});
 
 /**
  * Handle message retry logic
@@ -327,29 +344,30 @@ const handleMessageRetry = asyncHandler(async (state, msg, error, options = {}) 
 /**
  * Create consumer wrapper with error handling
  */
-const createConsumerWrapper = (state, handler, options = {}) => asyncHandler(async (msg) => {
-  if (!msg) return;
+const createConsumerWrapper = (state, handler, options = {}) =>
+  asyncHandler(async (msg) => {
+    if (!msg) {return;}
 
-  const { channel } = await getChannel(state);
-  const wrappedHandler = createMessageHandler(handler, options);
+    const { channel } = await getChannel(state);
+    const wrappedHandler = createMessageHandler(handler, options);
 
-  const result = await wrappedHandler(msg).catch(async (error) => {
-    const retryResult = await handleMessageRetry(state, msg, error, options);
+    const result = await wrappedHandler(msg).catch(async (error) => {
+      const retryResult = await handleMessageRetry(state, msg, error, options);
 
-    logger.info('Message handled with retry/dlq', {
-      meta: {
-        messageId: msg.properties.messageId,
-        action: retryResult.action,
-        retryCount: retryResult.retryCount
-      }
+      logger.info('Message handled with retry/dlq', {
+        meta: {
+          messageId: msg.properties.messageId,
+          action: retryResult.action,
+          retryCount: retryResult.retryCount
+        }
+      });
+
+      return { success: false, error: error.message };
     });
 
-    return { success: false, error: error.message };
+    channel.ack(msg);
+    return result;
   });
-
-  channel.ack(msg);
-  return result;
-});
 
 /**
  * Start consumer
@@ -456,10 +474,16 @@ export const sendToDeadLetterQueue = asyncHandler(async (state, msg, error) => {
  * Health check
  */
 export const healthCheck = asyncHandler(async (state) => {
-  await publishMessage(state, 'health.exchange', 'health.check', {
-    timestamp: new Date().toISOString(),
-    service: 'message-broker'
-  }, { priority: 1 });
+  await publishMessage(
+    state,
+    'health.exchange',
+    'health.check',
+    {
+      timestamp: new Date().toISOString(),
+      service: 'message-broker'
+    },
+    { priority: 1 }
+  );
 
   return {
     status: 'healthy',
@@ -500,8 +524,8 @@ export const closeAllChannels = asyncHandler(async (state) => {
  * Create a publisher function for a specific exchange
  */
 export const createPublisher = (state, exchangeName) => {
-  return async (routingKey, message, options = {}) => {
-    return publishMessage(state, exchangeName, routingKey, message, options);
+   async (routingKey, message, options = {}) => {
+     publishMessage(state, exchangeName, routingKey, message, options);
   };
 };
 
@@ -509,8 +533,8 @@ export const createPublisher = (state, exchangeName) => {
  * Create a consumer function for a specific queue
  */
 export const createConsumer = (state, queueName) => {
-  return async (handler, options = {}) => {
-    return consume(state, queueName, handler, options);
+   async (handler, options = {}) => {
+     consume(state, queueName, handler, options);
   };
 };
 
