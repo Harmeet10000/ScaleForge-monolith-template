@@ -9,19 +9,45 @@
     <directory-organization>
     ```
     src/
-    ├── connections/     # Database and external service connections (e.g., Redis, Mongoose, )
-    ├── constants/       # Application constants and enums
-    ├── controllers/     # Request handlers (thin layer)
-    ├── helpers/         # Utility functions for specific services
-    ├── middlewares/     # Express middleware functions (auth, error handling)
-    ├── models/          # Mongoose schemas and models
-    ├── repository/      # Data access layer (DAL) implementing the Repository Pattern
-    ├── routes/          # API route definitions
-    ├── services/        # Business logic layer
-    ├── utils/           # General, reusable utility functions (e.g., logger, httpError)
-    ├── validations/     # Joi validation schemas
-    ├── app.js           # Express app configuration
-    └── index.js         # Application entry point
+    ├── connections/         # Database and external service connections (e.g., Redis, Mongoose)
+    ├── constants/           # Application constants and enums
+    ├── features/            # Feature-first layout: each feature contains its controllers, services, routes, models, repository, validations
+    │   ├── auth/
+    │   │   ├── authConstants.js
+    │   │   ├── authController.js
+    │   │   ├── authMiddleware.js
+    │   │   ├── authRepository.js
+    │   │   ├── authRoutes.js
+    │   │   ├── authService.js
+    │   │   ├── authValidation.js
+    │   │   └── userModel.js
+    │   ├── health/
+    │   │   ├── healthController.js
+    │   │   └── healthRoutes.js
+    │   ├── notifications/
+    │   │   ├── deviceModel.js
+    │   │   ├── notificationController.js
+    │   │   ├── notificationLogModel.js
+    │   │   ├── notificationPreferencesModel.js
+    │   │   ├── notificationRepository.js
+    │   │   ├── notificationRoutes.js
+    │   │   └── notificationService.js
+    │   ├── payments/
+    │   ├── permissions/
+    │   ├── search/
+    │   ├── storage/
+    │   └── subscription/
+    ├── controllers/         # Cross-cutting controllers (if any) and thin adapters
+    ├── helpers/             # Utility functions for specific services (email, kafka, redis helpers)
+    ├── middlewares/         # Global middleware (error handler, server middleware)
+    ├── models/              # Shared or cross-feature Mongoose schemas
+    ├── repository/          # Shared repositories or data-access helpers
+    ├── routes/              # Route composition and API versioning (mounting feature routers)
+    ├── services/            # Shared services used across features
+    ├── utils/               # General, reusable utility functions (e.g., logger, httpError)
+    ├── validations/         # Shared Joi schemas and validation helpers
+    ├── app.js               # Express app configuration
+    └── index.js             # Application entry point
     ```
     </directory-organization>
 </project-structure>
@@ -53,7 +79,7 @@
         - Use ES module syntax (`import`/`export`).
         - Favor modern JavaScript features (ES2020+), including optional chaining (`?.`) and nullish coalescing (`??`).
         - Use destructuring for objects and arrays where it improves readability.
-        - If you cannot finish a piece of code, add a `// TODO:` comment explaining what's left.
+        - Always use Functional Programming principles over OOP.
     </general-rules>
 
     <code-style>
@@ -71,14 +97,13 @@
 <implementation-details>
     <error-handling>
         - Use the `httpError` utility from `/utils` for creating consistent, standardized HTTP errors.
-        - Wrap all asynchronous controller functions and middlewares with the `catchAsync` utility from `/utils` to handle errors gracefully and pass them to the global error handler.
+        - Wrap all asynchronous controller functions and middlewares with the `asyncHandler` utility from `/utils` to handle errors gracefully and pass them to the global error handler.
         - The `globalErrorHandler` middleware in `/middlewares` is responsible for processing all errors and sending a formatted response.
     </error-handling>
 
     <logging>
         - Use the `logger` utility from `/utils` for all logging.
         - Use appropriate log levels: `logger.error()`, `logger.warn()`, `logger.info()`, `logger.debug()`.
-        - Always include meaningful context in logs, such as `userId`, `action`, `ip`, and relevant metadata.
         - Example: `logger.error('Failed to process payment', { meta: { error: err.message, userId: user._id } });`
     </logging>
 
@@ -126,31 +151,17 @@
     </caching>
 
     <security>
-        - Use the `authNMiddleware` for protecting routes that require authentication.
-        - Use the `authRMiddleware` for fine-grained authorization checks.
+        - Use the `authMiddleware` for protecting routes that require authentication.
+        - Use the `permissionsMiddleware` for fine-grained authorization checks.
         - Never store secrets or sensitive data directly in the code. Use environment variables.
         - Always validate and sanitize user input to prevent injection attacks.
         - Follow OWASP Top 10 best practices.
     </security>
 
-    <authorization-openfga>
-        - **Overview**: OpenFGA is used for all fine-grained authorization checks. It manages relationships between users and objects.
-        - **Setup**: The OpenFGA service runs in Docker and is accessible via the `OPENFGA_API_URL` environment variable (e.g., `http://openfga:8080`).
-        - **Authorization Model**: The authorization model, defining types and relations, is located at `src/config/openfga/model.json`.
-        - **Client**: The OpenFGA client is initialized in `src/connections/connectOpenFGA.js` and should be used for all interactions.
-        - **Tuples**: Permissions are represented as tuples: `{ user, relation, object }`.
-            - `user`: Must be in the format `type:id` (e.g., `user:60c7c...`).
-            - `relation`: The permission being granted (e.g., `reader`, `writer`, `owner`).
-            - `object`: The resource being accessed, in the format `type:id` (e.g., `document:abc...`).
-        - **Core Operations**:
-            - **Checking Permissions**: Use `checkPolicy({ user, relation, object })` before allowing a user to perform an action on a resource. This should be done in the service layer.
-            - **Granting Permissions**: Use `writePolicy({ user, relation, object })` to create a relationship when a user is granted access.
-            - **Revoking Permissions**: Use `removePolicy({ user, relation, object })` to delete a relationship when access is revoked.
-    </authorization-openfga>
 
     <environment>
         - Use the `dotenv` package to manage environment variables.
-        - The `.env.dev` file is used for the development environment.
+        - The `.env.development` file is used for the development environment.
         - Ensure all sensitive keys (API keys, database URIs, JWT secrets) are stored in environment variables and never committed to the repository.
     </environment>
 
@@ -162,30 +173,19 @@
 </implementation-details>
 
 <development-workflow>
-    <testing>
+    <!-- <testing>
         - Write unit tests for all services and critical utility functions.
         - Write integration tests for all API endpoints.
         - Organize all test files in the `test/` directory.
         - Use `node:test` for the test runner and `node:assert` for assertions.
         - Structure tests using `describe`, `it`, `before`, and `after` blocks.
-    </testing>
+    </testing> -->
 
-    <linting-formatting>
-        - Before committing code, always run `npm run lint` and `npm run format`.
-        - To automatically fix issues, use `npm run lint:fix` and `npm run format:fix`.
-        - These checks are enforced by pre-commit hooks.
-    </linting-formatting>
-
-    <version-control>
-        - Follow the commit message conventions defined in `commitlint.config.js`.
-        - `husky` and `lint-staged` are configured to run pre-commit checks (linting, formatting).
-    </version-control>
 
     <code-review-checklist>
         - [ ] Follows existing patterns and architecture.
-        - [ ] Includes proper error handling using `httpError` and `catchAsync`.
+        - [ ] Includes proper error handling using `httpError` and `asyncHandler`.
         - [ ] Has appropriate, contextual logging.
-        - [ ] Includes unit and/or integration tests.
         - [ ] Updates Swagger/JSDoc documentation if an API endpoint is changed.
         - [ ] No hardcoded secrets or sensitive values.
         - [ ] Validates all inputs from requests.

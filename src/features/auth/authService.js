@@ -118,6 +118,9 @@ export const confirmAccount = asyncHandler(async (emailAddress, code, req, next)
 
   // Match code in DB
   if (user.accountConfirmation.code !== code) {
+    // CWE-208: Use of Timing Attack Resistant Comparison
+    //if (!crypto.timingSafeEqual(Buffer.from(user.accountConfirmation.code || ''), Buffer.from(code || ''))) {
+
     return httpError(next, new Error(INVALID_ACCOUNT_CONFIRMATION_EMAIL_OR_CODE), req, 400);
   }
 
@@ -127,8 +130,8 @@ export const confirmAccount = asyncHandler(async (emailAddress, code, req, next)
 
   user.accountConfirmation.status = true;
   user.accountConfirmation.timestamp = dayjs().utc().toDate();
-  // user.accountConfirmation.token = null;
-  // user.accountConfirmation.code = null;
+  user.accountConfirmation.token = null;
+  user.accountConfirmation.code = null;
   await user.save();
 
   const info = {
@@ -215,7 +218,7 @@ export const loginUser = asyncHandler(async (credentials, req, next) => {
 });
 
 export const logoutUser = asyncHandler(async (refreshToken) => {
-  logger.info('Logout called with refresh:', refreshToken);
+  logger.info('Logout called with refresh');
   if (refreshToken) {
     // Get user ID from refresh token
     const decoded = verifyToken(refreshToken, process.env.REFRESH_TOKEN_SECRET);
@@ -264,7 +267,7 @@ export const refreshUserToken = asyncHandler(async (refreshToken, req, next) => 
       userIp: req.ip
     },
     process.env.ACCESS_TOKEN_SECRET,
-    process.env.ACCESS_TOKEN_EXPIRY
+    3600
   );
 
   return {
@@ -374,6 +377,9 @@ export const changeUserPassword = asyncHandler(
     }
 
     if (newPassword === oldPassword) {
+      // CWE-208: Use of Timing Attack Resistant Comparison
+      //if (!crypto.timingSafeEqual(Buffer.from(newPassword || ''), Buffer.from(oldPassword || ''))) {
+
       return httpError(next, new Error(PASSWORD_MATCHING_WITH_OLD_PASSWORD), req, 400);
     }
 

@@ -221,7 +221,8 @@ cd production-grade-auth-template
 2. **Install dependencies**
 
 ```bash
-npm install
+npm i 
+pnpm i
 ```
 
 3. **Set up environment variables**
@@ -329,6 +330,8 @@ LOKI_HOST=http://loki:3100
 #### Development Mode
 
 ```bash
+docker compose up -d 
+or
 npm run dev
 ```
 
@@ -349,14 +352,14 @@ npm run start
 
 ```bash
 docker build -t auth-service-dev -f docker/dev.Dockerfile .
-docker run -p 8000:8000 --env-file .env.dev auth-service-dev
+docker run -p 8000:8000 --env-file .env.development auth-service-dev
 ```
 
 #### Production
 
 ```bash
 docker build -t auth-service-prod -f docker/prod.Dockerfile .
-docker run -p 8000:8000 --env-file .env.prod auth-service-prod
+docker run -p 8000:8000 --env-file .env.production auth-service-prod
 ```
 
 </details>

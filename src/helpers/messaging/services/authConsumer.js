@@ -51,7 +51,7 @@ const updateMetrics = (state, updates) => ({
  * Initialize consumer
  */
 const initializeConsumer = asyncHandler(async (consumerState) => {
-  if (consumerState.initialized) return consumerState;
+  if (consumerState.initialized) {return consumerState;}
 
   const serviceState = await AuthMessagingService.initializeAuthService();
 
@@ -66,9 +66,7 @@ const initializeConsumer = asyncHandler(async (consumerState) => {
 /**
  * Ensure consumer is initialized
  */
-const ensureInitialized = asyncHandler(async (consumerState) => {
-  return consumerState.initialized ? consumerState : await initializeConsumer(consumerState);
-});
+const ensureInitialized = asyncHandler(async (consumerState) => consumerState.initialized ? consumerState : await initializeConsumer(consumerState));
 
 // ==================== CONSUMER MANAGEMENT ====================
 
@@ -427,12 +425,8 @@ export const createMonitoredConsumer = (consumerState) => {
 
   return {
     ...manager,
-    processMessage: async (messageType, messageData, metadata) => {
-      return BaseService.logFunctionExecution(manager.processMessage, 'info', messageType, messageData, metadata);
-    },
-    processBatch: async (messages) => {
-      return BaseService.logFunctionExecution(manager.processBatch, 'info', messages);
-    }
+    processMessage: async (messageType, messageData, metadata) => BaseService.logFunctionExecution(manager.processMessage, 'info', messageType, messageData, metadata),
+    processBatch: async (messages) => BaseService.logFunctionExecution(manager.processBatch, 'info', messages)
   };
 };
 
@@ -462,9 +456,7 @@ export const createResilientConsumer = (consumerState, maxRestarts = 3, restartD
     throw new Error('Max restart attempts reached');
   });
 
-  const resilientRestart = async () => {
-    return BaseService.retryOperation(manager.restart, maxRestarts, restartDelay);
-  };
+  const resilientRestart = async () => BaseService.retryOperation(manager.restart, maxRestarts, restartDelay);
 
   return {
     ...manager,

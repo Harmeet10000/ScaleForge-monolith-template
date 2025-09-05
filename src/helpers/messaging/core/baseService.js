@@ -467,7 +467,7 @@ export const transformMessageData = (data, transformer) => {
  * Retry an async operation with exponential backoff
  */
 export const retryOperation = asyncHandler(async (fn, maxRetries = 3, delay = 1000) => {
-  let attempt = 1;
+  const attempt = 1;
 
   while (attempt <= maxRetries) {
     const result = await fn().catch((error) => {

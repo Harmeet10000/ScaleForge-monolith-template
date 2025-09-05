@@ -1,7 +1,7 @@
 import { logger } from '../../utils/logger.js';
 import asyncHandler from 'express-async-handler';
 import { redisClient } from '../../connections/connectRedis.js';
-import { createPipeline } from './redisPipeline.js';
+import { serializeHashData, deserializeHashData } from '../generalHelper.js';
 
 // Use Case | Recommended Redis Type
 // Caching a JWT token or simple API response | String
@@ -61,19 +61,6 @@ export const deleteCache = asyncHandler(async (objectType, key) => {
   return result > 0;
 });
 
-// New utility function to serialize nested objects for Redis hash storage
-const serializeHashData = (data) => {
-  const serialized = {};
-  for (const key in data) {
-    if (Object.prototype.hasOwnProperty.call(data, key)) {
-      const value = data[key];
-      // Serialize if value is an object and not null
-      serialized[key] = value && typeof value === 'object' ? JSON.stringify(value) : value;
-    }
-  }
-  return serialized;
-};
-
 // Redis Hash CRUD Operations
 
 export const setHash = asyncHandler(async (objectType, key, data, expireSeconds = 1800) => {
@@ -91,22 +78,13 @@ export const setHash = asyncHandler(async (objectType, key, data, expireSeconds 
 
 export const getHash = asyncHandler(async (objectType, key) => {
   const cacheKey = getCacheKey(objectType, key);
-  // logger.debug(`Getting hash: ${cacheKey}`);
   const result = await redisClient.hgetall(cacheKey);
   if (!result || Object.keys(result).length === 0) {
     return null;
   }
-  // Deserialize each field if it's a JSON string
-  Object.keys(result).forEach((field) => {
-    try {
-      result[field] = JSON.parse(result[field]);
-    } catch (err) {
-      // Leave as is if parsing fails
-      logger.error('Error parsing hash field JSON', { meta: { cacheKey, field, error: err } });
-    }
-  });
-  logger.info(`Hash retrieved:`, { meta: result });
-  return result;
+  const deserializedResult = deserializeHashData(result);
+  logger.info(`Hash retrieved:`, { meta: deserializedResult });
+  return deserializedResult;
 });
 
 export const updateHash = asyncHandler(async (objectType, key, data) => {
@@ -462,31 +440,4 @@ export const getBloomFilterInfo = asyncHandler(async (filterName) => {
     logger.error(`Failed to get bloom filter info: ${filterName}`, { meta: err });
     throw err;
   }
-});
-
-// Batch operations using pipeline
-export const batchOperations = asyncHandler(async (operations) => {
-  const pipeline = createPipeline();
-
-  operations.forEach((op) => {
-    switch (op.type) {
-      case 'set':
-        pipeline.set(op.key, op.value, op.expireSeconds);
-        break;
-      case 'hset':
-        pipeline.hset(op.key, op.data, op.expireSeconds);
-        break;
-      case 'get':
-        pipeline.get(op.key);
-        break;
-      case 'hgetall':
-        pipeline.hgetall(op.key);
-        break;
-      case 'del':
-        pipeline.del(op.key);
-        break;
-    }
-  });
-
-  return await pipeline.exec();
 });

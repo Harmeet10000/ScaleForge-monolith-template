@@ -680,38 +680,38 @@ const detectSuspiciousActivity = (activityData) => {
   activityData;
 };
 
-const assessThreatLevel = (suspiciousActivity) => {
+const assessThreatLevel = (suspiciousActivity) =>
   // Your threat assessment logic
-  return {
+   ({
     shouldAlert: true,
     shouldLock: false,
     user: suspiciousActivity.user,
     activityData: suspiciousActivity,
     lockReason: null,
     lockDuration: null
-  };
-};
+  })
+;
 
 const handleAlert = async (alert) => {
   logger.warn('Processing alert', { alert });
   // Your alert handling logic
 };
 
-const performComplexUserOperation = async (userData) => {
+const performComplexUserOperation = async (userData) =>
   // Your complex operation logic
-  return {
+   ({
     _id: '507f1f77bcf86cd799439011',
     emailAddress: userData.email,
     name: userData.name,
     token: 'generated-token',
     code: 'generated-code'
-  };
-};
+  })
+;
 
-const getFailedLoginAttempts = async (email, ip) => {
+const getFailedLoginAttempts = async (email, ip) =>
   // Your failed login tracking logic
-  return 5;
-};
+   5
+;
 
 // ==================== EXPORT FUNCTIONAL API ====================
 

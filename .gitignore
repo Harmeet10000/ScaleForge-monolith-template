@@ -79,3 +79,7 @@ uploads/
 # if you are using pnpm
 .pnpm-store/
 node_modules
+
+
+#Ignore vscode AI rules
+.github/instructions/codacy.instructions.md

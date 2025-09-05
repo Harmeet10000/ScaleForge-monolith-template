@@ -10,28 +10,28 @@ import {
   getBloomFilterInfo
 } from '../helpers/redisFunctions.js';
 
-// import {
-//   createPipeline,
-//   pipelineHset,
-//   pipelineDel,
-//   pipelineGet
-// } from '../helpers/redisPipeline.js';
+// In authService.js
+import { executePipeline, createOperation } from '../../helpers/cache/redisFunctions.js';
 
-// Compose operations functionally
-// const results = await createPipeline(
-//   pipelineHset('user:123', { name: 'John' }, 1800),
-//   pipelineHset('session:abc', { userId: '123' }, 3600),
-//   pipelineDel('old:key'),
-//   pipelineGet('config:app')
-// );
+// Multiple hash operations in login
+const results = await executePipeline(
+  createOperation('setHash', 'user', `email:${emailAddress}`, userForResponse, 1800),
+  createOperation('setHash', 'user', `id:${user._id}`, userForResponse, 1800)
+);
 
-// const operations = [
-//   pipelineHset('user:123', userData, 1800),
-//   pipelineGet('config:redis'),
-//   pipelineDel('expired:session')
-// ];
+// Mixed operations
+const results = await executePipeline(
+  createOperation('getHash', 'user', `email:${emailAddress}`),
+  createOperation('setCache', 'session', userId, sessionData, 3600),
+  createOperation('deleteHash', 'user', `temp:${userId}`)
+);
 
-// const results2 = await createPipeline(...operations);
+// Cache invalidation
+await executePipeline(
+  createOperation('deleteHash', 'user', `email:${user.emailAddress}`),
+  createOperation('deleteHash', 'user', `id:${user._id}`)
+);
+
 
 /**
  * Example: Using Redis Search for a User Directory
