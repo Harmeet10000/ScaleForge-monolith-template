@@ -115,12 +115,11 @@ export const confirmAccount = asyncHandler(async (emailAddress, code, req, next)
   if (!user) {
     return httpError(next, new Error(NOT_FOUND('user')), req, 404);
   }
-
+  logger.debug('User for account confirmation', { meta: { user } });
   // Match code in DB
   if (user.accountConfirmation.code !== code) {
     // CWE-208: Use of Timing Attack Resistant Comparison
     //if (!crypto.timingSafeEqual(Buffer.from(user.accountConfirmation.code || ''), Buffer.from(code || ''))) {
-
     return httpError(next, new Error(INVALID_ACCOUNT_CONFIRMATION_EMAIL_OR_CODE), req, 400);
   }
 

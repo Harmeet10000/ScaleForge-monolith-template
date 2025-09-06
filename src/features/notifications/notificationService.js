@@ -8,7 +8,7 @@ import asyncHandler from 'express-async-handler';
 
 // ===== CORE NOTIFICATION SENDING FUNCTIONS =====
 
-export const sendNotification = asyncHandler(async (notificationData, req, next) => {
+export const sendNotification = asyncHandler(async (notificationData) => {
   // Get user details for subscriber information
   const user = await User.findById(notificationData.userId).select(
     'email firstName lastName phone novuSubscriberId'
@@ -189,7 +189,7 @@ export const sendBulkNotifications = asyncHandler(async (notifications, req, nex
   return results;
 });
 
-export const sendBroadcast = asyncHandler(async (broadcastData, req, next) => {
+export const sendBroadcast = asyncHandler(async (broadcastData, req) => {
   // Sanitize broadcast content to prevent sensitive data exposure
   const sanitizedPayload = sanitizeNotificationContent(broadcastData.payload);
 
@@ -641,7 +641,7 @@ export const deleteSubscriber = asyncHandler(async (userId, req, next) => {
   };
 });
 
-export const updatePreferences = asyncHandler(async (userId, preferences, req, next) => {
+export const updatePreferences = asyncHandler(async (userId, preferences, req) => {
   const { user } = req;
   const subscriberId = user._id;
 
@@ -703,7 +703,7 @@ export const updatePreferences = asyncHandler(async (userId, preferences, req, n
   };
 });
 
-export const getPreferences = asyncHandler(async (userId, req, next) => {
+export const getPreferences = asyncHandler(async (userId) => {
   // Get local preferences
   const preferences = await notificationRepository.getUserPreferences(userId);
 
@@ -717,7 +717,7 @@ export const getPreferences = asyncHandler(async (userId, req, next) => {
   return preferences;
 });
 
-export const registerDevice = asyncHandler(async (userId, deviceData, req, next) => {
+export const registerDevice = asyncHandler(async (userId, deviceData, req) => {
   const { user } = req;
   const subscriberId = user._id;
 

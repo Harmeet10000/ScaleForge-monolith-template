@@ -11,27 +11,26 @@ import {
 } from '../helpers/redisFunctions.js';
 
 // In authService.js
-import { executePipeline, createOperation } from '../../helpers/cache/redisFunctions.js';
+// import { executePipeline, createOperation } from '../../helpers/cache/redisFunctions.js';
 
 // Multiple hash operations in login
-const results = await executePipeline(
-  createOperation('setHash', 'user', `email:${emailAddress}`, userForResponse, 1800),
-  createOperation('setHash', 'user', `id:${user._id}`, userForResponse, 1800)
-);
+// const results = await executePipeline(
+//   createOperation('setHash', 'user', `email:${emailAddress}`, userForResponse, 1800),
+//   createOperation('setHash', 'user', `id:${user._id}`, userForResponse, 1800)
+// );
 
 // Mixed operations
-const results = await executePipeline(
-  createOperation('getHash', 'user', `email:${emailAddress}`),
-  createOperation('setCache', 'session', userId, sessionData, 3600),
-  createOperation('deleteHash', 'user', `temp:${userId}`)
-);
+// const results = await executePipeline(
+//   createOperation('getHash', 'user', `email:${emailAddress}`),
+//   createOperation('setCache', 'session', userId, sessionData, 3600),
+//   createOperation('deleteHash', 'user', `temp:${userId}`)
+// );
 
 // Cache invalidation
-await executePipeline(
-  createOperation('deleteHash', 'user', `email:${user.emailAddress}`),
-  createOperation('deleteHash', 'user', `id:${user._id}`)
-);
-
+// await executePipeline(
+//   createOperation('deleteHash', 'user', `email:${user.emailAddress}`),
+//   createOperation('deleteHash', 'user', `id:${user._id}`)
+// );
 
 /**
  * Example: Using Redis Search for a User Directory

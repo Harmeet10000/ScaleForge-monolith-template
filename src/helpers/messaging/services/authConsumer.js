@@ -238,7 +238,8 @@ export const processBatch = asyncHandler(async (consumerState, messages) => {
   let currentState = state;
 
   for (const { messageType, messageData, metadata = {} } of messages) {
-    const result = await processMessage(currentState, messageType, messageData, metadata)
+    const loopState = currentState;
+    const result = await processMessage(loopState, messageType, messageData, metadata)
       .then((res) => ({
         messageType,
         messageId: metadata.messageId || 'batch',

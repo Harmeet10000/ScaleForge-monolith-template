@@ -342,7 +342,7 @@ export const publishBatch = asyncHandler(async (state, messages) => {
   const errors = [];
 
   for (const { messageType, data, options = {} } of messages) {
-    const result = await publishServiceMessage(initializedState, messageType, data, options)
+    const publishResult = await publishServiceMessage(initializedState, messageType, data, options)
       .then(({ result }) => {
         results.push({ messageType, result, success: true });
       })

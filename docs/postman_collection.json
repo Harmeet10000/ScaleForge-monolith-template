@@ -1,0 +1,273 @@
+{
+  "info": {
+    "_postman_id": "a8a0b6e8-c22f-4c44-8a64-331533f8a2f1",
+    "name": "Gemini API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Generate Text",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{authToken}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"prompt\": \"Write a story about a magic backpack.\",\n  \"model\": \"gemini-1.5-flash\",\n  \"config\": {}\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/gemini/generate-text",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "gemini",
+            "generate-text"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Generate Text Stream",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{authToken}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"prompt\": \"Write a long story about a magic backpack.\",\n  \"model\": \"gemini-1.5-flash\",\n  \"config\": {}\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/gemini/generate-text-stream",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "gemini",
+            "generate-text-stream"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Embed Text",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{authToken}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"text\": \"This is a sentence to embed.\",\n  \"model\": \"text-embedding-004\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/gemini/embed-text",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "gemini",
+            "embed-text"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Generate Image",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{authToken}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"prompt\": \"A picture of a cat sitting on a couch.\",\n  \"model\": \"imagen-4.0-generate-001\",\n  \"config\": {}\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/gemini/generate-image",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "gemini",
+            "generate-image"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Generate Video",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{authToken}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"prompt\": \"A video of a dog playing fetch.\",\n  \"model\": \"veo-2.0-generate-001\",\n  \"config\": {\n    \"poll\": false\n  }\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/gemini/generate-video",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "gemini",
+            "generate-video"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Generate JSON",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{authToken}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"prompt\": \"Create a JSON object with a name and an age.\",\n  \"schema\": {\"type\": \"object\", \"properties\": {\"name\": {\"type\": \"string\"}, \"age\": {\"type\": \"number\"}}},\n  \"model\": \"gemini-1.5-flash\",\n  \"config\": {}\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/gemini/generate-json",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "gemini",
+            "generate-json"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Generate Multimodal",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{authToken}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"parts\": [ {\"text\": \"What is in this image?\"}, {\"inlineData\": {\"mimeType\": \"image/png\", \"data\": \"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=\"}} ],\n  \"model\": \"gemini-1.5-flash\",\n  \"config\": {}\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/gemini/generate-multimodal",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "gemini",
+            "generate-multimodal"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Create Chat",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{authToken}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"systemInstruction\": \"You are a helpful assistant.\",\n  \"model\": \"gemini-1.5-flash\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/gemini/create-chat",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "gemini",
+            "create-chat"
+          ]
+        }
+      },
+      "response": []
+    }
+  ]
+}
