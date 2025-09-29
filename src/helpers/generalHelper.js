@@ -57,6 +57,23 @@ export const generateResetPasswordExpiry = (minute) => dayjs().valueOf() + minut
 
 export const getKeyName = (objectType, ...args) => `${objectType}:${args.join(':')}`;
 
+export const getCacheKey = (objectType, key) =>
+  getKeyName(objectType, ...(Array.isArray(key) ? key : [key]));
+
+// Reusable validation function (consistent with existing pattern)
+export const validateJoiSchema = (schema, value) => {
+  const result = schema.validate(value, {
+    abortEarly: false,
+    allowUnknown: false,
+    stripUnknown: true
+  });
+
+  return {
+    value: result.value,
+    error: result.error
+  };
+};
+
 // Serialize nested objects for Redis hash storage using superjson
 export const serializeHashData = (data) => {
   const serialized = {};

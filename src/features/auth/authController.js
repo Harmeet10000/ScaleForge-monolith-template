@@ -1,7 +1,6 @@
 import { httpResponse } from '../../utils/httpResponse.js';
 import { httpError } from '../../utils/httpError.js';
 import {
-  validateJoiSchema,
   validateRegisterBody,
   validateLoginBody,
   validateForgotPasswordBody,
@@ -10,6 +9,7 @@ import {
   validateGoogleLogin,
   validateGoogleSignup
 } from './authValidation.js';
+import { validateJoiSchema } from '../../helpers/generalHelper.js';
 import * as authService from './authService.js';
 import { getDomainFromUrl } from '../../helpers/generalHelper.js';
 import asyncHandler from 'express-async-handler';

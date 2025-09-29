@@ -8,12 +8,10 @@ import {
   generateVideo,
   generateJson,
   generateMultimodal,
-  createChat
+  createChat,
+  ai
 } from '../../helpers/gemini.js';
-import { GoogleGenAI } from '@google/genai';
 import asyncHandler from 'express-async-handler';
-
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY ?? process.env.GEMINI_API_KEY });
 
 export const generateTextHandler = asyncHandler(async (req, res) => {
   const { prompt, model, config } = req.body;

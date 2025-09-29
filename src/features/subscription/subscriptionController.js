@@ -2,7 +2,6 @@ import { httpResponse } from '../../utils/httpResponse.js';
 import { httpError } from '../../utils/httpError.js';
 import asyncHandler from 'express-async-handler';
 import {
-  validateJoiSchema,
   validateCreateSubscriptionRequest,
   validateGetSubscriptionRequest,
   validateUpdateSubscriptionRequest,
@@ -13,6 +12,7 @@ import {
   validateGetStatisticsRequest,
   validateProcessRenewalsRequest
 } from './subscriptionValidation.js';
+import { validateJoiSchema } from '../../helpers/generalHelper.js';
 import * as subscriptionService from './subscriptionService.js';
 
 /**

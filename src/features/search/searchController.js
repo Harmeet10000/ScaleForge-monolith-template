@@ -2,7 +2,6 @@ import { httpResponse } from '../../utils/httpResponse.js';
 import { httpError } from '../../utils/httpError.js';
 import asyncHandler from 'express-async-handler';
 import {
-  validateJoiSchema,
   validateSearchRequest,
   validateSemanticSearchRequest,
   validateKNNSearchRequest,
@@ -19,6 +18,7 @@ import {
   validateDeletePipelineRequest,
   validateDeleteIndexRequest
 } from './searchValidation.js';
+import { validateJoiSchema } from '../../helpers/generalHelper.js';
 import * as searchService from './searchService.js';
 import { SEARCH_MESSAGES } from './searchConstants.js';
 

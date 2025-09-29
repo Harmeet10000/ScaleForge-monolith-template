@@ -23,9 +23,9 @@ import {
   removeUserFromProjectValidation,
   shareDocumentValidation,
   transferOwnershipValidation,
-  unshareDocumentValidation,
-  validateJoiSchema
+  unshareDocumentValidation
 } from './permissionValidation.js';
+import { validateJoiSchema } from '../../helpers/generalHelper.js';
 import {
   ACCESS_CHECK_COMPLETED,
   ALL_RESOURCE_PERMISSIONS_REMOVED,

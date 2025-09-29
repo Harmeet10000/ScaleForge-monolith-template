@@ -9,9 +9,9 @@ import {
   getHistorySchema,
   registerDeviceSchema,
   sendNotificationSchema,
-  updatePreferencesSchema,
-  validateJoiSchema
+  updatePreferencesSchema
 } from './notificationValidation.js';
+import { validateJoiSchema } from '../../helpers/generalHelper.js';
 
 /**
  * Send a single notification

@@ -5,7 +5,7 @@ import { SEARCH_ERROR_CODES } from './searchConstants.js';
 import asyncHandler from 'express-async-handler';
 // Core search operations
 export const executeSearch = asyncHandler(async (query, indexName) => {
-    const response = await client.search({
+  const response = await client.search({
     index: indexName,
     body: query
   });
@@ -17,7 +17,7 @@ export const executeKNNSearch = asyncHandler(async (knnQuery, indexName) => {
     index: indexName,
     body: knnQuery
   });
-    return response;
+  return response;
 });
 
 export const executeAggregation = asyncHandler(async (query, aggregations, indexName) => {
@@ -28,7 +28,7 @@ export const executeAggregation = asyncHandler(async (query, aggregations, index
       aggs: aggregations
     }
   });
-    return response;
+  return response;
 });
 
 // Document operations
@@ -43,7 +43,7 @@ export const indexDocument = asyncHandler(async (document, indexName, id = null)
   }
 
   const response = await client.index(params);
-    return response;
+  return response;
 });
 
 export const bulkIndex = asyncHandler(async (documents, indexName, req, next) => {
@@ -89,7 +89,7 @@ export const bulkIndex = asyncHandler(async (documents, indexName, req, next) =>
     return httpError(next, new Error(SEARCH_ERROR_CODES.BULK_INDEX_FAILED), req, 400);
   }
 
-    return response;
+  return response;
 });
 
 export const updateDocument = asyncHandler(async (id, document, indexName) => {
@@ -100,7 +100,7 @@ export const updateDocument = asyncHandler(async (id, document, indexName) => {
       doc: document
     }
   });
-    return response;
+  return response;
 });
 
 export const deleteDocument = asyncHandler(async (id, indexName) => {
@@ -108,7 +108,7 @@ export const deleteDocument = asyncHandler(async (id, indexName) => {
     index: indexName,
     id
   });
-    return response;
+  return response;
 });
 
 // Index management functions
@@ -120,7 +120,7 @@ export const createIndex = asyncHandler(async (indexName, mapping, settings) => 
       settings
     }
   });
-    return response;
+  return response;
 });
 
 export const updateIndexMapping = asyncHandler(async (indexName, mapping) => {
@@ -128,23 +128,23 @@ export const updateIndexMapping = asyncHandler(async (indexName, mapping) => {
     index: indexName,
     body: mapping
   });
-    return response;
+  return response;
 });
 
 export const deleteIndex = asyncHandler(async (indexName) => {
   const response = await client.indices.delete({
     index: indexName
   });
-    return response;
+  return response;
 });
 
 // N-gram search operations
 export const executeNgramSearch = asyncHandler(async (query, indexName) => {
-    const response = await client.search({
+  const response = await client.search({
     index: indexName,
     body: query
   });
-    return response;
+  return response;
 });
 
 // Fuzzy search operations
@@ -153,7 +153,7 @@ export const executeFuzzySearch = asyncHandler(async (query, indexName) => {
     index: indexName,
     body: query
   });
-    return response;
+  return response;
 });
 /**
  * Check Elasticsearch cluster health
@@ -163,5 +163,5 @@ export const executeFuzzySearch = asyncHandler(async (query, indexName) => {
  */
 export const checkElasticsearchHealth = asyncHandler(async () => {
   const response = await client.cluster.health();
-    return response;
+  return response;
 });

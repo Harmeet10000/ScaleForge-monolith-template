@@ -5,7 +5,13 @@ import {
   listObjects,
   copyObject,
   checkObjectExists,
-  getObjectMetadata
+  getObjectMetadata,
+  generateBatchUploadUrls,
+  initiateMultipart,
+  generateMultipartParts,
+  completeMultipart,
+  abortMultipart,
+  listMultipartPartsController as listMultipartParts
 } from './s3Controller.js';
 import { protect } from '../auth/authMiddleware.js';
 
@@ -123,6 +129,218 @@ router.use(protect);
  *               $ref: '#/components/schemas/S3Error'
  */
 router.post('/upload-url', generateUploadUrl);
+
+/**
+ * @swagger
+ * /s3/upload-urls/batch:
+ *   post:
+ *     summary: Generate multiple presigned upload URLs
+ *     tags: [S3 Storage]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - files
+ *             properties:
+ *               files:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *                   required: [filename, contentType]
+ *                   properties:
+ *                     filename:
+ *                       type: string
+ *                     contentType:
+ *                       type: string
+ *               destination:
+ *                 type: string
+ *                 default: uploads
+ *               expiresIn:
+ *                 type: integer
+ *                 default: 900
+ *     responses:
+ *       200:
+ *         description: Batch upload URLs generated
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/S3Success'
+ */
+router.post('/upload-urls/batch', generateBatchUploadUrls);
+
+/**
+ * @swagger
+ * /s3/multipart/initiate:
+ *   post:
+ *     summary: Initiate multipart upload
+ *     tags: [S3 Storage]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [filename, contentType, fileSize]
+ *             properties:
+ *               filename:
+ *                 type: string
+ *               contentType:
+ *                 type: string
+ *               fileSize:
+ *                 type: integer
+ *               destination:
+ *                 type: string
+ *                 default: uploads
+ *     responses:
+ *       200:
+ *         description: Multipart upload initiated
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/S3Success'
+ */
+router.post('/multipart/initiate', initiateMultipart);
+
+/**
+ * @swagger
+ * /s3/multipart/parts:
+ *   post:
+ *     summary: Generate presigned URLs for multipart upload parts
+ *     tags: [S3 Storage]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [filename, contentType, fileSize]
+ *             properties:
+ *               filename:
+ *                 type: string
+ *               contentType:
+ *                 type: string
+ *               fileSize:
+ *                 type: integer
+ *               partSize:
+ *                 type: integer
+ *               expiresIn:
+ *                 type: integer
+ *     responses:
+ *       200:
+ *         description: Multipart presigned URLs generated
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/S3Success'
+ */
+router.post('/multipart/parts', generateMultipartParts);
+
+/**
+ * @swagger
+ * /s3/multipart/complete:
+ *   post:
+ *     summary: Complete multipart upload
+ *     tags: [S3 Storage]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [key, uploadId, parts]
+ *             properties:
+ *               key:
+ *                 type: string
+ *               uploadId:
+ *                 type: string
+ *               parts:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *                   properties:
+ *                     PartNumber:
+ *                       type: integer
+ *                     ETag:
+ *                       type: string
+ *     responses:
+ *       200:
+ *         description: Multipart upload completed
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/S3Success'
+ */
+router.post('/multipart/complete', completeMultipart);
+
+/**
+ * @swagger
+ * /s3/multipart/abort:
+ *   post:
+ *     summary: Abort multipart upload
+ *     tags: [S3 Storage]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [key, uploadId]
+ *             properties:
+ *               key:
+ *                 type: string
+ *               uploadId:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Multipart upload aborted
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/S3Success'
+ */
+router.post('/multipart/abort', abortMultipart);
+
+/**
+ * @swagger
+ * /s3/multipart/parts:
+ *   get:
+ *     summary: List parts of an in-progress multipart upload
+ *     tags: [S3 Storage]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: key
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: uploadId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Multipart upload parts listed
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/S3Success'
+ */
+router.get('/multipart/parts', listMultipartParts);
 
 /**
  * @swagger

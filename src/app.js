@@ -26,15 +26,19 @@ import subscriptionRoutes from './features/subscription/subscriptionRoutes.js';
 import notificationRoutes from './features/notifications/notificationRoutes.js';
 import s3Routes from './features/storage/s3Routes.js';
 import geminiRoutes from './features/gemini/geminiRoutes.js';
+import { logger } from './utils/logger.js';
 
 const app = express();
 
 // 1) GLOBAL MIDDLEWARES
-// Set request timeout to 20 seconds
+// Set request timeout to 30 seconds
 app.use(
   timeout.handler({
-    timeout: 20000,
+    timeout: 30000,
     onTimeout: (req, res, next) => {
+      logger.warn('Request timed out', {
+        meta: { correlationId: req.correlationId, url: req.originalUrl }
+      });
       httpError(next, new Error('Request took too long to process'), req, 408);
     }
   })
@@ -75,17 +79,7 @@ app.use(mongoSanitize());
 // Prevent parameter pollution
 app.use(
   hpp({
-    whitelist: [
-      'sort',
-      'fields',
-      'page',
-      'limit',
-      'filter',
-      'search',
-      'category',
-      'tags',
-      'status'
-    ]
+    whitelist: ['sort', 'fields', 'page', 'limit', 'filter', 'search', 'category', 'tags', 'status']
   })
 );
 
@@ -139,3 +133,12 @@ app.all('*', (req, res, next) => {
 app.use(globalErrorHandler);
 
 export default app;
+
+//react three fiber
+//react 360
+// react DND
+//  magic ui
+// react AG Grid
+// spline
+// micro animations
+//  origin ui

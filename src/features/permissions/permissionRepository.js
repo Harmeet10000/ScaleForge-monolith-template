@@ -11,7 +11,7 @@ export const writeRelationship = asyncHandler(async (tuple) => {
       authorizationModelId: '01K2M2XK88QZ9H6797FM5QYVVZ'
     }
   );
-    return true;
+  return true;
 });
 
 // Generic method to delete relationship tuples
@@ -22,7 +22,7 @@ export const deleteRelationship = asyncHandler(async (tuple) => {
       authorizationModelId: '01K2M2XK88QZ9H6797FM5QYVVZ'
     }
   );
-    return true;
+  return true;
 });
 
 // Generic method to check authorization
@@ -36,7 +36,7 @@ export const check = asyncHandler(async (tuple) => {
 // Batch operations for better performance
 export const batchWriteRelationships = asyncHandler(async (tuples) => {
   await fgaClient.write({ writes: tuples }, { authorizationModelId: '01K2M2XK88QZ9H6797FM5QYVVZ' });
-    return true;
+  return true;
 });
 
 export const batchDeleteRelationships = asyncHandler(async (tuples) => {
@@ -44,7 +44,7 @@ export const batchDeleteRelationships = asyncHandler(async (tuples) => {
     { deletes: tuples },
     { authorizationModelId: '01K2M2XK88QZ9H6797FM5QYVVZ' }
   );
-    return true;
+  return true;
 });
 
 // List objects a user has access to

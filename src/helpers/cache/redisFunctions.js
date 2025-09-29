@@ -1,7 +1,12 @@
 import { logger } from '../../utils/logger.js';
 import asyncHandler from 'express-async-handler';
 import { redisClient } from '../../connections/connectRedis.js';
-import { serializeHashData, deserializeHashData } from '../generalHelper.js';
+import {
+  serializeHashData,
+  deserializeHashData,
+  getCacheKey,
+  getKeyName
+} from '../generalHelper.js';
 
 // Use Case | Recommended Redis Type
 // Caching a JWT token or simple API response | String
@@ -15,10 +20,6 @@ import { serializeHashData, deserializeHashData } from '../generalHelper.js';
 // List (LPUSH, LRANGE) | - Cache ordered sequences of items.  - Example: Recent activity feed, chat messages, task queues.
 // Set (SADD, SMEMBERS) | - Cache unique unordered items (no duplicates).  - Example: Online users, tags, permissions.
 // Sorted Set (ZADD, ZRANGE) | - Cache items with a score (ranking).  - Example: Leaderboards, ranking posts by popularity, trending topics.
-
-const getKeyName = (objectType, ...args) => `${objectType}:${args.join(':')}`;
-const getCacheKey = (objectType, key) =>
-  getKeyName(objectType, ...(Array.isArray(key) ? key : [key]));
 
 export const setCache = asyncHandler(async (objectType, key, value, expireSeconds = 1800) => {
   const cacheKey = getCacheKey(objectType, key);

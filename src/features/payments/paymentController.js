@@ -4,13 +4,13 @@ import {
   validatePaymentVerification,
   validatePaymentHistory,
   validatePaymentId,
-  validateRefund,
-  validateJoiSchema
+  validateRefund
 } from './paymentValidation.js';
 import * as paymentService from './paymentService.js';
 import * as paymentRepository from './paymentRepository.js';
 import asyncHandler from 'express-async-handler';
 import { httpResponse } from '../../utils/httpResponse.js';
+import { validateJoiSchema } from '../../helpers/generalHelper.js';
 
 export const checkout = asyncHandler(async (req, res, next) => {
   const { error, value } = validateJoiSchema(validateCheckout, req.body);

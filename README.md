@@ -221,7 +221,7 @@ cd production-grade-auth-template
 2. **Install dependencies**
 
 ```bash
-npm i 
+npm i
 pnpm i
 ```
 
@@ -330,7 +330,7 @@ LOKI_HOST=http://loki:3100
 #### Development Mode
 
 ```bash
-docker compose up -d 
+docker compose up -d
 or
 npm run dev
 ```
@@ -515,7 +515,6 @@ npm run test:coverage
 ```
 
 </details>
-
 
 ## 🤝 Contributing
 

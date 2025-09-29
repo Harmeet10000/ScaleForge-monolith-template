@@ -56,7 +56,7 @@ Promise.all([connectDB(), connectRedis(), createConnection()])
     });
   })
   .catch((err) => {
-    logger.error('Application startup failed!', { error: err });
+    logger.error('Application startup failed!', { meta: { error: err } });
     // Attempt to disconnect Redis, DB, RabbitMQ, Novu, and Kafka even on startup failure
     Promise.allSettled([
       redisClient.status === 'ready' || redisClient.status === 'connect'
