@@ -22,10 +22,11 @@ import permissionsRoutes from './features/permissions/permissionsRoutes.js';
 import searchRoutes from './features/search/searchRoutes.js';
 import paymentsRoutes from './features/payments/paymentsRoutes.js';
 import subscriptionRoutes from './features/subscription/subscriptionRoutes.js';
-// import billingRoutes from './features/billing/billingRoutes.js';
+import recommendationsRoutes from './features/recommendations/recommendationsRoutes.js';
 import notificationRoutes from './features/notifications/notificationRoutes.js';
 import s3Routes from './features/storage/s3Routes.js';
 import geminiRoutes from './features/gemini/geminiRoutes.js';
+import auditRoutes from './features/audit/auditRoutes.js';
 import { logger } from './utils/logger.js';
 
 const app = express();
@@ -124,6 +125,8 @@ app.use('/api/v1/subscriptions', subscriptionRoutes);
 app.use('/api/v1/notifications', notificationRoutes);
 app.use('/api/v1/upload', s3Routes);
 app.use('/api/v1/gemini', geminiRoutes);
+app.use('/api/v1/recommendations', recommendationsRoutes);
+app.use('/api/v1/audit', auditRoutes);
 
 // 4) CATCHES ALL ROUTES THAT ARE NOT DEFINED
 app.all('*', (req, res, next) => {

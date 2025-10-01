@@ -5,14 +5,14 @@
 1.  add Gemini system prompts, prompt message structure, LLM settings, structured output, tool calling and RAG - DONE
 1.  make AI-driven features for enhanced user experience and personalization using Gemini API - DONE
 1.  add Novu for push notifications - DONE
+1.  add recommendation system using Convex or AWS personalise/GCP equivalent - DONE
+1.  add ELK stack for logging and monitoring - ABANDONED
 1.  Add LangChain, LangGraph, LangSmith, LangServe - Undergoing
+1.  properly implement RabbitMQ for message queuing for modularity and decoupling - Undergoing
 1.  Improve the idempotency in payments
 1.  Figure out what will be subscription id in payments
 1.  Shift audit trail to new model
-1.      message: 'Cannot modify cancelled subscription except to reactivate', actually changed to suspended
-1.  add ELK stack for logging and monitoring - ABANDONED
-1.  add recommendation system using Convex or AWS personalise/GCP equivalent  - Undergoing
-1.  properly implement RabbitMQ for message queuing for modularity and decoupling - Undergoing
+1.       message: 'Cannot modify cancelled subscription except to reactivate', actually changed to suspended
 1.  make a branch for drizzle + JS for AI features and Postgres extensions
 1.  explore Postgres Extensions for enhanced functionality
 1.  check if I can deploy it on AWS Lambda or Google Cloud Functions for serverless architecture and also check about cloudflare WAF

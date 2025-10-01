@@ -5,8 +5,8 @@ import {
   createConsumer
 } from '../helpers/rabbitMQConsumer.js';
 import { logger } from '../utils/logger.js';
-import { catchAsync } from '../utils/catchAsync.js';
 import { closeConnection } from '../db/rabbitMQConnection.js';
+import asyncHandler from 'express-async-handler';
 
 /**
  * Example: Setting up a RabbitMQ producer
@@ -14,7 +14,7 @@ import { closeConnection } from '../db/rabbitMQConnection.js';
  * This demonstrates creating and using a producer to send messages to different exchanges
  * with various routing patterns and handling backpressure.
  */
-export const setupProducer = catchAsync(async () => {
+export const setupProducer = asyncHandler(async () => {
   // Create a producer for a direct exchange
   const directProducer = await createProducer('notifications', ExchangeTypes.DIRECT);
   logger.info('Direct producer created:', {
@@ -143,7 +143,7 @@ export const setupProducer = catchAsync(async () => {
  * This demonstrates creating and using consumers to receive messages from queues
  * bound to different exchange types with various routing patterns and retry mechanisms.
  */
-export const setupConsumers = catchAsync(async () => {
+export const setupConsumers = asyncHandler(async () => {
   // Create a consumer with custom retry configuration
   const emailConsumer = await createConsumer('email_notifications', {
     durable: true,
@@ -251,7 +251,7 @@ export const setupConsumers = catchAsync(async () => {
  * This demonstrates creating and using a priority queue for task processing
  * where higher priority tasks are processed first.
  */
-export const runTaskQueueExample = catchAsync(async () => {
+export const runTaskQueueExample = asyncHandler(async () => {
   // Create a task producer that publishes to a direct exchange
   const taskProducer = await createProducer('tasks', ExchangeTypes.DIRECT, true);
 
@@ -374,7 +374,7 @@ export const runTaskQueueExample = catchAsync(async () => {
  * This demonstrates handling failed messages with a Dead Letter Exchange (DLX),
  * where messages that fail processing are sent to a separate queue for analysis.
  */
-export const deadLetterExchangeExample = catchAsync(async () => {
+export const deadLetterExchangeExample = asyncHandler(async () => {
   // Create an exchange for our main messages
   const mainProducer = await createProducer('orders', ExchangeTypes.DIRECT);
 

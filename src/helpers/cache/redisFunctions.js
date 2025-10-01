@@ -1,12 +1,7 @@
 import { logger } from '../../utils/logger.js';
 import asyncHandler from 'express-async-handler';
 import { redisClient } from '../../connections/connectRedis.js';
-import {
-  serializeHashData,
-  deserializeHashData,
-  getCacheKey,
-  getKeyName
-} from '../generalHelper.js';
+import { serializeHashData, deserializeHashData, getCacheKey } from '../generalHelper.js';
 
 // Use Case | Recommended Redis Type
 // Caching a JWT token or simple API response | String

@@ -3,14 +3,9 @@ import crypto from 'crypto';
 import asyncHandler from 'express-async-handler';
 import { httpError } from '../../utils/httpError.js';
 import { logger } from '../../utils/logger.js';
-import {
-  EPaymentStatus,
-  EAuditOperationType,
-  EAuditStatus,
-  RETRY_CONFIG,
-  DEFAULT_VALUES
-} from './paymentConstants.js';
+import { EPaymentStatus, RETRY_CONFIG, DEFAULT_VALUES } from './paymentConstants.js';
 import * as paymentRepository from './paymentRepository.js';
+import * as auditUtils from '../audit/auditUtils.js';
 
 // Initialize Razorpay instance
 const razorpayInstance = new Razorpay({
@@ -29,7 +24,7 @@ const razorpayInstance = new Razorpay({
  * @returns {Promise<Object= asyncHandler>} - Created payment and idempotency flag
  */
 export const createPayment = asyncHandler(
-  async (paymentData, correlationId, userId, requestContext = {}, req, next) => {
+  async (paymentData, correlationId, userId, requestContext = {}, req) => {
     logger.info('Creating payment', {
       meta: {
         correlationId,
@@ -103,23 +98,19 @@ export const createPayment = asyncHandler(
       requestHash
     );
 
-    // Add audit entry
-    // await paymentRepository.addPaymentAuditEntry(
-    //   payment.paymentId,
-    //   'Payment created',
-    //   EAuditOperationType.PAYMENT_CREATE,
-    //   userId,
-    //   {
-    //     operationData: {
-    //       razorpayOrderId: razorpayOrder.id,
-    //       amount: paymentData.amount,
-    //       currency: paymentData.currency
-    //     }
-    //   },
-    //   requestContext.ipAddress,
-    //   requestContext.userAgent,
-    //   EAuditStatus.SUCCESS
-    // );
+    // Add audit entry using new audit system
+    await auditUtils.auditPaymentOperation('create', payment, {
+      userId,
+      correlationId,
+      ipAddress: requestContext.ipAddress,
+      userAgent: requestContext.userAgent,
+      requestId: req?.id,
+      metadata: {
+        razorpayOrderId: razorpayOrder.id,
+        amount: paymentData.amount,
+        currency: paymentData.currency
+      }
+    });
 
     logger.info('Payment created successfully', {
       meta: {
@@ -137,17 +128,6 @@ export const createPayment = asyncHandler(
   }
 );
 
-/**
- * Update payment status with audit trail
- * @param {string} paymentId - Payment ID to update
- * @param {string} status - New payment status
- * @param {Object} updateData - Additional data to update
- * @param {string} userId - User ID for audit trail
- * @param {Object} requestContext - Request context
- * @param {Object} req - Express request object
- * @param {Function} next - Express next function
- * @returns {Promise<Object>} Updated payment object
- */
 export const updatePaymentStatus = asyncHandler(
   async (paymentId, status, updateData = {}, userId, requestContext = {}, req, next) => {
     const payment = await paymentRepository.findPaymentById(paymentId);
@@ -171,20 +151,22 @@ export const updatePaymentStatus = asyncHandler(
     // Update payment
     const updatedPayment = await paymentRepository.updatePaymentById(paymentId, updatePayload);
 
-    // Add audit entry
-    await paymentRepository.addPaymentAuditEntry(
+    // Add audit entry using new audit system
+    await auditUtils.auditEntityChange(
+      'payment',
       paymentId,
       `Payment status updated to ${status}`,
-      EAuditOperationType.PAYMENT_UPDATE,
-      userId,
+      { status: previousStatus },
+      { status },
       {
-        before: { status: previousStatus },
-        after: { status },
+        operationType: 'payment_update',
+        userId,
+        correlationId: updatedPayment.correlationId,
+        ipAddress: requestContext.ipAddress,
+        userAgent: requestContext.userAgent,
+        requestId: req?.id,
         operationData: updateData
-      },
-      requestContext.ipAddress,
-      requestContext.userAgent,
-      EAuditStatus.SUCCESS
+      }
     );
 
     logger.info('Payment status updated', {
@@ -200,15 +182,6 @@ export const updatePaymentStatus = asyncHandler(
   }
 );
 
-/**
- * Retry failed payment with exponential backoff
- * @param {string} paymentId - Payment ID to retry
- * @param {string} userId - User ID for audit trail
- * @param {Object} requestContext - Request context
- * @param {Object} req - Express request object
- * @param {Function} next - Express next function
- * @returns {Promise<Object>} Retry result
- */
 export const retryFailedPayment = asyncHandler(
   async (paymentId, userId, requestContext = {}, req, next) => {
     const payment = await paymentRepository.findPaymentById(paymentId);
@@ -256,23 +229,19 @@ export const retryFailedPayment = asyncHandler(
     // Get updated payment for retry count
     const updatedPayment = await paymentRepository.findPaymentById(paymentId);
 
-    // Add audit entry for retry attempt
-    await paymentRepository.addPaymentAuditEntry(
-      paymentId,
-      `Payment retry attempt ${updatedPayment.retryCount}`,
-      EAuditOperationType.PAYMENT_UPDATE,
+    // Add audit entry for retry attempt using new audit system
+    await auditUtils.auditPaymentOperation('retry', updatedPayment, {
       userId,
-      {
-        operationData: {
-          retryCount: updatedPayment.retryCount,
-          delay,
-          previousFailureReason: payment.failureReason
-        }
-      },
-      requestContext.ipAddress,
-      requestContext.userAgent,
-      EAuditStatus.SUCCESS
-    );
+      correlationId: payment.correlationId,
+      ipAddress: requestContext.ipAddress,
+      userAgent: requestContext.userAgent,
+      requestId: req?.id,
+      metadata: {
+        retryCount: updatedPayment.retryCount,
+        delay,
+        previousFailureReason: payment.failureReason
+      }
+    });
 
     // In a real implementation, you would schedule the retry after the delay
     // For now, we'll return the retry information
@@ -286,14 +255,7 @@ export const retryFailedPayment = asyncHandler(
   }
 );
 
-/**
- * Get payment status from Razorpay API
- * @param {string} razorpayPaymentId - Razorpay payment ID
- * @param {Object} req - Express request object
- * @param {Function} next - Express next function
- * @returns {Promise<Object>} Payment status from Razorpay
- */
-export const getPaymentStatusFromRazorpay = asyncHandler(async (razorpayPaymentId, req, next) => {
+export const getPaymentStatusFromRazorpay = asyncHandler(async (razorpayPaymentId) => {
   const payment = await razorpayInstance.payments.fetch(razorpayPaymentId);
 
   logger.info('Fetched payment status from Razorpay', {
@@ -317,16 +279,6 @@ export const getPaymentStatusFromRazorpay = asyncHandler(async (razorpayPaymentI
   };
 });
 
-/**
- * Process payment verification
- * @param {Object} verificationData - Razorpay verification data
- * @param {string} correlationId - Correlation ID
- * @param {string} userId - User ID for audit trail
- * @param {Object} requestContext - Request context
- * @param {Object} req - Express request object
- * @param {Function} next - Express next function
- * @returns {Promise<Object>} Verification result
- */
 export const verifyPayment = asyncHandler(
   async (verificationData, correlationId, userId, requestContext = {}, req, next) => {
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = verificationData;
@@ -393,23 +345,19 @@ export const verifyPayment = asyncHandler(
       next
     );
 
-    // Add verification audit entry
-    await paymentRepository.addPaymentAuditEntry(
-      payment.paymentId,
-      'Payment verification completed',
-      EAuditOperationType.PAYMENT_VERIFY,
+    // Add verification audit entry using new audit system
+    await auditUtils.auditPaymentOperation('verify', updatedPayment, {
       userId,
-      {
-        operationData: {
-          razorpayPaymentId: razorpay_payment_id,
-          signatureValid: isSignatureValid,
-          razorpayStatus: razorpayPaymentDetails.status
-        }
-      },
-      requestContext.ipAddress,
-      requestContext.userAgent,
-      EAuditStatus.SUCCESS
-    );
+      correlationId,
+      ipAddress: requestContext.ipAddress,
+      userAgent: requestContext.userAgent,
+      requestId: req?.id,
+      metadata: {
+        razorpayPaymentId: razorpay_payment_id,
+        signatureValid: isSignatureValid,
+        razorpayStatus: razorpayPaymentDetails.status
+      }
+    });
 
     logger.info('Payment verification completed', {
       meta: {
@@ -428,13 +376,6 @@ export const verifyPayment = asyncHandler(
   }
 );
 
-/**
- * Get payment by correlation ID
- * @param {string} correlationId - Correlation ID
- * @param {Object} req - Express request object
- * @param {Function} next - Express next function
- * @returns {Promise<Object>} Payment object
- */
 export const getPaymentByCorrelationId = asyncHandler(async (correlationId, req, next) => {
   const payment = await paymentRepository.findPaymentByCorrelationId(correlationId);
   if (!payment) {
@@ -444,51 +385,21 @@ export const getPaymentByCorrelationId = asyncHandler(async (correlationId, req,
   return payment;
 });
 
-/**
- * Get payments by customer with filtering options
- * @param {string} customerId - Customer ID
- * @param {Object} options - Query options (status, limit, sort, etc.)
- * @param {Object} req - Express request object
- * @param {Function} next - Express next function
- * @returns {Promise<Array>} Array of payments
- */
-export const getPaymentsByCustomer = asyncHandler(async (customerId, options = {}, req, next) => {
+export const getPaymentsByCustomer = asyncHandler(async (customerId, options = {}) => {
   const payments = await paymentRepository.findPaymentsByCustomer(customerId, options);
   return payments;
 });
 
-/**
- * Get pending payments that need status updates
- * @param {Object} req - Express request object
- * @param {Function} next - Express next function
- * @returns {Promise<Array>} Array of pending payments
- */
-export const getPendingPayments = asyncHandler(async (req, next) => {
+export const getPendingPayments = asyncHandler(async () => {
   const payments = await paymentRepository.findPendingPayments();
   return payments;
 });
 
-/**
- * Calculate exponential backoff delay
- * @param {number} retryCount - Current retry count
- * @param {Object} config - Retry configuration
- * @returns {number} Delay in milliseconds
- */
 export const calculateBackoffDelay = (retryCount, config = RETRY_CONFIG.PAYMENT) => {
   const delay = config.BASE_DELAY * Math.pow(config.BACKOFF_MULTIPLIER, retryCount);
   return Math.min(delay, config.MAX_DELAY);
 };
 
-/**
- * Process payment with automatic retry logic
- * @param {string} paymentId - Payment ID to process
- * @param {string} userId - User ID for audit trail
- * @param {Object} requestContext - Request context
- * @param {number} maxRetries - Maximum retry attempts
- * @param {Object} req - Express request object
- * @param {Function} next - Express next function
- * @returns {Promise<Object>} Processing result
- */
 export const processPaymentWithRetry = asyncHandler(
   async (
     paymentId,
@@ -604,18 +515,6 @@ export const processPaymentWithRetry = asyncHandler(
   }
 );
 
-/**
- * Refund payment
- * @param {string} paymentId - Payment ID to refund
- * @param {number} amount - Refund amount (optional, defaults to full amount)
- * @param {string} reason - Refund reason
- * @param {string} correlationId - Correlation ID for tracking
- * @param {string} userId - User ID for audit trail
- * @param {Object} requestContext - Request context
- * @param {Object} req - Express request object
- * @param {Function} next - Express next function
- * @returns {Promise<Object>} Refund result
- */
 export const refundPayment = asyncHandler(
   async (paymentId, amount, reason, correlationId, userId, requestContext = {}, req, next) => {
     const payment = await paymentRepository.findPaymentById(paymentId);
@@ -674,24 +573,20 @@ export const refundPayment = asyncHandler(
       next
     );
 
-    // Add refund audit entry
-    await paymentRepository.addPaymentAuditEntry(
-      paymentId,
-      'Payment refunded',
-      EAuditOperationType.PAYMENT_REFUND,
+    // Add refund audit entry using new audit system
+    await auditUtils.auditPaymentOperation('refund', updatedPayment, {
       userId,
-      {
-        operationData: {
-          razorpayRefundId: razorpayRefund.id,
-          refundAmount,
-          reason,
-          originalAmount: payment.amount
-        }
-      },
-      requestContext.ipAddress,
-      requestContext.userAgent,
-      EAuditStatus.SUCCESS
-    );
+      correlationId,
+      ipAddress: requestContext.ipAddress,
+      userAgent: requestContext.userAgent,
+      requestId: req?.id,
+      metadata: {
+        razorpayRefundId: razorpayRefund.id,
+        refundAmount,
+        reason,
+        originalAmount: payment.amount
+      }
+    });
 
     logger.info('Payment refunded successfully', {
       meta: {
@@ -710,17 +605,6 @@ export const refundPayment = asyncHandler(
   }
 );
 
-/**
- * Cancel payment
- * @param {string} paymentId - Payment ID to cancel
- * @param {string} reason - Cancellation reason
- * @param {string} correlationId - Correlation ID for tracking
- * @param {string} userId - User ID for audit trail
- * @param {Object} requestContext - Request context
- * @param {Object} req - Express request object
- * @param {Function} next - Express next function
- * @returns {Promise<Object>} Cancellation result
- */
 export const cancelPayment = asyncHandler(
   async (paymentId, reason, correlationId, userId, requestContext = {}, req, next) => {
     const payment = await paymentRepository.findPaymentById(paymentId);
@@ -758,22 +642,18 @@ export const cancelPayment = asyncHandler(
       next
     );
 
-    // Add cancellation audit entry
-    await paymentRepository.addPaymentAuditEntry(
-      paymentId,
-      'Payment cancelled',
-      EAuditOperationType.PAYMENT_CANCEL,
+    // Add cancellation audit entry using new audit system
+    await auditUtils.auditPaymentOperation('cancel', updatedPayment, {
       userId,
-      {
-        operationData: {
-          reason,
-          previousStatus: payment.status
-        }
-      },
-      requestContext.ipAddress,
-      requestContext.userAgent,
-      EAuditStatus.SUCCESS
-    );
+      correlationId,
+      ipAddress: requestContext.ipAddress,
+      userAgent: requestContext.userAgent,
+      requestId: req?.id,
+      metadata: {
+        reason,
+        previousStatus: payment.status
+      }
+    });
 
     logger.info('Payment cancelled successfully', {
       meta: {
@@ -791,14 +671,6 @@ export const cancelPayment = asyncHandler(
   }
 );
 
-/**
- * Batch update payment statuses by polling Razorpay
- * @param {Array} paymentIds - Array of payment IDs to update
- * @param {string} userId - User ID for audit trail
- * @param {Object} req - Express request object
- * @param {Function} next - Express next function
- * @returns {Promise<Object>} Batch update result
- */
 export const batchUpdatePaymentStatuses = asyncHandler(async (paymentIds, userId, req, next) => {
   const results = {
     updated: [],

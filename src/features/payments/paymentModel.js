@@ -1,4 +1,5 @@
 import mongoose, { Schema } from 'mongoose';
+import { auditPlugin } from '../audit/auditUtils.js';
 
 const paymentSchema = new Schema(
   {
@@ -78,48 +79,7 @@ const paymentSchema = new Schema(
     expiresAt: {
       type: Date,
       index: { expireAfterSeconds: 0 }
-    },
-    auditTrail: [
-      {
-        _id: false,
-        operation: {
-          type: String,
-          required: true
-        },
-        operationType: {
-          type: String,
-          enum: [
-            'payment_create',
-            'payment_update',
-            'payment_verify',
-            'payment_refund',
-            'payment_cancel'
-          ],
-          required: true
-        },
-        userId: {
-          type: mongoose.Schema.Types.ObjectId,
-          ref: 'User'
-        },
-        details: {
-          before: mongoose.Schema.Types.Mixed,
-          after: mongoose.Schema.Types.Mixed,
-          operationData: mongoose.Schema.Types.Mixed
-        },
-        ipAddress: String,
-        userAgent: String,
-        status: {
-          type: String,
-          enum: ['success', 'failure', 'error'],
-          required: true
-        },
-        errorMessage: String,
-        timestamp: {
-          type: Date,
-          default: Date.now
-        }
-      }
-    ]
+    }
   },
   {
     timestamps: true
@@ -152,30 +112,6 @@ paymentSchema.methods.incrementRetry = function () {
 
 paymentSchema.methods.canRetry = function (maxRetries = 3) {
   return this.retryCount < maxRetries && this.status === 'failed';
-};
-
-paymentSchema.methods.addAuditEntry = function (
-  operation,
-  operationType,
-  userId,
-  details,
-  ipAddress,
-  userAgent,
-  status,
-  errorMessage
-) {
-  this.auditTrail.push({
-    operation,
-    operationType,
-    userId,
-    details,
-    ipAddress,
-    userAgent,
-    status,
-    errorMessage,
-    timestamp: new Date()
-  });
-  return this.save();
 };
 
 paymentSchema.methods.setIdempotencyKey = function (key, requestHash) {
@@ -262,6 +198,12 @@ paymentSchema.pre('save', function (next) {
   }
 
   next();
+});
+
+// Apply audit plugin
+paymentSchema.plugin(auditPlugin, {
+  entityType: 'payment',
+  excludeFields: ['updatedAt', '__v']
 });
 
 export const Payment = mongoose.model('Payment', paymentSchema);

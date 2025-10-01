@@ -284,7 +284,7 @@ export const bulkIndexDocuments = asyncHandler(async (bulkData) => {
     const sourceDocuments = bulkData.documents.map((doc) => doc._source || doc);
 
     const pipelineResult = await pipelineService.processBatch(sourceDocuments, bulkData.pipeline);
-    logger.debug('pipelineResult', { meta: { pipelineResult } });
+    // logger.debug('pipelineResult', { meta: { pipelineResult } });
     const processedSources = pipelineResult.processedDocuments || pipelineResult;
 
     // Reconstruct the bulk format with processed sources

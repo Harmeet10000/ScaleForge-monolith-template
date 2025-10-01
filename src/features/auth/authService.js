@@ -184,7 +184,7 @@ export const loginUser = asyncHandler(async (credentials, req, next) => {
       userIp
     },
     process.env.REFRESH_TOKEN_SECRET,
-    3600
+    604800
   );
 
   await authRepository.updateUserLastLogin(user._id);
@@ -217,7 +217,7 @@ export const loginUser = asyncHandler(async (credentials, req, next) => {
 });
 
 export const logoutUser = asyncHandler(async (refreshToken) => {
-  logger.info('Logout called with refresh');
+  // logger.info('Logout called with refresh');
   if (refreshToken) {
     // Get user ID from refresh token
     const decoded = verifyToken(refreshToken, process.env.REFRESH_TOKEN_SECRET);

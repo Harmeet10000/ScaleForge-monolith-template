@@ -1,4 +1,5 @@
 import mongoose, { Schema } from 'mongoose';
+import { auditPlugin } from '../audit/auditUtils.js';
 
 const subscriptionSchema = new Schema(
   {
@@ -74,48 +75,7 @@ const subscriptionSchema = new Schema(
     metadata: {
       type: mongoose.Schema.Types.Mixed,
       default: {}
-    },
-    auditTrail: [
-      {
-        _id: false,
-        operation: {
-          type: String,
-          required: true
-        },
-        operationType: {
-          type: String,
-          enum: [
-            'subscription_create',
-            'subscription_update',
-            'subscription_cancel',
-            'subscription_renew',
-            'subscription_suspend'
-          ],
-          required: true
-        },
-        userId: {
-          type: mongoose.Schema.Types.ObjectId,
-          ref: 'User'
-        },
-        details: {
-          before: mongoose.Schema.Types.Mixed,
-          after: mongoose.Schema.Types.Mixed,
-          operationData: mongoose.Schema.Types.Mixed
-        },
-        ipAddress: String,
-        userAgent: String,
-        status: {
-          type: String,
-          enum: ['success', 'failure', 'error'],
-          required: true
-        },
-        errorMessage: String,
-        timestamp: {
-          type: Date,
-          default: Date.now
-        }
-      }
-    ]
+    }
   },
   {
     timestamps: true
@@ -203,30 +163,6 @@ subscriptionSchema.methods.renewPeriod = function () {
   this.currentPeriodEnd = nextEnd;
   this.nextBillingDate = nextEnd;
 
-  return this.save();
-};
-
-subscriptionSchema.methods.addAuditEntry = function (
-  operation,
-  operationType,
-  userId,
-  details,
-  ipAddress,
-  userAgent,
-  status,
-  errorMessage
-) {
-  this.auditTrail.push({
-    operation,
-    operationType,
-    userId,
-    details,
-    ipAddress,
-    userAgent,
-    status,
-    errorMessage,
-    timestamp: new Date()
-  });
   return this.save();
 };
 
@@ -323,6 +259,12 @@ subscriptionSchema.set('toObject', {
     delete ret.__v;
     return ret;
   }
+});
+
+// Apply audit plugin
+subscriptionSchema.plugin(auditPlugin, {
+  entityType: 'subscription',
+  excludeFields: ['updatedAt', '__v']
 });
 
 export const Subscription = mongoose.model('Subscription', subscriptionSchema);

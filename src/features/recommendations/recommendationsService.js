@@ -1,13 +1,16 @@
-import AWS from 'aws-sdk';
 import asyncHandler from 'express-async-handler';
 import { getCache, setCache, deleteCache } from '../../helpers/cache/redisFunctions.js';
+import {
+  PersonalizeRuntimeClient,
+  GetRecommendationsCommand
+} from '@aws-sdk/client-personalize-runtime';
+import { PersonalizeEventsClient, PutEventsCommand } from '@aws-sdk/client-personalize-events';
 
-// Initialize AWS clients
-const personalizeRuntime = new AWS.PersonalizeRuntime({
+// Initialize AWS SDK v3 clients
+const personalizeRuntime = new PersonalizeRuntimeClient({
   region: process.env.AWS_REGION
 });
-
-const personalizeEvents = new AWS.PersonalizeEvents({
+const personalizeEvents = new PersonalizeEventsClient({
   region: process.env.AWS_REGION
 });
 
@@ -33,7 +36,7 @@ export const getUserRecommendations = asyncHandler(async (userId, numResults = 2
     numResults
   };
 
-  const response = await personalizeRuntime.getRecommendations(params).promise();
+  const response = await personalizeRuntime.send(new GetRecommendationsCommand(params));
   const recommendations = (response.itemList || []).map((item) => ({
     itemId: item.itemId,
     score: item.score
@@ -64,7 +67,7 @@ export const getSimilarItems = asyncHandler(async (itemId, userId = null, numRes
     params.userId = userId.toString();
   }
 
-  const response = await personalizeRuntime.getRecommendations(params).promise();
+  const response = await personalizeRuntime.send(new GetRecommendationsCommand(params));
   const recommendations = (response.itemList || []).map((item) => ({
     itemId: item.itemId,
     score: item.score
@@ -90,7 +93,7 @@ export const getTrendingItems = asyncHandler(async (numResults = 20) => {
     numResults
   };
 
-  const response = await personalizeRuntime.getRecommendations(params).promise();
+  const response = await personalizeRuntime.send(new GetRecommendationsCommand(params));
   const recommendations = (response.itemList || []).map((item) => ({
     itemId: item.itemId,
     score: item.score
@@ -119,7 +122,7 @@ export const trackUserEvent = asyncHandler(async (eventData) => {
     ]
   };
 
-  await personalizeEvents.putEvents(params).promise();
+  await personalizeEvents.send(new PutEventsCommand(params));
 
   // Invalidate related cache entries
   const userKeyParts = ['user', userId];
@@ -160,7 +163,7 @@ export const trackBatchEvents = asyncHandler(async (events) => {
       eventList
     };
 
-    await personalizeEvents.putEvents(params).promise();
+    await personalizeEvents.send(new PutEventsCommand(params));
 
     // Invalidate user cache
     const userKeyParts = ['user', userId];

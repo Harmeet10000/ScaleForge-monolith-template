@@ -1,6 +1,6 @@
-import { httpResponse } from '../../../utils/httpResponse.js';
-import { httpError } from '../../../utils/httpError.js';
-import { validateJoiSchema } from '../../../helpers/generalHelper.js';
+import { httpResponse } from '../../utils/httpResponse.js';
+import { httpError } from '../../utils/httpError.js';
+import { validateJoiSchema } from '../../helpers/generalHelper.js';
 import * as recommendationsService from './recommendationsService.js';
 import asyncHandler from 'express-async-handler';
 import {
