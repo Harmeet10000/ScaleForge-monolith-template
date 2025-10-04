@@ -128,8 +128,7 @@ const auditSchema = new Schema(
     },
     userAgent: String,
     requestId: {
-      type: String,
-      index: true
+      type: String
     },
     sessionId: {
       type: String,
@@ -175,12 +174,6 @@ const auditSchema = new Schema(
     duration: {
       type: Number, // milliseconds
       min: 0
-    },
-
-    timestamp: {
-      type: Date,
-      default: Date.now,
-      index: true
     }
   },
   {

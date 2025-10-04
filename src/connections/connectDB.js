@@ -27,20 +27,31 @@ export const connectDB = asyncHandler(async () => {
     }
   });
 
-  // Enhanced connection event handling
-  mongoose.connection.on('disconnected', () => {
-    logger.warn('MongoDB disconnected');
+  // Handle connection events
+  mongoose.connection.on('connecting', () => {
+    logger.info('MongoDB client connecting...');
   });
 
-  mongoose.connection.on('reconnected', () => {
-    logger.info('MongoDB reconnected');
+  mongoose.connection.on('connected', () => {
+    logger.info('MongoDB client connected and ready');
   });
 
   mongoose.connection.on('error', (err) => {
-    logger.error('MongoDB connection error', { error: err.message });
+    logger.error('MongoDB client error:', { meta: { error: err.message } });
   });
 
-  // Monitor connection pool
+  mongoose.connection.on('disconnected', () => {
+    logger.warn('MongoDB connection closed');
+  });
+
+  mongoose.connection.on('reconnected', () => {
+    logger.info('MongoDB client reconnected');
+  });
+
+  mongoose.connection.on('close', () => {
+    logger.warn('MongoDB connection ended');
+  });
+
   mongoose.connection.on('fullsetup', () => {
     logger.info('MongoDB replica set connection established');
   });

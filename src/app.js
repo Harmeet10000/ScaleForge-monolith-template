@@ -66,7 +66,7 @@ app.use(
 app.use('/api', limiter);
 
 // Body parser, reading data from body into req.body
-app.use(express.json({ limit: '16kb' }));
+app.use(express.json({ limit: '64kb' }));
 
 // Middleware to handle URL-encoded data
 app.use(express.urlencoded({ extended: true }));
@@ -122,11 +122,11 @@ app.use('/api/v1/permissions', permissionsRoutes);
 app.use('/api/v1/search', searchRoutes);
 app.use('/api/v1/payments', paymentsRoutes);
 app.use('/api/v1/subscriptions', subscriptionRoutes);
+app.use('/api/v1/audit', auditRoutes);
 app.use('/api/v1/notifications', notificationRoutes);
 app.use('/api/v1/upload', s3Routes);
 app.use('/api/v1/gemini', geminiRoutes);
 app.use('/api/v1/recommendations', recommendationsRoutes);
-app.use('/api/v1/audit', auditRoutes);
 
 // 4) CATCHES ALL ROUTES THAT ARE NOT DEFINED
 app.all('*', (req, res, next) => {

@@ -234,16 +234,60 @@ export const getStatsSchema = Joi.object({
   })
 });
 
-// Reusable validation function (consistent with existing pattern)
-export const validateJoiSchema = (schema, value) => {
-  const result = schema.validate(value, {
-    abortEarly: false,
-    allowUnknown: false,
-    stripUnknown: true
-  });
+export const scheduleNotificationSchema = Joi.object({
+  userId: Joi.string().required().messages({
+    'string.empty': 'User ID is required',
+    'any.required': 'User ID is required'
+  }),
+  workflowId: Joi.string().required().messages({
+    'string.empty': 'Workflow ID is required',
+    'any.required': 'Workflow ID is required'
+  }),
+  payload: Joi.object().required().messages({
+    'object.base': 'Payload must be an object',
+    'any.required': 'Payload is required'
+  }),
+  scheduledFor: Joi.date().iso().greater('now').required().messages({
+    'date.base': 'Scheduled date must be a valid date',
+    'date.format': 'Scheduled date must be in ISO format',
+    'date.greater': 'Scheduled date must be in the future',
+    'any.required': 'Scheduled date is required'
+  }),
+  channels: Joi.array()
+    .items(Joi.string().valid('sms', 'email', 'web_push', 'mobile_push', 'in_app'))
+    .optional(),
+  priority: Joi.string().valid('low', 'normal', 'high', 'critical').default('normal')
+});
 
-  return {
-    value: result.value,
-    error: result.error
-  };
-};
+export const createTopicSchema = Joi.object({
+  key: Joi.string().required().messages({
+    'string.empty': 'Topic key is required',
+    'any.required': 'Topic key is required'
+  }),
+  name: Joi.string().required().messages({
+    'string.empty': 'Topic name is required',
+    'any.required': 'Topic name is required'
+  })
+});
+
+export const topicSubscribersSchema = Joi.object({
+  subscriberIds: Joi.alternatives()
+    .try(Joi.string(), Joi.array().items(Joi.string()).min(1))
+    .required()
+    .messages({
+      'alternatives.types': 'Subscriber IDs must be a string or array of strings',
+      'array.min': 'At least one subscriber ID is required',
+      'any.required': 'Subscriber IDs are required'
+    })
+});
+
+export const triggerToTopicSchema = Joi.object({
+  workflowName: Joi.string().required().messages({
+    'string.empty': 'Workflow name is required',
+    'any.required': 'Workflow name is required'
+  }),
+  payload: Joi.object().required().messages({
+    'object.base': 'Payload must be an object',
+    'any.required': 'Payload is required'
+  })
+});

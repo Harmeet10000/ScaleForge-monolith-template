@@ -6,9 +6,13 @@ import { NOTIFICATION_MESSAGES } from './notificationConstants.js';
 import {
   broadcastNotificationSchema,
   bulkNotificationSchema,
+  createTopicSchema,
   getHistorySchema,
   registerDeviceSchema,
+  scheduleNotificationSchema,
   sendNotificationSchema,
+  topicSubscribersSchema,
+  triggerToTopicSchema,
   updatePreferencesSchema
 } from './notificationValidation.js';
 import { validateJoiSchema } from '../../helpers/generalHelper.js';
@@ -135,4 +139,135 @@ export const getNotificationHistory = asyncHandler(async (req, res, next) => {
   );
 
   httpResponse(req, res, 200, NOTIFICATION_MESSAGES.HISTORY_RETRIEVED_SUCCESS, result);
+});
+
+export const scheduleNotification = asyncHandler(async (req, res, next) => {
+  const { error, value } = validateJoiSchema(scheduleNotificationSchema, req.body);
+
+  if (error) {
+    return httpError(next, error, req, 422);
+  }
+
+  const result = await notificationService.scheduleNotification(value, req, next);
+
+  httpResponse(req, res, 200, NOTIFICATION_MESSAGES.NOTIFICATION_SCHEDULED_SUCCESS, result);
+});
+
+export const cancelScheduledNotification = asyncHandler(async (req, res, next) => {
+  const result = await notificationService.cancelScheduledNotification(
+    req.params.transactionId,
+    req,
+    next
+  );
+
+  httpResponse(req, res, 200, 'Scheduled notification cancelled successfully', result);
+});
+
+export const createTopic = asyncHandler(async (req, res, next) => {
+  const { error, value } = validateJoiSchema(createTopicSchema, req.body);
+
+  if (error) {
+    return httpError(next, error, req, 422);
+  }
+
+  const result = await notificationService.createNotificationTopic(value, req, next);
+
+  httpResponse(req, res, 201, 'Topic created successfully', result);
+});
+
+export const addSubscribersToTopic = asyncHandler(async (req, res, next) => {
+  const { error, value } = validateJoiSchema(topicSubscribersSchema, req.body);
+
+  if (error) {
+    return httpError(next, error, req, 422);
+  }
+
+  const result = await notificationService.addSubscribersToTopic(
+    req.params.topicKey,
+    value.subscriberIds,
+    req,
+    next
+  );
+
+  httpResponse(req, res, 200, 'Subscribers added to topic successfully', result);
+});
+
+export const removeSubscribersFromTopic = asyncHandler(async (req, res, next) => {
+  const { error, value } = validateJoiSchema(topicSubscribersSchema, req.body);
+
+  if (error) {
+    return httpError(next, error, req, 422);
+  }
+
+  const result = await notificationService.removeSubscribersFromTopic(
+    req.params.topicKey,
+    value.subscriberIds,
+    req,
+    next
+  );
+
+  httpResponse(req, res, 200, 'Subscribers removed from topic successfully', result);
+});
+
+export const triggerToTopic = asyncHandler(async (req, res, next) => {
+  const { error, value } = validateJoiSchema(triggerToTopicSchema, req.body);
+
+  if (error) {
+    return httpError(next, error, req, 422);
+  }
+
+  const result = await notificationService.triggerNotificationToTopic(
+    value.workflowName,
+    req.params.topicKey,
+    value.payload,
+    req,
+    next
+  );
+
+  httpResponse(req, res, 200, NOTIFICATION_MESSAGES.NOTIFICATION_SENT_SUCCESS, result);
+});
+
+export const getUnseenCount = asyncHandler(async (req, res, next) => {
+  const result = await notificationService.getUnseenNotificationCount(req.params.userId, req, next);
+
+  httpResponse(req, res, 200, 'Unseen count retrieved successfully', result);
+});
+
+export const markAsRead = asyncHandler(async (req, res, next) => {
+  const result = await notificationService.markNotificationAsRead(
+    req.params.userId,
+    req.params.messageId,
+    req,
+    next
+  );
+
+  httpResponse(req, res, 200, 'Notification marked as read', result);
+});
+
+export const markAsSeen = asyncHandler(async (req, res, next) => {
+  const result = await notificationService.markNotificationAsSeen(
+    req.params.userId,
+    req.params.messageId,
+    req,
+    next
+  );
+
+  httpResponse(req, res, 200, 'Notification marked as seen', result);
+});
+
+export const markAllAsRead = asyncHandler(async (req, res, next) => {
+  const result = await notificationService.markAllNotificationsAsRead(req.params.userId, req, next);
+
+  httpResponse(req, res, 200, 'All notifications marked as read', result);
+});
+
+export const deleteNotification = asyncHandler(async (req, res, next) => {
+  const result = await notificationService.deleteNotification(
+    req.params.userId,
+    req.params.messageId,
+    req,
+    next
+  );
+
+  httpResponse(req, res, 200, 'Notification deleted successfully', result);
 });

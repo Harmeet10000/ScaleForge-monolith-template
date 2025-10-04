@@ -245,11 +245,12 @@ export const refreshUserToken = asyncHandler(async (refreshToken, req, next) => 
   }
 
   const domain = getDomainFromUrl(process.env.SERVER_URL);
-  let userId = null;
+  let userId,
+    role = null;
 
   try {
     const decryptedJwt = verifyToken(refreshToken, process.env.REFRESH_TOKEN_SECRET);
-    ({ userId } = decryptedJwt);
+    ({ userId, role } = decryptedJwt);
   } catch (err) {
     logger.error('Error in refresh token:', err);
     return httpError(next, new Error(UNAUTHORIZED), req, 401);
@@ -263,6 +264,7 @@ export const refreshUserToken = asyncHandler(async (refreshToken, req, next) => 
   const newAccessToken = generateToken(
     {
       userId,
+      role,
       userIp: req.ip
     },
     process.env.ACCESS_TOKEN_SECRET,

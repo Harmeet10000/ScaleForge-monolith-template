@@ -1,6 +1,7 @@
 # Complete AWS Personalize Setup Guide for Express.js
 
 ## Table of Contents
+
 1. [Prerequisites](#prerequisites)
 2. [Understanding AWS Personalize](#understanding-aws-personalize)
 3. [Step-by-Step Setup](#step-by-step-setup)
@@ -14,6 +15,7 @@
 ## Prerequisites
 
 ### Required AWS Setup
+
 - AWS Account with appropriate permissions
 - IAM User with permissions for:
   - `AmazonPersonalizeFullAccess`
@@ -22,6 +24,7 @@
 - Node.js and Express.js project
 
 ### Install AWS CLI
+
 ```bash
 # Install AWS CLI
 curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
@@ -50,6 +53,7 @@ aws configure
 6. **Event Tracker**: Tracks real-time user interactions
 
 ### Recipe Types
+
 - **User-Personalization**: Personalized recommendations for users
 - **Similar-Items**: Find similar items based on user behavior
 - **Personalized-Ranking**: Rerank items for a specific user
@@ -62,7 +66,9 @@ aws configure
 
 Create three CSV files with your data:
 
+
 #### interactions.csv (Required)
+
 ```csv
 USER_ID,ITEM_ID,TIMESTAMP,EVENT_TYPE
 user1,item101,1634567890,purchase
@@ -73,6 +79,7 @@ user3,item102,1634567930,view
 ```
 
 #### users.csv (Optional)
+
 ```csv
 USER_ID,AGE,GENDER,MEMBERSHIP_TYPE
 user1,25,M,premium
@@ -81,6 +88,7 @@ user3,45,M,premium
 ```
 
 #### items.csv (Optional)
+
 ```csv
 ITEM_ID,CATEGORY,PRICE,GENRE
 item101,electronics,299.99,smartphones
@@ -103,6 +111,7 @@ aws s3 cp items.csv s3://my-personalize-data-bucket/
 ### Step 3: Create IAM Role for Personalize
 
 Create a file named `personalize-trust-policy.json`:
+
 ```json
 {
   "Version": "2012-10-17",
@@ -119,6 +128,7 @@ Create a file named `personalize-trust-policy.json`:
 ```
 
 Create the role:
+
 ```bash
 # Create IAM role
 aws iam create-role \
@@ -138,14 +148,17 @@ aws iam get-role --role-name PersonalizeS3Role --query 'Role.Arn' --output text
 
 1. **Open AWS Personalize Console**: https://console.aws.amazon.com/personalize/
 2. **Create Dataset Group**:
+
    - Click "Create dataset group"
    - Name: `my-recommendation-system`
    - Click "Next"
 
 3. **Create Interactions Schema**:
+
    - Click "Create new schema"
    - Name: `interactions-schema`
    - Schema definition:
+
    ```json
    {
      "type": "record",
@@ -172,9 +185,11 @@ aws iam get-role --role-name PersonalizeS3Role --query 'Role.Arn' --output text
      "version": "1.0"
    }
    ```
+
    - Click "Next"
 
 4. **Create Interactions Dataset**:
+
    - Dataset name: `interactions-dataset`
    - Schema: Select the schema you just created
    - Click "Next"
@@ -189,6 +204,7 @@ aws iam get-role --role-name PersonalizeS3Role --query 'Role.Arn' --output text
 ### Step 5: Create Solution and Solution Version
 
 1. **Create Solution**:
+
    - Go to "Solutions and recipes"
    - Click "Create solution"
    - Solution name: `user-personalization-solution`
@@ -204,6 +220,7 @@ aws iam get-role --role-name PersonalizeS3Role --query 'Role.Arn' --output text
 ### Step 6: Create Campaign
 
 1. **Create Campaign**:
+
    - Go to "Campaigns"
    - Click "Create campaign"
    - Campaign name: `user-personalization-campaign`
@@ -257,14 +274,11 @@ PERSONALIZE_RANKING_CAMPAIGN_ARN=arn:aws:personalize:us-east-1:123456789:campaig
 ```javascript
 // server.js
 const express = require('express');
-const { 
-  PersonalizeRuntimeClient, 
-  GetRecommendationsCommand 
+const {
+  PersonalizeRuntimeClient,
+  GetRecommendationsCommand
 } = require('@aws-sdk/client-personalize-runtime');
-const { 
-  PersonalizeEventsClient, 
-  PutEventsCommand 
-} = require('@aws-sdk/client-personalize-events');
+const { PersonalizeEventsClient, PutEventsCommand } = require('@aws-sdk/client-personalize-events');
 require('dotenv').config();
 
 const app = express();
@@ -300,11 +314,11 @@ app.get('/api/recommendations/:userId', async (req, res) => {
     });
 
     const response = await personalizeRuntimeClient.send(command);
-    
+
     res.json({
       success: true,
       userId: userId,
-      recommendations: response.itemList.map(item => ({
+      recommendations: response.itemList.map((item) => ({
         itemId: item.itemId,
         score: item.score
       })),
@@ -339,7 +353,7 @@ app.post('/api/events/track', async (req, res) => {
     });
 
     await personalizeEventsClient.send(command);
-    
+
     res.json({
       success: true,
       message: 'Event tracked successfully'
@@ -367,11 +381,11 @@ app.get('/api/similar-items/:itemId', async (req, res) => {
     });
 
     const response = await personalizeRuntimeClient.send(command);
-    
+
     res.json({
       success: true,
       itemId: itemId,
-      similarItems: response.itemList.map(item => ({
+      similarItems: response.itemList.map((item) => ({
         itemId: item.itemId,
         score: item.score
       }))
@@ -396,12 +410,14 @@ app.listen(PORT, () => {
 ## Testing Your Integration
 
 ### Test 1: Get Recommendations
+
 ```bash
 # Get recommendations for a user
 curl http://localhost:3000/api/recommendations/user1?numResults=5
 ```
 
 Expected response:
+
 ```json
 {
   "success": true,
@@ -416,6 +432,7 @@ Expected response:
 ```
 
 ### Test 2: Track an Event
+
 ```bash
 curl -X POST http://localhost:3000/api/events/track \
   -H "Content-Type: application/json" \
@@ -432,6 +449,7 @@ curl -X POST http://localhost:3000/api/events/track \
 ```
 
 ### Test 3: Get Similar Items
+
 ```bash
 curl http://localhost:3000/api/similar-items/item101?numResults=3
 ```
@@ -500,17 +518,20 @@ console.log('Similar items:', similar.similarItems);
 ## Best Practices & Tips
 
 ### Data Quality
+
 - **Minimum interactions**: AWS recommends at least 1,000 interactions for training
 - **User diversity**: More diverse user behavior = better recommendations
 - **Fresh data**: Regularly update your dataset with new interactions
 - **Event types**: Use consistent event types (view, click, purchase)
 
 ### Event Tracking
+
 - Track events in real-time for better personalization
 - Include sessionId to track user journeys
 - Common event types: `view`, `click`, `purchase`, `add-to-cart`, `rating`
 
 ### Monitoring
+
 ```javascript
 // Add monitoring middleware
 app.use((req, res, next) => {
@@ -524,6 +545,7 @@ app.use((req, res, next) => {
 ```
 
 ### Caching Recommendations
+
 ```javascript
 const NodeCache = require('node-cache');
 const cache = new NodeCache({ stdTTL: 300 }); // 5 minutes
@@ -531,13 +553,13 @@ const cache = new NodeCache({ stdTTL: 300 }); // 5 minutes
 app.get('/api/recommendations/:userId', async (req, res) => {
   const { userId } = req.params;
   const cacheKey = `recs-${userId}`;
-  
+
   // Check cache first
   const cached = cache.get(cacheKey);
   if (cached) {
     return res.json(cached);
   }
-  
+
   // Get from Personalize and cache
   const recommendations = await getRecommendations(userId);
   cache.set(cacheKey, recommendations);
@@ -546,6 +568,7 @@ app.get('/api/recommendations/:userId', async (req, res) => {
 ```
 
 ### Error Handling
+
 - Handle cold start (new users with no interactions)
 - Provide fallback recommendations (popular items, trending)
 - Log errors for monitoring
@@ -555,12 +578,14 @@ app.get('/api/recommendations/:userId', async (req, res) => {
 ## Cost Optimization
 
 ### Pricing Overview
+
 - **Training**: ~$1.25 per training hour
 - **Campaign hosting**: ~$0.75 per hour (minimum 1 TPS)
 - **Recommendations**: ~$0.20 per 1,000 recommendations
 - **Real-time events**: ~$0.10 per 100,000 events
 
 ### Tips to Reduce Costs
+
 1. Start with minimum TPS (1), scale up as needed
 2. Use caching to reduce API calls
 3. Batch event tracking when possible
@@ -574,19 +599,23 @@ app.get('/api/recommendations/:userId', async (req, res) => {
 ### Common Issues
 
 **Issue**: "Campaign not found"
+
 - **Solution**: Verify campaign ARN in .env file
 - Check campaign status is ACTIVE in AWS Console
 
 **Issue**: "No recommendations returned"
+
 - **Solution**: Ensure user has interaction history
 - Check if solution training completed successfully
 - Verify minimum data requirements (1,000+ interactions)
 
 **Issue**: "Access Denied"
+
 - **Solution**: Check IAM permissions for Personalize
 - Verify AWS credentials in .env file
 
 **Issue**: "Event tracking fails"
+
 - **Solution**: Verify tracking ID is correct
 - Check event schema matches your dataset
 
@@ -596,7 +625,7 @@ app.get('/api/recommendations/:userId', async (req, res) => {
 
 1. **Improve Models**: Add user and item metadata for better recommendations
 2. **A/B Testing**: Compare Personalize recommendations with your current system
-3. **Create Multiple Campaigns**: 
+3. **Create Multiple Campaigns**:
    - User-Personalization for homepage
    - Similar-Items for product pages
    - Personalized-Ranking for search results

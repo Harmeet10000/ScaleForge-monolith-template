@@ -95,11 +95,9 @@ export const logout = asyncHandler(async (req, res) => {
 });
 
 export const genNewAccessToken = asyncHandler(async (req, res, next) => {
-  const { cookies } = req;
-  const { refreshToken, accessToken } = cookies;
-
-  if (req.cookies.accessToken) {
-    return httpResponse(req, res, 200, SUCCESS, { accessToken });
+  let { refreshToken } = req.cookies;
+  if (!refreshToken) {
+    ({ refreshToken } = req.body);
   }
 
   const { newAccessToken, domain } = await authService.refreshUserToken(refreshToken, req, next);

@@ -114,7 +114,7 @@ export const metricsMiddleware = promBundle({
 });
 
 export const corsOptions = {
-  origin: 'http://localhost:5173',
+  origin: process.env.FRONTEND_URL?.split(',') || '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Authorization', 'Content-Type', 'X-Requested-With', 'Accept', 'Origin'],
   credentials: true

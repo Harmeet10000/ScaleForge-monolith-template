@@ -88,105 +88,74 @@ export const sendBulkNotifications = asyncHandler(async (notifications, req, nex
     return httpError(next, new Error('Maximum 100 notifications allowed per batch'), req, 400);
   }
 
-  const results = {
-    total: notifications.length,
-    successful: 0,
-    failed: 0,
-    results: []
-  };
-
-  logger.info('Starting bulk notification processing', {
-    meta: {
-      count: notifications.length
-    }
+  logger.info('Starting bulk notification processing with native Novu bulk trigger', {
+    meta: { count: notifications.length }
   });
 
-  // Process notifications in batches to manage rate limiting
-  const batchSize = 10;
-  const batches = [];
+  const bulkEvents = await Promise.all(
+    notifications.map(async (notification) => {
+      const user = await User.findById(notification.userId).select(
+        'email firstName lastName phone novuSubscriberId'
+      );
 
-  for (let i = 0; i < notifications.length; i += batchSize) {
-    batches.push(notifications.slice(i, i + batchSize));
-  }
-
-  // Process each batch with delay to respect rate limits
-  for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
-    const batch = batches[batchIndex];
-
-    // Add delay between batches (except first batch)
-    if (batchIndex > 0) {
-      await new Promise((resolve) => setTimeout(resolve, 1000)); // 1 second delay
-    }
-
-    // Process batch notifications concurrently
-    const batchPromises = batch.map(async (notification, index) => {
-      try {
-        // Add batch metadata
-        const notificationWithMeta = {
-          ...notification,
-          metadata: {
-            ...notification.metadata,
-            batchId: req.correlationId,
-            batchIndex,
-            itemIndex: index
-          }
-        };
-
-        const result = await sendNotification(notificationWithMeta, req, next);
-
-        results.successful++;
-        return {
-          index: batchIndex * batchSize + index,
-          status: 'success',
-          transactionId: result.transactionId,
-          userId: notification.userId
-        };
-      } catch (error) {
-        results.failed++;
-        logger.error('Failed to send notification in batch', {
-          meta: {
-            error: error.message,
-            batchIndex,
-            itemIndex: index,
-            userId: notification.userId
-          }
-        });
-
-        return {
-          index: batchIndex * batchSize + index,
-          status: 'failed',
-          error: error.message,
-          userId: notification.userId
-        };
+      if (!user) {
+        return null;
       }
-    });
 
-    const batchResults = await Promise.allSettled(batchPromises);
+      return {
+        name: notification.workflowId,
+        to: {
+          subscriberId: user.novuSubscriberId || user._id.toString(),
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          phone: user.phone
+        },
+        payload: sanitizeNotificationContent(notification.payload),
+        overrides: notification.channels ? { channels: notification.channels } : {}
+      };
+    })
+  );
 
-    // Process batch results
-    batchResults.forEach((result, index) => {
-      if (result.status === 'fulfilled') {
-        results.results.push(result.value);
-      } else {
-        results.failed++;
-        results.results.push({
-          index: batchIndex * batchSize + index,
-          status: 'failed',
-          error: result.reason?.message || 'Unknown error'
-        });
-      }
-    });
-  }
+  const validEvents = bulkEvents.filter((event) => event !== null);
+
+  const novuResponse = await novuHelper.bulkTriggerEvents(validEvents);
+
+  await Promise.all(
+    validEvents.map((event, index) =>
+      notificationRepository.saveNotificationLog({
+        userId: notifications[index].userId,
+        transactionId: novuResponse[index]?.transactionId,
+        workflowId: event.name,
+        channels: (notifications[index].channels || []).map((type) => ({
+          type,
+          status: 'pending',
+          sentAt: new Date()
+        })),
+        payload: event.payload,
+        metadata: {
+          source: 'bulk_api',
+          priority: notifications[index].priority || 'normal',
+          batchId: req.correlationId
+        }
+      })
+    )
+  );
 
   logger.info('Bulk notification processing completed', {
     meta: {
-      total: results.total,
-      successful: results.successful,
-      failed: results.failed
+      total: notifications.length,
+      successful: validEvents.length,
+      failed: notifications.length - validEvents.length
     }
   });
 
-  return results;
+  return {
+    total: notifications.length,
+    successful: validEvents.length,
+    failed: notifications.length - validEvents.length,
+    results: novuResponse
+  };
 });
 
 export const sendBroadcast = asyncHandler(async (broadcastData, req) => {
@@ -302,18 +271,6 @@ const sanitizeNotificationContent = (payload) => {
 
   return sanitizeObject(sanitized);
 };
-
-// const isValidPriority = (priority) => {
-//   const validPriorities = ['low', 'normal', 'high', 'critical'];
-//   return validPriorities.includes(priority);
-// };
-
-// const areValidChannels = (channels) => {
-//   if (!Array.isArray(channels)) {return false};
-
-//   const validChannels = ['sms', 'email', 'web_push', 'mobile_push', 'in_app'];
-//   return channels.every((channel) => validChannels.includes(channel));
-// };
 
 // ===== CHANNEL-SPECIFIC NOTIFICATION FUNCTIONS =====
 
@@ -545,9 +502,6 @@ const maskPhoneNumber = (phone) => {
   return masked;
 };
 
-// const isValidContentLength = (content, maxLength = 1000) => {
-//   return typeof content === 'string' && content.length <= maxLength;
-// };
 // ===== SUBSCRIBER AND PREFERENCE MANAGEMENT FUNCTIONS =====
 
 export const createSubscriber = asyncHandler(async (userData, req, next) => {
@@ -1044,4 +998,254 @@ export const getDeliveryMetrics = asyncHandler(async (options = {}) => {
   });
 
   return deliveryMetrics;
+});
+
+// ===== PHASE 1 ENHANCEMENTS: SCHEDULED, TOPICS, READ/SEEN, DELETE =====
+
+export const scheduleNotification = asyncHandler(async (notificationData, req, next) => {
+  const user = await User.findById(notificationData.userId).select(
+    'email firstName lastName phone novuSubscriberId'
+  );
+
+  if (!user) {
+    return httpError(next, new Error('User not found'), req, 404);
+  }
+
+  const sanitizedPayload = sanitizeNotificationContent(notificationData.payload);
+
+  const scheduledDate = new Date(notificationData.scheduledFor);
+  const now = new Date();
+  const delayMs = scheduledDate.getTime() - now.getTime();
+
+  if (delayMs < 0) {
+    return httpError(next, new Error('Scheduled date must be in the future'), req, 400);
+  }
+
+  const delayInSeconds = Math.floor(delayMs / 1000);
+
+  const workflowData = {
+    name: notificationData.workflowId,
+    to: {
+      subscriberId: user.novuSubscriberId || user._id.toString(),
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName
+    },
+    payload: sanitizedPayload
+  };
+
+  const delayOptions = {
+    amount: delayInSeconds,
+    unit: 'seconds'
+  };
+
+  const novuResponse = await novuHelper.triggerWorkflowWithDelay(workflowData, delayOptions);
+
+  const logData = {
+    userId: notificationData.userId,
+    transactionId: novuResponse.transactionId,
+    workflowId: notificationData.workflowId,
+    channels: (notificationData.channels || []).map((type) => ({
+      type,
+      status: 'scheduled',
+      sentAt: null
+    })),
+    payload: sanitizedPayload,
+    metadata: {
+      source: 'scheduled_api',
+      priority: notificationData.priority || 'normal',
+      scheduledFor: scheduledDate.toISOString(),
+      delaySeconds: delayInSeconds
+    }
+  };
+
+  await notificationRepository.saveNotificationLog(logData);
+
+  logger.info('Notification scheduled successfully', {
+    meta: {
+      userId: notificationData.userId,
+      workflowId: notificationData.workflowId,
+      scheduledFor: scheduledDate.toISOString(),
+      transactionId: novuResponse.transactionId
+    }
+  });
+
+  return {
+    transactionId: novuResponse.transactionId,
+    status: 'scheduled',
+    scheduledFor: scheduledDate.toISOString(),
+    workflowId: notificationData.workflowId
+  };
+});
+
+export const cancelScheduledNotification = asyncHandler(async (transactionId, req, next) => {
+  const result = await novuHelper.cancelTriggeredEvent(transactionId);
+
+  logger.info('Scheduled notification cancelled', {
+    meta: { transactionId }
+  });
+
+  return {
+    transactionId,
+    status: 'cancelled',
+    cancelledAt: new Date()
+  };
+});
+
+export const createNotificationTopic = asyncHandler(async (topicData, req, next) => {
+  const result = await novuHelper.createTopic(topicData);
+
+  logger.info('Notification topic created', {
+    meta: { topicKey: topicData.key, topicName: topicData.name }
+  });
+
+  return result;
+});
+
+export const addSubscribersToTopic = asyncHandler(async (topicKey, subscriberIds, req, next) => {
+  const result = await novuHelper.addSubscribersToTopic(topicKey, subscriberIds);
+
+  logger.info('Subscribers added to topic', {
+    meta: { topicKey, count: Array.isArray(subscriberIds) ? subscriberIds.length : 1 }
+  });
+
+  return result;
+});
+
+export const removeSubscribersFromTopic = asyncHandler(
+  async (topicKey, subscriberIds, req, next) => {
+    await novuHelper.removeSubscribersFromTopic(topicKey, subscriberIds);
+
+    logger.info('Subscribers removed from topic', {
+      meta: { topicKey, count: Array.isArray(subscriberIds) ? subscriberIds.length : 1 }
+    });
+
+    return {
+      topicKey,
+      removedCount: Array.isArray(subscriberIds) ? subscriberIds.length : 1,
+      removedAt: new Date()
+    };
+  }
+);
+
+export const triggerNotificationToTopic = asyncHandler(
+  async (workflowName, topicKey, payload, req, next) => {
+    const sanitizedPayload = sanitizeNotificationContent(payload);
+
+    const novuResponse = await novuHelper.triggerWorkflowToTopic(
+      workflowName,
+      topicKey,
+      sanitizedPayload
+    );
+
+    logger.info('Notification triggered to topic', {
+      meta: {
+        workflowName,
+        topicKey,
+        transactionId: novuResponse.transactionId
+      }
+    });
+
+    return {
+      transactionId: novuResponse.transactionId,
+      status: 'sent',
+      workflowName,
+      topicKey,
+      sentAt: new Date()
+    };
+  }
+);
+
+export const getUnseenNotificationCount = asyncHandler(async (userId, req, next) => {
+  const user = await User.findById(userId).select('novuSubscriberId');
+
+  if (!user) {
+    return httpError(next, new Error('User not found'), req, 404);
+  }
+
+  const subscriberId = user.novuSubscriberId || user._id.toString();
+
+  const result = await novuHelper.getUnseenCount(subscriberId, false);
+
+  logger.info('Unseen notification count retrieved', {
+    meta: { userId, subscriberId, count: result.count }
+  });
+
+  return result;
+});
+
+export const markNotificationAsRead = asyncHandler(async (userId, messageId, req, next) => {
+  const user = await User.findById(userId).select('novuSubscriberId');
+
+  if (!user) {
+    return httpError(next, new Error('User not found'), req, 404);
+  }
+
+  const subscriberId = user.novuSubscriberId || user._id.toString();
+
+  const result = await novuHelper.markMessageAsRead(subscriberId, messageId);
+
+  logger.info('Notification marked as read', {
+    meta: { userId, subscriberId, messageId }
+  });
+
+  return result;
+});
+
+export const markNotificationAsSeen = asyncHandler(async (userId, messageId, req, next) => {
+  const user = await User.findById(userId).select('novuSubscriberId');
+
+  if (!user) {
+    return httpError(next, new Error('User not found'), req, 404);
+  }
+
+  const subscriberId = user.novuSubscriberId || user._id.toString();
+
+  const result = await novuHelper.markMessageAsSeen(subscriberId, messageId);
+
+  logger.info('Notification marked as seen', {
+    meta: { userId, subscriberId, messageId }
+  });
+
+  return result;
+});
+
+export const markAllNotificationsAsRead = asyncHandler(async (userId, req, next) => {
+  const user = await User.findById(userId).select('novuSubscriberId');
+
+  if (!user) {
+    return httpError(next, new Error('User not found'), req, 404);
+  }
+
+  const subscriberId = user.novuSubscriberId || user._id.toString();
+
+  const result = await novuHelper.markAllMessagesAsRead(subscriberId);
+
+  logger.info('All notifications marked as read', {
+    meta: { userId, subscriberId }
+  });
+
+  return result;
+});
+
+export const deleteNotification = asyncHandler(async (userId, messageId, req, next) => {
+  const user = await User.findById(userId).select('novuSubscriberId');
+
+  if (!user) {
+    return httpError(next, new Error('User not found'), req, 404);
+  }
+
+  const subscriberId = user.novuSubscriberId || user._id.toString();
+
+  const result = await novuHelper.removeMessage(subscriberId, messageId);
+
+  logger.info('Notification deleted', {
+    meta: { userId, subscriberId, messageId }
+  });
+
+  return {
+    messageId,
+    deletedAt: new Date(),
+    message: 'Notification deleted successfully'
+  };
 });

@@ -155,12 +155,7 @@ export const executeFuzzySearch = asyncHandler(async (query, indexName) => {
   });
   return response;
 });
-/**
- * Check Elasticsearch cluster health
- * @param {Object} req - Express request object
- * @param {Function} next - Express next function
- * @returns {Object} Elasticsearch health information
- */
+
 export const checkElasticsearchHealth = asyncHandler(async () => {
   const response = await client.cluster.health();
   return response;

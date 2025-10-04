@@ -13,27 +13,8 @@ const razorpayInstance = new Razorpay({
   key_secret: process.env.RAZORPAY_KEY_SECRET
 });
 
-/**
- * Create a new payment with correlation ID and idempotency support
- * @param {Object} paymentData - Payment creation data
- * @param {string} correlationId - Correlation ID for tracking
- * @param {string} userId - User ID for audit trail
- * @param {Object} requestContext - Request context (IP, user agent)
- * @param {Object} req - Express request object
- * @param {Function} next - Express next function
- * @returns {Promise<Object= asyncHandler>} - Created payment and idempotency flag
- */
 export const createPayment = asyncHandler(
   async (paymentData, correlationId, userId, requestContext = {}, req) => {
-    logger.info('Creating payment', {
-      meta: {
-        correlationId,
-        userId,
-        amount: paymentData.amount,
-        currency: paymentData.currency
-      }
-    });
-
     // Generate idempotency key from request data
     const requestHash = crypto
       .createHash('sha256')
@@ -43,19 +24,19 @@ export const createPayment = asyncHandler(
     const idempotencyKey = `${correlationId}_${requestHash.substring(0, 16)}`;
 
     // Check for existing payment with same idempotency key
-    // const existingPayment = await paymentRepository.findPaymentByIdempotencyKey(idempotencyKey);
-    // if (existingPayment) {
-    //   logger.info('Returning existing payment due to idempotency', {
-    //     meta: {
-    //       correlationId,
-    //       paymentId: existingPayment.paymentId
-    //     }
-    //   });
-    //   return {
-    //     payment: existingPayment,
-    //     isIdempotent: true
-    //   };
-    // }
+    const existingPayment = await paymentRepository.findPaymentByIdempotencyKey(idempotencyKey);
+    if (existingPayment) {
+      logger.info('Returning existing payment due to idempotency', {
+        meta: {
+          correlationId,
+          paymentId: existingPayment.paymentId
+        }
+      });
+      return {
+        payment: existingPayment,
+        isIdempotent: true
+      };
+    }
 
     // Create Razorpay order
     const razorpayOrderOptions = {

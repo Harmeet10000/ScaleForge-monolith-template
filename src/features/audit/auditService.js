@@ -1,7 +1,6 @@
-import { Audit } from './auditModel.js';
+import * as auditRepository from './auditRepository.js';
 import { logger } from '../../utils/logger.js';
 import { v4 as uuidv4 } from 'uuid';
-import APIFeatures from '../../utils/apiFeatures.js';
 import asyncHandler from 'express-async-handler';
 
 export const createAuditEntry = asyncHandler(async (auditData) => {
@@ -14,7 +13,7 @@ export const createAuditEntry = asyncHandler(async (auditData) => {
     retentionPolicy: auditData.retentionPolicy || 'standard'
   };
 
-  const savedAudit = await Audit.create(auditEntryData);
+  const savedAudit = await auditRepository.createAuditEntry(auditEntryData);
 
   logger.info(`Audit entry created: ${savedAudit._id}`, {
     meta: {
@@ -75,24 +74,25 @@ export const auditFailure = asyncHandler(async (params) => {
 
 export const getEntityAuditTrail = asyncHandler(
   async (entityType, entityId, options = {}) =>
-    await Audit.findByEntity(entityType, entityId, options)
+    await auditRepository.findByEntity(entityType, entityId, options)
 );
 
 export const getUserAuditTrail = asyncHandler(
-  async (userId, options = {}) => await Audit.findByUser(userId, options)
+  async (userId, options = {}) => await auditRepository.findByUser(userId, options)
 );
 
 export const getOrganizationAuditTrail = asyncHandler(
-  async (organizationId, options = {}) => await Audit.findByOrganization(organizationId, options)
+  async (organizationId, options = {}) =>
+    await auditRepository.findByOrganization(organizationId, options)
 );
 
 export const getAuditByCorrelationId = asyncHandler(
-  async (correlationId) => await Audit.findByCorrelationId(correlationId)
+  async (correlationId) => await auditRepository.findByCorrelationId(correlationId)
 );
 
 export const getOperationStats = asyncHandler(
   async (entityType, dateFrom, dateTo) =>
-    await Audit.getOperationStats(entityType, dateFrom, dateTo)
+    await auditRepository.getOperationStats(entityType, dateFrom, dateTo)
 );
 
 export const searchAuditEntries = asyncHandler(async (searchParams) => {
@@ -107,7 +107,9 @@ export const searchAuditEntries = asyncHandler(async (searchParams) => {
     dateTo,
     searchText,
     page = 1,
-    limit = 50
+    limit = 50,
+    sortBy = 'timestamp',
+    sortOrder = 'desc'
   } = searchParams;
 
   const baseQuery = {};
@@ -145,23 +147,16 @@ export const searchAuditEntries = asyncHandler(async (searchParams) => {
     baseQuery.$text = { $search: searchText };
   }
 
-  const query = Audit.find(baseQuery).populate('userId', 'email name');
-
-  const features = new APIFeatures(query, searchParams).filter().sort().limitFields().paginate();
-
-  const entries = await features.query;
-
-  const total = await Audit.countDocuments(baseQuery);
-
-  return {
-    entries,
-    pagination: {
-      page: parseInt(page, 10),
-      limit: parseInt(limit, 10),
-      total,
-      pages: Math.ceil(total / limit)
-    }
+  const options = {
+    page: parseInt(page, 10),
+    limit: parseInt(limit, 10),
+    sortBy,
+    sortOrder
   };
+
+  const result = await auditRepository.searchAuditEntries(baseQuery, options);
+
+  return result;
 });
 
 export const bulkCreateAuditEntries = asyncHandler(async (auditEntries) => {
@@ -172,7 +167,7 @@ export const bulkCreateAuditEntries = asyncHandler(async (auditEntries) => {
     timestamp: new Date()
   }));
 
-  const savedEntries = await Audit.insertMany(entries);
+  const savedEntries = await auditRepository.bulkCreateAuditEntries(entries);
 
   logger.info(`Bulk audit entries created: ${savedEntries.length}`, {
     meta: { count: savedEntries.length }
@@ -182,9 +177,7 @@ export const bulkCreateAuditEntries = asyncHandler(async (auditEntries) => {
 });
 
 export const cleanupExpiredEntries = asyncHandler(async () => {
-  const result = await Audit.deleteMany({
-    expiresAt: { $lt: new Date() }
-  });
+  const result = await auditRepository.deleteExpiredEntries();
 
   logger.info(`Expired audit entries cleaned up: ${result.deletedCount}`, {
     meta: { deletedCount: result.deletedCount }
