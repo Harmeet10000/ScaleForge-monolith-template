@@ -3,7 +3,9 @@
 ## 📚 Phase 1: Foundation & Setup (1-2 days)
 
 ### 1. Understanding Novu
+
 - **What is Novu?**
+
   - Open-source notification infrastructure
   - Unified API for all messaging channels
   - Notification management platform
@@ -16,6 +18,7 @@
   - Channels (Email, SMS, Push, Chat, etc.)
 
 ### 2. Environment Setup
+
 ```bash
 # Install Novu Node.js SDK
 npm install @novu/node
@@ -25,12 +28,14 @@ npm install @novu/react
 ```
 
 ### 3. Create Novu Account
+
 - Sign up at [novu.co](https://novu.co)
 - Get your API keys (Public & Secret)
 
 ## 🛠️ Phase 2: Core Concepts & Basic Implementation (3-4 days)
 
 ### 1. Initialize Novu Client
+
 ```javascript
 // Initialize Novu
 const { Novu } = require('@novu/node');
@@ -39,6 +44,7 @@ const novu = new Novu(process.env.NOVU_API_KEY);
 ```
 
 ### 2. Subscriber Management
+
 ```javascript
 // Create/Update Subscriber
 await novu.subscribers.identify('subscriber-id', {
@@ -56,6 +62,7 @@ await novu.subscribers.update('subscriber-id', {
 ```
 
 ### 3. Basic Notification Trigger
+
 ```javascript
 // Simple trigger
 await novu.trigger('workflow-name', {
@@ -70,6 +77,7 @@ await novu.trigger('workflow-name', {
 ```
 
 ### 4. Handle Different Channels
+
 - Email notifications
 - SMS notifications
 - In-app notifications
@@ -79,12 +87,14 @@ await novu.trigger('workflow-name', {
 ## 🔄 Phase 3: Workflow & Template Management (2-3 days)
 
 ### 1. Creating Workflows in Novu Dashboard
+
 - Understanding workflow builder
 - Setting up triggers
 - Configuring channels
 - Adding conditions and filters
 
 ### 2. Working with Templates
+
 ```javascript
 // Using templates with variables
 await novu.trigger('welcome-email', {
@@ -101,6 +111,7 @@ await novu.trigger('welcome-email', {
 ```
 
 ### 3. Advanced Payload Handling
+
 ```javascript
 // Complex payload with nested data
 await novu.trigger('order-confirmation', {
@@ -127,6 +138,7 @@ await novu.trigger('order-confirmation', {
 ## 🚀 Phase 4: Advanced Implementation (3-4 days)
 
 ### 1. Error Handling & Logging
+
 ```javascript
 try {
   const response = await novu.trigger('workflow-name', {
@@ -141,14 +153,11 @@ try {
 ```
 
 ### 2. Bulk Operations
+
 ```javascript
 // Trigger to multiple subscribers
 await novu.trigger('newsletter', {
-  to: [
-    { subscriberId: 'user-1' },
-    { subscriberId: 'user-2' },
-    { subscriberId: 'user-3' }
-  ],
+  to: [{ subscriberId: 'user-1' }, { subscriberId: 'user-2' }, { subscriberId: 'user-3' }],
   payload: {
     subject: 'Weekly Newsletter',
     content: 'Latest updates...'
@@ -157,6 +166,7 @@ await novu.trigger('newsletter', {
 ```
 
 ### 3. Topic-Based Notifications
+
 ```javascript
 // Create topic
 await novu.topics.create({
@@ -179,19 +189,23 @@ await novu.trigger('announcement', {
 ### 4. Integration with Popular Providers
 
 #### Email Providers
+
 ```javascript
 // Configure with SendGrid, Mailgun, etc.
 // Done through Novu dashboard
 await novu.trigger('email-notification', {
-  to: { 
+  to: {
     subscriberId: 'user-123',
     email: 'user@example.com'
   },
-  payload: { /* data */ }
+  payload: {
+    /* data */
+  }
 });
 ```
 
 #### SMS Providers
+
 ```javascript
 // Twilio, AWS SNS configuration
 await novu.trigger('sms-notification', {
@@ -199,13 +213,16 @@ await novu.trigger('sms-notification', {
     subscriberId: 'user-123',
     phone: '+1234567890'
   },
-  payload: { /* data */ }
+  payload: {
+    /* data */
+  }
 });
 ```
 
 ## 🧪 Phase 5: Testing & Monitoring (2 days)
 
 ### 1. Unit Testing Novu Integration
+
 ```javascript
 // Mock Novu for testing
 const mockNovu = {
@@ -219,15 +236,13 @@ const mockNovu = {
 describe('Notification Service', () => {
   test('should send welcome notification', async () => {
     await sendWelcomeNotification('user-123');
-    expect(mockNovu.trigger).toHaveBeenCalledWith(
-      'welcome-email',
-      expect.any(Object)
-    );
+    expect(mockNovu.trigger).toHaveBeenCalledWith('welcome-email', expect.any(Object));
   });
 });
 ```
 
 ### 2. Monitoring & Analytics
+
 - Track delivery status
 - Monitor performance metrics
 - Set up alerts for failures
@@ -235,6 +250,7 @@ describe('Notification Service', () => {
 ## 📖 Phase 6: Best Practices & Optimization (2-3 days)
 
 ### 1. Environment Configuration
+
 ```javascript
 // config/novu.js
 const { Novu } = require('@novu/node');
@@ -254,6 +270,7 @@ module.exports = novu;
 ```
 
 ### 2. Rate Limiting & Queue Management
+
 ```javascript
 // Implement queue for bulk notifications
 const sendBulkNotifications = async (users, workflow) => {
@@ -264,7 +281,7 @@ const sendBulkNotifications = async (users, workflow) => {
         payload: user.data
       });
       // Add delay to respect rate limits
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 100));
     } catch (error) {
       console.error(`Failed to send to ${user.id}:`, error);
     }
@@ -273,6 +290,7 @@ const sendBulkNotifications = async (users, workflow) => {
 ```
 
 ### 3. Error Recovery Patterns
+
 ```javascript
 // Retry mechanism
 const sendWithRetry = async (workflow, to, payload, maxRetries = 3) => {
@@ -281,7 +299,7 @@ const sendWithRetry = async (workflow, to, payload, maxRetries = 3) => {
       return await novu.trigger(workflow, { to, payload });
     } catch (error) {
       if (i === maxRetries) throw error;
-      await new Promise(resolve => setTimeout(resolve, Math.pow(2, i) * 1000));
+      await new Promise((resolve) => setTimeout(resolve, Math.pow(2, i) * 1000));
     }
   }
 };
@@ -290,6 +308,7 @@ const sendWithRetry = async (workflow, to, payload, maxRetries = 3) => {
 ## 🎯 Phase 7: Real-World Implementation Examples (3-4 days)
 
 ### 1. User Onboarding Flow
+
 ```javascript
 // Welcome series implementation
 class OnboardingNotifications {
@@ -300,7 +319,7 @@ class OnboardingNotifications {
   async startOnboarding(userId, userData) {
     // Create subscriber
     await this.novu.subscribers.identify(userId, userData);
-    
+
     // Trigger welcome workflow
     await this.novu.trigger('welcome-series', {
       to: { subscriberId: userId },
@@ -311,12 +330,13 @@ class OnboardingNotifications {
 ```
 
 ### 2. Transactional Notifications
+
 ```javascript
 // Order confirmation system
 class OrderNotifications {
   async sendOrderConfirmation(order) {
     await this.novu.trigger('order-confirmation', {
-      to: { 
+      to: {
         subscriberId: order.userId,
         email: order.userEmail
       },
@@ -343,6 +363,7 @@ class OrderNotifications {
 ```
 
 ### 3. Activity Feed Integration
+
 ```javascript
 // In-app notifications
 class ActivityNotifications {
@@ -362,16 +383,19 @@ class ActivityNotifications {
 ## 📚 Additional Resources
 
 ### Documentation & References
+
 - [Official Novu Documentation](https://docs.novu.co/)
 - [@novu/node GitHub Repository](https://github.com/novuhq/novu)
 - [Novu Examples](https://github.com/novuhq/novu/tree/next/examples)
 
 ### Community & Support
+
 - Novu Discord Community
 - GitHub Issues
 - Stack Overflow (novu tag)
 
 ### Next Steps After Mastery
+
 - Contribute to Novu open-source
 - Build custom notification integrations
 - Create reusable notification patterns
@@ -379,14 +403,14 @@ class ActivityNotifications {
 
 This roadmap should take approximately 2-3 weeks to complete depending on your pace. Adjust the timeline based on your project requirements and existing experience level.
 
-
 # Novu Implementation Roadmap (Based on Your Existing Code)
 
 ## 📚 Phase 1: Understanding Current Implementation (1-2 days)
 
 ### 1. Code Analysis
+
 - **Workflow Operations** - 90% implemented
-- **Subscriber Management** - 100% implemented  
+- **Subscriber Management** - 100% implemented
 - **Preferences & Settings** - 80% implemented
 - **Notification Feed** - 100% implemented
 - **Device/Credentials** - 100% implemented
@@ -399,6 +423,7 @@ This roadmap should take approximately 2-3 weeks to complete depending on your p
 - **Utilities** - 20% implemented
 
 ### 2. Integration Points
+
 ```javascript
 // Your current setup
 import { novuClient } from '../connections/connectNovu.js';
@@ -409,11 +434,12 @@ import { logger } from '../utils/logger.js';
 ## 🎯 Phase 2: Immediate Implementation Needs (2-3 days)
 
 ### 1. Complete Missing Event Operations
+
 ```javascript
 // Add to your existing file
 export const getNovuEvent = asyncHandler(async (transactionId) => {
   const response = await novuClient.events.get(transactionId);
-  
+
   logger.info('Event retrieved', { meta: { transactionId } });
   return response.data;
 });
@@ -423,24 +449,25 @@ export const broadcastEvent = asyncHandler(async (broadcastData) => {
     payload: broadcastData.payload || {},
     overrides: broadcastData.overrides || {}
   });
-  
+
   logger.info('Event broadcasted', { meta: { eventName: broadcastData.name } });
   return response.data;
 });
 ```
 
 ### 2. Enhance Webhook Utilities
+
 ```javascript
 // Add webhook handling functions
 export const handleNovuWebhook = asyncHandler(async (req, res) => {
   const signature = req.headers['novu-signature'];
   const payload = req.body;
-  
+
   // Verify webhook
   if (!verifyNovuWebhook(signature, payload, process.env.NOVU_WEBHOOK_SECRET)) {
     return res.status(401).json({ error: 'Invalid signature' });
   }
-  
+
   // Process webhook events
   switch (payload.type) {
     case 'message_sent':
@@ -455,7 +482,7 @@ export const handleNovuWebhook = asyncHandler(async (req, res) => {
     default:
       logger.info('Unknown webhook event', { meta: payload });
   }
-  
+
   res.status(200).json({ success: true });
 });
 ```
@@ -463,6 +490,7 @@ export const handleNovuWebhook = asyncHandler(async (req, res) => {
 ## 🔧 Phase 3: Advanced Features Implementation (3-4 days)
 
 ### 1. Complete Layout Operations
+
 ```javascript
 export const createLayout = asyncHandler(async (layoutData) => {
   const response = await novuClient.layouts.create({
@@ -471,46 +499,48 @@ export const createLayout = asyncHandler(async (layoutData) => {
     content: layoutData.content,
     variables: layoutData.variables || []
   });
-  
+
   logger.info('Layout created', { meta: { layoutId: response.data._id } });
   return response.data;
 });
 
 export const updateLayout = asyncHandler(async (layoutId, updates) => {
   const response = await novuClient.layouts.update(layoutId, updates);
-  
+
   logger.info('Layout updated', { meta: { layoutId } });
   return response.data;
 });
 
 export const deleteLayout = asyncHandler(async (layoutId) => {
   await novuClient.layouts.delete(layoutId);
-  
+
   logger.info('Layout deleted', { meta: { layoutId } });
 });
 ```
 
 ### 2. Enhanced Feed Management
+
 ```javascript
 export const getFeeds = asyncHandler(async (options = {}) => {
   const response = await novuClient.feeds.list({
     page: options.page || 0,
     limit: options.limit || 10
   });
-  
+
   logger.info('Feeds retrieved', { meta: { count: response.data?.length || 0 } });
   return response.data;
 });
 
 export const getFeed = asyncHandler(async (feedId) => {
   const response = await novuClient.feeds.get(feedId);
-  
+
   logger.info('Feed retrieved', { meta: { feedId } });
   return response.data;
 });
 ```
 
 ### 3. Integration with Existing Systems
+
 ```javascript
 // User registration integration
 export const integrateUserRegistration = asyncHandler(async (userData) => {
@@ -522,7 +552,7 @@ export const integrateUserRegistration = asyncHandler(async (userData) => {
     lastName: userData.lastName,
     ...userData.profile
   });
-  
+
   // Send welcome notification
   await triggerWorkflow({
     name: 'welcome-user',
@@ -538,6 +568,7 @@ export const integrateUserRegistration = asyncHandler(async (userData) => {
 ## 🚀 Phase 4: Performance & Monitoring (2-3 days)
 
 ### 1. Rate Limiting Implementation
+
 ```javascript
 // Add rate limiting wrapper
 class NovuRateLimiter {
@@ -546,13 +577,13 @@ class NovuRateLimiter {
     this.timeWindow = timeWindow;
     this.requests = [];
   }
-  
+
   canMakeRequest() {
     const now = Date.now();
-    this.requests = this.requests.filter(time => now - time < this.timeWindow);
+    this.requests = this.requests.filter((time) => now - time < this.timeWindow);
     return this.requests.length < this.maxRequests;
   }
-  
+
   addRequest() {
     this.requests.push(Date.now());
   }
@@ -564,13 +595,14 @@ export const safeTriggerWorkflow = asyncHandler(async (workflowData) => {
   if (!rateLimiter.canMakeRequest()) {
     throw new Error('Rate limit exceeded');
   }
-  
+
   rateLimiter.addRequest();
   return triggerWorkflow(workflowData);
 });
 ```
 
 ### 2. Retry Logic Implementation
+
 ```javascript
 export const triggerWorkflowWithRetry = asyncHandler(async (workflowData, maxRetries = 3) => {
   for (let i = 0; i <= maxRetries; i++) {
@@ -580,16 +612,16 @@ export const triggerWorkflowWithRetry = asyncHandler(async (workflowData, maxRet
       logger.warn(`Workflow trigger failed (attempt ${i + 1})`, {
         meta: { workflowName: workflowData.name, error: error.message }
       });
-      
+
       if (i === maxRetries) {
         logger.error('Workflow trigger failed after all retries', {
           meta: { workflowName: workflowData.name, error: error.message }
         });
         throw error;
       }
-      
+
       // Exponential backoff
-      await new Promise(resolve => setTimeout(resolve, Math.pow(2, i) * 1000));
+      await new Promise((resolve) => setTimeout(resolve, Math.pow(2, i) * 1000));
     }
   }
 });
@@ -598,6 +630,7 @@ export const triggerWorkflowWithRetry = asyncHandler(async (workflowData, maxRet
 ## 📊 Phase 5: Analytics & Reporting (2-3 days)
 
 ### 1. Notification Analytics Service
+
 ```javascript
 export const getNotificationAnalytics = asyncHandler(async (options = {}) => {
   // This would require additional API calls or database tracking
@@ -608,7 +641,7 @@ export const getNotificationAnalytics = asyncHandler(async (options = {}) => {
     totalClicked: 0,
     failureRate: 0
   };
-  
+
   logger.info('Notification analytics retrieved', { meta: analytics });
   return analytics;
 });
@@ -616,20 +649,23 @@ export const getNotificationAnalytics = asyncHandler(async (options = {}) => {
 export const getSubscriberEngagement = asyncHandler(async (subscriberId) => {
   const feed = await getNovuNotificationFeed(subscriberId);
   const unreadCount = await getUnseenCount(subscriberId, false);
-  
+
   const engagement = {
     totalNotifications: feed.totalCount,
     unreadNotifications: unreadCount.count,
-    engagementRate: feed.totalCount > 0 ? 
-      ((feed.totalCount - unreadCount.count) / feed.totalCount * 100).toFixed(2) : 0
+    engagementRate:
+      feed.totalCount > 0
+        ? (((feed.totalCount - unreadCount.count) / feed.totalCount) * 100).toFixed(2)
+        : 0
   };
-  
+
   logger.info('Subscriber engagement calculated', { meta: engagement });
   return engagement;
 });
 ```
 
 ### 2. Usage Tracking
+
 ```javascript
 export const trackNotificationUsage = asyncHandler(async () => {
   // Implement usage tracking logic
@@ -638,7 +674,7 @@ export const trackNotificationUsage = asyncHandler(async () => {
     subscribersManaged: 0,
     topicsUsed: 0
   };
-  
+
   logger.info('Notification usage tracked', { meta: usage });
   return usage;
 });
@@ -647,21 +683,22 @@ export const trackNotificationUsage = asyncHandler(async () => {
 ## 🔒 Phase 6: Security & Compliance (1-2 days)
 
 ### 1. Enhanced Security Features
+
 ```javascript
 // Data validation middleware
 const validateSubscriberData = (subscriberData) => {
   const required = ['subscriberId'];
-  const missing = required.filter(field => !subscriberData[field]);
-  
+  const missing = required.filter((field) => !subscriberData[field]);
+
   if (missing.length > 0) {
     throw new Error(`Missing required fields: ${missing.join(', ')}`);
   }
-  
+
   // Validate email format if provided
   if (subscriberData.email && !/\S+@\S+\.\S+/.test(subscriberData.email)) {
     throw new Error('Invalid email format');
   }
-  
+
   return true;
 };
 
@@ -673,12 +710,13 @@ export const secureCreateSubscriber = asyncHandler(async (subscriberData) => {
 ```
 
 ### 2. GDPR Compliance Features
+
 ```javascript
 export const exportSubscriberData = asyncHandler(async (subscriberId) => {
   const subscriber = await getNovuSubscriber(subscriberId);
   const preferences = await getNovuSubscriberPreferences(subscriberId);
   const notificationFeed = await getNovuNotificationFeed(subscriberId);
-  
+
   const exportData = {
     subscriber: {
       id: subscriber._id,
@@ -689,7 +727,7 @@ export const exportSubscriberData = asyncHandler(async (subscriberId) => {
     preferences,
     notifications: notificationFeed
   };
-  
+
   logger.info('Subscriber data exported for compliance', { meta: { subscriberId } });
   return exportData;
 });
@@ -698,7 +736,7 @@ export const deleteAllSubscriberData = asyncHandler(async (subscriberId) => {
   // Remove from all topics first
   // Then delete subscriber
   await deleteNovuSubscriber(subscriberId);
-  
+
   logger.info('Subscriber data deleted for compliance', { meta: { subscriberId } });
 });
 ```
@@ -706,6 +744,7 @@ export const deleteAllSubscriberData = asyncHandler(async (subscriberId) => {
 ## 🧪 Phase 7: Testing & Documentation (2-3 days)
 
 ### 1. Comprehensive Testing Suite
+
 ```javascript
 // tests/novuService.test.js
 describe('Novu Service', () => {
@@ -713,25 +752,23 @@ describe('Novu Service', () => {
     test('should trigger workflow successfully', async () => {
       const mockResponse = { data: { transactionId: 'test-123' } };
       novuClient.trigger.mockResolvedValue(mockResponse);
-      
+
       const result = await triggerWorkflow({
         name: 'test-workflow',
         to: { subscriberId: 'user-123' }
       });
-      
+
       expect(result.transactionId).toBe('test-123');
-      expect(novuClient.trigger).toHaveBeenCalledWith(
-        'test-workflow',
-        expect.any(Object)
-      );
+      expect(novuClient.trigger).toHaveBeenCalledWith('test-workflow', expect.any(Object));
     });
   });
-  
+
   // Add more tests for all operations
 });
 ```
 
 ### 2. API Documentation
+
 ```javascript
 /**
  * Triggers a Novu workflow for a specific subscriber
@@ -741,7 +778,7 @@ describe('Novu Service', () => {
  * @param {Object} workflowData.payload - Dynamic data for template
  * @param {Object} workflowData.overrides - Channel-specific overrides
  * @returns {Promise<Object>} Response data from Novu
- * 
+ *
  * @example
  * await triggerWorkflow({
  *   name: 'welcome-email',
@@ -754,6 +791,7 @@ describe('Novu Service', () => {
 ## 🎯 Phase 8: Production Optimization (1-2 days)
 
 ### 1. Environment-Specific Configuration
+
 ```javascript
 // config/novuConfig.js
 const novuConfig = {
@@ -777,6 +815,7 @@ export const getNovuConfig = () => {
 ```
 
 ### 2. Health Check Endpoint
+
 ```javascript
 export const novuHealthCheck = asyncHandler(async (req, res) => {
   try {
@@ -792,16 +831,16 @@ export const novuHealthCheck = asyncHandler(async (req, res) => {
 
 ## Timeline Summary
 
-| Phase | Duration | Key Deliverables |
-|-------|----------|------------------|
-| Understanding Current Implementation | 1-2 days | Code analysis, gap identification |
-| Immediate Implementation Needs | 2-3 days | Complete missing features |
-| Advanced Features | 3-4 days | Layouts, enhanced integrations |
-| Performance & Monitoring | 2-3 days | Rate limiting, retry logic |
-| Analytics & Reporting | 2-3 days | Usage tracking, engagement metrics |
-| Security & Compliance | 1-2 days | Validation, GDPR features |
-| Testing & Documentation | 2-3 days | Test suite, API docs |
-| Production Optimization | 1-2 days | Config, health checks |
+| Phase                                | Duration | Key Deliverables                   |
+| ------------------------------------ | -------- | ---------------------------------- |
+| Understanding Current Implementation | 1-2 days | Code analysis, gap identification  |
+| Immediate Implementation Needs       | 2-3 days | Complete missing features          |
+| Advanced Features                    | 3-4 days | Layouts, enhanced integrations     |
+| Performance & Monitoring             | 2-3 days | Rate limiting, retry logic         |
+| Analytics & Reporting                | 2-3 days | Usage tracking, engagement metrics |
+| Security & Compliance                | 1-2 days | Validation, GDPR features          |
+| Testing & Documentation              | 2-3 days | Test suite, API docs               |
+| Production Optimization              | 1-2 days | Config, health checks              |
 
 **Total Estimated Time: 14-20 days**
 

@@ -66,7 +66,6 @@ aws configure
 
 Create three CSV files with your data:
 
-
 #### interactions.csv (Required)
 
 ```csv
