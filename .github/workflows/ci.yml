@@ -1,0 +1,436 @@
+name: Continuous Integration
+
+on:
+  push:
+    branches: [main, develop, "feature/*", "hotfix/*"]
+  pull_request:
+    branches: [main, develop]
+  workflow_dispatch:
+
+env:
+  NODE_VERSION: "22.x"
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  # Code Quality and Security Checks
+  code-quality:
+    name: Code Quality & Security
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Full history for better analysis
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci --prefer-offline --no-audit
+
+      - name: Run ESLint
+        run: npm run lint
+
+      - name: Run Prettier check
+        run: npm run format
+
+      - name: Audit dependencies for vulnerabilities
+        run: npm audit --audit-level=moderate
+
+      - name: Check for outdated dependencies
+        run: npm outdated || true
+
+      - name: Upload lint results
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lint-results
+          path: |
+            eslint-report.json
+            prettier-report.json
+          retention-days: 7
+
+  # Unit and Integration Tests
+  test:
+    name: Test Suite
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    services:
+      mongodb:
+        image: mongo:7
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --eval 'db.runCommand({ping: 1})'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      rabbitmq:
+        image: rabbitmq:3-management-alpine
+        ports:
+          - 5672:5672
+          - 15672:15672
+        options: >-
+          --health-cmd "rabbitmq-diagnostics -q ping"
+          --health-interval 30s
+          --health-timeout 10s
+          --health-retries 5
+        env:
+          RABBITMQ_DEFAULT_USER: test
+          RABBITMQ_DEFAULT_PASS: test
+
+    strategy:
+      fail-fast: false
+      matrix:
+        test-type: [unit, integration]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci --prefer-offline --no-audit
+
+      - name: Create test environment file
+        run: |
+          cat > .env.test << EOF
+          NODE_ENV=test
+          PORT=3000
+          SERVER_URL=http://localhost:3000
+          FRONTEND_URL=http://localhost:3001
+          DATABASE=mongodb://localhost:27017/auth_test
+          DB_POOL_SIZE=10
+          REDIS_HOST=localhost
+          REDIS_PORT=6379
+          RABBITMQ_URL=amqp://test:test@localhost:5672
+          ACCESS_TOKEN_SECRET=test_access_secret_key_for_ci
+          REFRESH_TOKEN_SECRET=test_refresh_secret_key_for_ci
+          ACCESS_TOKEN_EXPIRY=15m
+          REFRESH_TOKEN_EXPIRY=7d
+          LOG_LEVEL=error
+          EOF
+
+      - name: Wait for services
+        run: |
+          echo "Waiting for MongoDB..."
+          timeout 60 bash -c 'until nc -z localhost 27017; do sleep 1; done'
+          echo "Waiting for Redis..."
+          timeout 60 bash -c 'until nc -z localhost 6379; do sleep 1; done'
+          echo "Waiting for RabbitMQ..."
+          timeout 60 bash -c 'until nc -z localhost 5672; do sleep 1; done'
+          echo "All services are ready!"
+
+      - name: Run unit tests
+        if: matrix.test-type == 'unit'
+        run: npm run test --run
+        env:
+          CI: true
+
+      - name: Run integration tests
+        if: matrix.test-type == 'integration'
+        run: npm run test:integration --run || true
+        env:
+          CI: true
+
+      - name: Generate test coverage
+        if: matrix.test-type == 'unit'
+        run: npm run test:coverage
+        env:
+          CI: true
+
+      - name: Upload coverage reports
+        if: matrix.test-type == 'unit'
+        uses: codecov/codecov-action@v4
+        with:
+          file: ./coverage/lcov.info
+          flags: unittests
+          name: codecov-umbrella
+          fail_ci_if_error: false
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: Archive test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ matrix.test-type }}
+          path: |
+            coverage/
+            test-results.xml
+            logs/
+          retention-days: 7
+
+  # Security Scanning
+  security-scan:
+    name: Security Scanning
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: [code-quality]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Trivy vulnerability scanner (filesystem)
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: "fs"
+          scan-ref: "."
+          format: "sarif"
+          output: "trivy-fs-results.sarif"
+          severity: "CRITICAL,HIGH,MEDIUM"
+
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: "trivy-fs-results.sarif"
+
+      - name: Run Semgrep security analysis
+        uses: semgrep/semgrep-action@v1
+        with:
+          config: >-
+            p/security-audit
+            p/secrets
+            p/nodejs
+            p/express
+            p/mongodb
+          generateSarif: "1"
+        env:
+          SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
+
+      - name: Upload Semgrep results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: semgrep.sarif
+
+      - name: Check for secrets with GitLeaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
+
+  # Build and Push Container Images
+  build-images:
+    name: Build Container Images
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: [test, security-scan]
+    if: github.event_name != 'pull_request'
+
+    outputs:
+      image-digest: ${{ steps.build.outputs.digest }}
+      image-tags: ${{ steps.meta.outputs.tags }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable={{is_default_branch}}
+          labels: |
+            org.opencontainers.image.title=${{ github.repository }}
+            org.opencontainers.image.description=Production-grade authentication service
+            org.opencontainers.image.vendor=${{ github.repository_owner }}
+
+      - name: Create production environment file
+        run: |
+          cat > .env.production << EOF
+          NODE_ENV=production
+          PORT=3000
+          LOG_LEVEL=info
+          EOF
+
+      - name: Build and push Docker image
+        id: build
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./docker/prod.Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          provenance: false
+          sbom: true
+
+      - name: Run Trivy vulnerability scanner (image)
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+          format: "sarif"
+          output: "trivy-image-results.sarif"
+
+      - name: Upload Trivy image scan results
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: "trivy-image-results.sarif"
+
+  # Generate SBOM (Software Bill of Materials)
+  generate-sbom:
+    name: Generate SBOM
+    runs-on: ubuntu-latest
+    needs: [build-images]
+    if: github.event_name != 'pull_request'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Generate SBOM with Syft
+        uses: anchore/sbom-action@v0
+        with:
+          image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+          format: spdx-json
+          output-file: sbom.spdx.json
+
+      - name: Upload SBOM
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom
+          path: sbom.spdx.json
+          retention-days: 30
+
+  # Performance and Load Testing
+  performance-test:
+    name: Performance Testing
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: [build-images]
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
+
+    services:
+      mongodb:
+        image: mongo:7
+        ports:
+          - 27017:27017
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci --prefer-offline --no-audit
+
+      - name: Start application
+        run: |
+          npm run build
+          npm start &
+          sleep 10
+
+      - name: Install k6
+        run: |
+          sudo gpg -k
+          sudo gpg --no-default-keyring --keyring /usr/share/keyrings/k6-archive-keyring.gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69
+          echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" | sudo tee /etc/apt/sources.list.d/k6.list
+          sudo apt-get update
+          sudo apt-get install k6
+
+      - name: Run performance tests
+        run: |
+          k6 run --out json=performance-results.json tests/performance/load-test.js || true
+
+      - name: Upload performance results
+        uses: actions/upload-artifact@v4
+        with:
+          name: performance-results
+          path: performance-results.json
+          retention-days: 30
+
+  # Notification and Summary
+  notify-results:
+    name: Notify Results
+    runs-on: ubuntu-latest
+    needs: [code-quality, test, security-scan, build-images, generate-sbom]
+    if: always()
+
+    steps:
+      - name: Determine overall status
+        id: status
+        run: |
+          if [[ "${{ needs.code-quality.result }}" == "success" &&
+                "${{ needs.test.result }}" == "success" &&
+                "${{ needs.security-scan.result }}" == "success" &&
+                ("${{ needs.build-images.result }}" == "success" || "${{ needs.build-images.result }}" == "skipped") ]]; then
+            echo "status=success" >> $GITHUB_OUTPUT
+            echo "message=✅ All CI checks passed successfully!" >> $GITHUB_OUTPUT
+          else
+            echo "status=failure" >> $GITHUB_OUTPUT
+            echo "message=❌ Some CI checks failed. Please review the results." >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create job summary
+        run: |
+          echo "## CI Pipeline Results 🚀" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Job | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Code Quality | ${{ needs.code-quality.result == 'success' && '✅' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Tests | ${{ needs.test.result == 'success' && '✅' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Security Scan | ${{ needs.security-scan.result == 'success' && '✅' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Build Images | ${{ (needs.build-images.result == 'success' || needs.build-images.result == 'skipped') && '✅' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Generate SBOM | ${{ (needs.generate-sbom.result == 'success' || needs.generate-sbom.result == 'skipped') && '✅' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Overall Status:** ${{ steps.status.outputs.message }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Triggered by:** ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY

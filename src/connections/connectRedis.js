@@ -1,7 +1,6 @@
 import Redis from 'ioredis';
 import { logger } from '../utils/logger.js';
 import asyncHandler from 'express-async-handler';
-import { trace } from 'joi';
 
 export const redisClient = new Redis({
   host: process.env.REDIS_HOST,

@@ -1,34 +1,116 @@
-//meant to be changed in near future
-
-// {
-//   "name": "Auth Service Dev",
-//   "dockerComposeFile": "docker-compose.yml",
-//   "service": "app",
-//   "workspaceFolder": "/workspace",
-//   "features": {
-//     "ghcr.io/devcontainers/features/node:1": {
-//       "version": "22"
-//     },
-//     "ghcr.io/devcontainers/features/docker-in-docker:2": {}
-//   },
-//   "customizations": {
-//     "vscode": {
-//       "extensions": [
-//         "esbenp.prettier-vscode",
-//         "dbaeumer.vscode-eslint",
-//         "ms-vscode.vscode-json"
-//       ],
-//       "settings": {
-//         "editor.formatOnSave": true,
-//         "editor.defaultFormatter": "esbenp.prettier-vscode"
-//       }
-//     }
-//   },
-//   "forwardPorts": [
-//     8000,
-//     27017,
-//     6379
-//   ],
-//   "postCreateCommand": "npm install",
-//   "remoteUser": "node"
-// }
+{
+  "name": "Production Auth Template Dev",
+  "dockerFile": "../docker/dev.Dockerfile",
+  "context": "..",
+  "workspaceFolder": "/usr/src/backend-app",
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "22",
+      "nodeGypDependencies": true,
+      "nvmVersion": "latest"
+    },
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {
+      "version": "latest",
+      "enableNonRootDocker": "true"
+    },
+    "ghcr.io/devcontainers/features/git:1": {
+      "ppa": true,
+      "version": "latest"
+    }
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "esbenp.prettier-vscode",
+        "dbaeumer.vscode-eslint",
+        "ms-vscode.vscode-json",
+        "bradlc.vscode-tailwindcss",
+        "ms-vscode.vscode-typescript-next",
+        "christian-kohler.path-intellisense",
+        "formulahendry.auto-rename-tag",
+        "ms-vscode.vscode-json",
+        "redhat.vscode-yaml",
+        "ms-vscode-remote.remote-containers",
+        "github.copilot",
+        "github.copilot-chat",
+        "humao.rest-client",
+        "ms-vscode.test-adapter-converter",
+        "hbenl.vscode-test-explorer"
+      ],
+      "settings": {
+        "editor.formatOnSave": true,
+        "editor.defaultFormatter": "esbenp.prettier-vscode",
+        "editor.codeActionsOnSave": {
+          "source.fixAll.eslint": "explicit"
+        },
+        "eslint.validate": [
+          "javascript",
+          "javascriptreact",
+          "typescript",
+          "typescriptreact"
+        ],
+        "editor.tabSize": 2,
+        "editor.insertSpaces": true,
+        "files.eol": "\n",
+        "files.trimTrailingWhitespace": true,
+        "files.insertFinalNewline": true,
+        "terminal.integrated.defaultProfile.linux": "bash",
+        "git.autofetch": true,
+        "git.enableSmartCommit": true,
+        "npm.enableScriptExplorer": true,
+        "javascript.preferences.importModuleSpecifier": "relative",
+        "typescript.preferences.importModuleSpecifier": "relative"
+      }
+    }
+  },
+  "forwardPorts": [
+    8000,
+    27017,
+    6379,
+    9200,
+    3100,
+    9090,
+    3000
+  ],
+  "portsAttributes": {
+    "8000": {
+      "label": "API Server",
+      "onAutoForward": "notify"
+    },
+    "27017": {
+      "label": "MongoDB"
+    },
+    "6379": {
+      "label": "Redis"
+    },
+    "9200": {
+      "label": "Elasticsearch"
+    },
+    "3100": {
+      "label": "Loki"
+    },
+    "9090": {
+      "label": "Prometheus"
+    },
+    "3000": {
+      "label": "Grafana"
+    }
+  },
+  "postCreateCommand": "pnpm install && pnpm run swagger",
+  "postStartCommand": "git config --global --add safe.directory ${containerWorkspaceFolder}",
+  "remoteUser": "node",
+  "mounts": [
+    "source=${localWorkspaceFolder}/.env.development,target=/usr/src/backend-app/.env.development,type=bind,consistency=cached",
+    "source=auth-template-node_modules,target=/usr/src/backend-app/node_modules,type=volume"
+  ],
+  "containerEnv": {
+    "NODE_ENV": "development",
+    "CHOKIDAR_USEPOLLING": "true"
+  },
+  "runArgs": [
+    "--init",
+    "--privileged"
+  ],
+  "shutdownAction": "stopContainer",
+  "updateContentCommand": "pnpm install"
+}

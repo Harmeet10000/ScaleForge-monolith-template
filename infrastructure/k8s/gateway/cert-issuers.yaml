@@ -1,0 +1,79 @@
+# Let's Encrypt staging issuer for testing
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-staging
+spec:
+  acme:
+    server: https://acme-staging-v02.api.letsencrypt.org/directory
+    email: admin@example.com
+    privateKeySecretRef:
+      name: letsencrypt-staging
+    solvers:
+      - http01:
+          ingress:
+            class: kong
+      - dns01:
+          route53:
+            region: us-west-2
+            accessKeyID: AKIAIOSFODNN7EXAMPLE
+            secretAccessKeySecretRef:
+              name: route53-credentials
+              key: secret-access-key
+---
+# Let's Encrypt production issuer
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-prod
+spec:
+  acme:
+    server: https://acme-v02.api.letsencrypt.org/directory
+    email: admin@example.com
+    privateKeySecretRef:
+      name: letsencrypt-prod
+    solvers:
+      - http01:
+          ingress:
+            class: kong
+      - dns01:
+          route53:
+            region: us-west-2
+            accessKeyID: AKIAIOSFODNN7EXAMPLE
+            secretAccessKeySecretRef:
+              name: route53-credentials
+              key: secret-access-key
+---
+# Self-signed issuer for internal certificates
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: selfsigned-issuer
+spec:
+  selfSigned: {}
+---
+# CA issuer for internal PKI
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: platform-ca
+  namespace: cert-manager
+spec:
+  isCA: true
+  commonName: Platform CA
+  secretName: platform-ca-secret
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+  issuerRef:
+    name: selfsigned-issuer
+    kind: ClusterIssuer
+    group: cert-manager.io
+---
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: platform-ca-issuer
+spec:
+  ca:
+    secretName: platform-ca-secret

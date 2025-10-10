@@ -1,11 +1,9 @@
-name: Build and Push Docker Image
+name: Build and Push Docker Image (Legacy)
 
 on:
   push:
     branches: [js-mongoDB]
-    tags: ['v*']
-  pull_request:
-    branches: [main]
+    tags: ["v*"]
   workflow_dispatch:
 
 env:

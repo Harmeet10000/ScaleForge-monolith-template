@@ -1,0 +1,204 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: cert-manager
+  labels:
+    name: cert-manager
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: cert-manager
+  namespace: cert-manager
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::ACCOUNT_ID:role/cert-manager-role
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cert-manager
+  namespace: cert-manager
+  labels:
+    app: cert-manager
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cert-manager
+  template:
+    metadata:
+      labels:
+        app: cert-manager
+    spec:
+      serviceAccountName: cert-manager
+      containers:
+        - name: cert-manager
+          image: quay.io/jetstack/cert-manager-controller:v1.13.2
+          args:
+            - --v=2
+            - --cluster-resource-namespace=$(POD_NAMESPACE)
+            - --leader-election-namespace=kube-system
+            - --acme-http01-solver-image=quay.io/jetstack/cert-manager-acmesolver:v1.13.2
+            - --max-concurrent-challenges=60
+          env:
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+          ports:
+            - containerPort: 9402
+              name: http-metrics
+              protocol: TCP
+            - containerPort: 9403
+              name: http-healthz
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /livez
+              port: http-healthz
+              scheme: HTTP
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 15
+            successThreshold: 1
+            failureThreshold: 8
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: http-healthz
+              scheme: HTTP
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 5
+            successThreshold: 1
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cert-manager-webhook
+  namespace: cert-manager
+  labels:
+    app: cert-manager-webhook
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cert-manager-webhook
+  template:
+    metadata:
+      labels:
+        app: cert-manager-webhook
+    spec:
+      serviceAccountName: cert-manager-webhook
+      containers:
+        - name: cert-manager-webhook
+          image: quay.io/jetstack/cert-manager-webhook:v1.13.2
+          args:
+            - --v=2
+            - --secure-port=10250
+            - --dynamic-serving-ca-secret-namespace=$(POD_NAMESPACE)
+            - --dynamic-serving-ca-secret-name=cert-manager-webhook-ca
+            - --dynamic-serving-dns-names=cert-manager-webhook
+            - --dynamic-serving-dns-names=cert-manager-webhook.$(POD_NAMESPACE)
+            - --dynamic-serving-dns-names=cert-manager-webhook.$(POD_NAMESPACE).svc
+          ports:
+            - name: https
+              protocol: TCP
+              containerPort: 10250
+            - name: healthcheck
+              protocol: TCP
+              containerPort: 6080
+          livenessProbe:
+            httpGet:
+              path: /livez
+              port: 6080
+              scheme: HTTP
+            initialDelaySeconds: 60
+            periodSeconds: 10
+            timeoutSeconds: 1
+            successThreshold: 1
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 6080
+              scheme: HTTP
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 1
+            successThreshold: 1
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+          env:
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: cert-manager-webhook
+  namespace: cert-manager
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cert-manager
+  namespace: cert-manager
+  labels:
+    app: cert-manager
+spec:
+  type: ClusterIP
+  ports:
+    - protocol: TCP
+      port: 9402
+      name: tcp-prometheus-servicemonitor
+      targetPort: 9402
+  selector:
+    app: cert-manager
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cert-manager-webhook
+  namespace: cert-manager
+  labels:
+    app: cert-manager-webhook
+spec:
+  type: ClusterIP
+  ports:
+    - name: https
+      port: 443
+      protocol: TCP
+      targetPort: https
+  selector:
+    app: cert-manager-webhook

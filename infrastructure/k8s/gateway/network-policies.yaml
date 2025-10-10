@@ -1,0 +1,181 @@
+# Network policy for platform namespace
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: platform-network-policy
+  namespace: platform
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow ingress from ALB
+    - from: []
+      ports:
+        - protocol: TCP
+          port: 8000
+        - protocol: TCP
+          port: 8443
+    # Allow ingress from observability namespace for metrics
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: observability
+      ports:
+        - protocol: TCP
+          port: 9542
+  egress:
+    # Allow egress to apps namespace
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              name: apps
+      ports:
+        - protocol: TCP
+          port: 80
+        - protocol: TCP
+          port: 8000
+        - protocol: TCP
+          port: 3000
+    # Allow DNS resolution
+    - to: []
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    # Allow HTTPS for external services
+    - to: []
+      ports:
+        - protocol: TCP
+          port: 443
+---
+# Network policy for apps namespace
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: apps-network-policy
+  namespace: apps
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow ingress from platform namespace (Kong Gateway)
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: platform
+      ports:
+        - protocol: TCP
+          port: 80
+        - protocol: TCP
+          port: 8000
+        - protocol: TCP
+          port: 3000
+    # Allow ingress from observability namespace for metrics
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: observability
+      ports:
+        - protocol: TCP
+          port: 8080
+        - protocol: TCP
+          port: 9090
+  egress:
+    # Allow egress to workers namespace
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              name: workers
+      ports:
+        - protocol: TCP
+          port: 80
+        - protocol: TCP
+          port: 8080
+    # Allow DNS resolution
+    - to: []
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    # Allow database connections
+    - to: []
+      ports:
+        - protocol: TCP
+          port: 5432 # PostgreSQL
+        - protocol: TCP
+          port: 6379 # Redis
+        - protocol: TCP
+          port: 27017 # MongoDB
+    # Allow HTTPS for external APIs
+    - to: []
+      ports:
+        - protocol: TCP
+          port: 443
+---
+# Network policy for workers namespace
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: workers-network-policy
+  namespace: workers
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow ingress from apps namespace
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: apps
+      ports:
+        - protocol: TCP
+          port: 80
+        - protocol: TCP
+          port: 8080
+    # Allow ingress from observability namespace for metrics
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: observability
+      ports:
+        - protocol: TCP
+          port: 8080
+        - protocol: TCP
+          port: 9090
+  egress:
+    # Allow DNS resolution
+    - to: []
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    # Allow database connections
+    - to: []
+      ports:
+        - protocol: TCP
+          port: 5432 # PostgreSQL
+        - protocol: TCP
+          port: 6379 # Redis
+        - protocol: TCP
+          port: 27017 # MongoDB
+        - protocol: TCP
+          port: 9200 # Elasticsearch/OpenSearch
+    # Allow HTTPS for external APIs (Pinecone, Gemini, etc.)
+    - to: []
+      ports:
+        - protocol: TCP
+          port: 443
+    # Allow S3 access
+    - to: []
+      ports:
+        - protocol: TCP
+          port: 443

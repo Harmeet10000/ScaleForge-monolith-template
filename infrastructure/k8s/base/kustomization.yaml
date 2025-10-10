@@ -1,0 +1,28 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+metadata:
+  name: auth-service-base
+
+resources:
+  - namespace.yaml
+  - fastapi-deployment.yaml
+  - fastapi-service.yaml
+  - fastapi-hpa.yaml
+  - express-deployment.yaml
+  - express-service.yaml
+  - express-hpa.yaml
+  - configmap.yaml
+  - secrets.yaml
+  - ingress.yaml
+  - network-policy.yaml
+  - pod-disruption-budget.yaml
+
+commonLabels:
+  app.kubernetes.io/name: auth-service
+  app.kubernetes.io/part-of: platform
+
+images:
+  - name: auth-service
+    newName: ghcr.io/harmeet10000/production-grade-auth-template
+    newTag: latest

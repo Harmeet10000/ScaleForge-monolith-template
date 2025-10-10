@@ -35,23 +35,29 @@ This is a **production-grade authentication and monolith service** built with mo
 ## Architectural Principles
 
 ### 1. **Separation of Concerns (SoC)**
+
 Each layer and feature module has a single, well-defined responsibility.
 
 ### 2. **DRY (Don't Repeat Yourself)**
+
 Shared utilities, helpers, and middleware are centralized and reusable across features.
 
 ### 3. **SOLID Principles**
+
 - **Single Responsibility**: Each module/class/function does one thing well
 - **Open/Closed**: Features are open for extension but closed for modification
 - **Dependency Inversion**: High-level modules don't depend on low-level modules
 
 ### 4. **Domain-Driven Design (DDD)**
+
 Features are organized around business domains (auth, payments, notifications, etc.)
 
 ### 5. **Fail-Fast Philosophy**
+
 Input validation and error handling occur as early as possible in the request lifecycle.
 
 ### 6. **Security by Design**
+
 Security considerations are built into every layer of the application.
 
 ---
@@ -252,6 +258,7 @@ src/
 ### Layer Responsibilities Within Each Feature
 
 #### **Layer 1: Routes** (`*Routes.js`)
+
 - **Purpose**: Define API endpoints and HTTP methods
 - **Responsibilities**:
   - Map URLs to controller functions
@@ -259,6 +266,7 @@ src/
   - Define route-level validation
   - Document API with JSDoc for Swagger
 - **Example**:
+
 ```javascript
 // authRoutes.js
 import express from 'express';
@@ -281,12 +289,14 @@ export default router;
 ```
 
 #### **Layer 2: Validation** (`*Validation.js`)
+
 - **Purpose**: Define input validation schemas
 - **Responsibilities**:
   - Create Joi validation schemas
   - Validate request body, params, query
   - Sanitize and normalize input
 - **Example**:
+
 ```javascript
 // authValidation.js
 import Joi from 'joi';
@@ -301,6 +311,7 @@ export const validateRegisterBody = Joi.object({
 ```
 
 #### **Layer 3: Controller** (`*Controller.js`)
+
 - **Purpose**: Handle HTTP requests and responses (thin adapter layer)
 - **Responsibilities**:
   - Extract data from request (body, params, query, headers)
@@ -309,6 +320,7 @@ export const validateRegisterBody = Joi.object({
   - Format and send HTTP responses
   - Handle errors via httpError utility
 - **Example**:
+
 ```javascript
 // authController.js
 import asyncHandler from 'express-async-handler';
@@ -323,13 +335,14 @@ export const register = asyncHandler(async (req, res, next) => {
   if (error) {
     return httpError(next, error, req, 422);
   }
-  
+
   const newUser = await authService.registerUser(value);
   httpResponse(req, res, 201, 'SUCCESS', { _id: newUser._id });
 });
 ```
 
 #### **Layer 4: Service** (`*Service.js`)
+
 - **Purpose**: Implement business logic and orchestration
 - **Responsibilities**:
   - Core business logic and rules
@@ -339,6 +352,7 @@ export const register = asyncHandler(async (req, res, next) => {
   - Manage transactions
   - Implement caching strategies
 - **Example**:
+
 ```javascript
 // authService.js
 import asyncHandler from 'express-async-handler';
@@ -353,30 +367,31 @@ export const registerUser = asyncHandler(async (userData) => {
   if (cachedUser) {
     throw new Error('User already exists');
   }
-  
+
   // Business logic
   const encryptedPassword = await hashPassword(userData.password);
   const token = generateRandomId();
-  
+
   // Data persistence
   const newUser = await authRepository.registerUser({
     ...userData,
     password: encryptedPassword,
     accountConfirmation: { token, status: false }
   });
-  
+
   // External service integration
   await Resendmail({
     to: [userData.emailAddress],
     subject: 'Confirm Your Account',
     confirmationUrl: `${process.env.FRONTEND_URL}/confirm?token=${token}`
   });
-  
+
   return newUser;
 });
 ```
 
 #### **Layer 5: Repository** (`*Repository.js`)
+
 - **Purpose**: Abstract database operations (Data Access Layer)
 - **Responsibilities**:
   - All database queries
@@ -385,18 +400,16 @@ export const registerUser = asyncHandler(async (userData) => {
   - Database-specific optimizations
   - Query result transformation
 - **Example**:
+
 ```javascript
 // authRepository.js
 import asyncHandler from 'express-async-handler';
 import { User } from './userModel.js';
 
-export const registerUser = asyncHandler(
-  async (payload) => await User.create(payload)
-);
+export const registerUser = asyncHandler(async (payload) => await User.create(payload));
 
 export const findUserByEmailAddress = asyncHandler(
-  async (emailAddress, select = '+password') => 
-    await User.findOne({ emailAddress }).select(select)
+  async (emailAddress, select = '+password') => await User.findOne({ emailAddress }).select(select)
 );
 
 export const updateUserLastLogin = asyncHandler(
@@ -410,6 +423,7 @@ export const updateUserLastLogin = asyncHandler(
 ```
 
 #### **Layer 6: Model** (`*Model.js`)
+
 - **Purpose**: Define data structure and constraints
 - **Responsibilities**:
   - Mongoose schema definition
@@ -419,44 +433,48 @@ export const updateUserLastLogin = asyncHandler(
   - Instance/static methods
   - Pre/post hooks
 - **Example**:
+
 ```javascript
 // userModel.js
 import mongoose from 'mongoose';
 
-const userSchema = new mongoose.Schema({
-  name: {
-    type: String,
-    required: [true, 'Name is required'],
-    trim: true,
-    maxlength: [50, 'Name cannot exceed 50 characters']
+const userSchema = new mongoose.Schema(
+  {
+    name: {
+      type: String,
+      required: [true, 'Name is required'],
+      trim: true,
+      maxlength: [50, 'Name cannot exceed 50 characters']
+    },
+    emailAddress: {
+      type: String,
+      required: [true, 'Email is required'],
+      unique: true,
+      lowercase: true,
+      index: true
+    },
+    password: {
+      type: String,
+      required: true,
+      select: false // Don't return password by default
+    },
+    role: {
+      type: String,
+      enum: ['user', 'admin', 'moderator'],
+      default: 'user'
+    },
+    accountConfirmation: {
+      status: { type: Boolean, default: false },
+      token: String,
+      code: String,
+      timestamp: Date
+    },
+    lastLoginAt: Date
   },
-  emailAddress: {
-    type: String,
-    required: [true, 'Email is required'],
-    unique: true,
-    lowercase: true,
-    index: true
-  },
-  password: {
-    type: String,
-    required: true,
-    select: false  // Don't return password by default
-  },
-  role: {
-    type: String,
-    enum: ['user', 'admin', 'moderator'],
-    default: 'user'
-  },
-  accountConfirmation: {
-    status: { type: Boolean, default: false },
-    token: String,
-    code: String,
-    timestamp: Date
-  },
-  lastLoginAt: Date
-}, { 
-  timestamps: true  // Adds createdAt and updatedAt
-});
+  {
+    timestamps: true // Adds createdAt and updatedAt
+  }
+);
 
 // Indexes for performance
 userSchema.index({ emailAddress: 1 });
@@ -474,11 +492,13 @@ export const User = mongoose.model('User', userSchema);
 **Purpose**: Separate data access logic from business logic
 
 **Implementation**:
+
 - Each feature has a repository layer (`*Repository.js`)
 - Repositories handle all database operations
 - Services call repositories, never directly accessing the database
 
 **Benefits**:
+
 - Easy to test (mock repositories)
 - Easy to switch databases
 - Clear separation of concerns
@@ -488,11 +508,13 @@ export const User = mongoose.model('User', userSchema);
 **Purpose**: Encapsulate business logic
 
 **Implementation**:
+
 - Each feature has a service layer (`*Service.js`)
 - Services orchestrate business workflows
 - Controllers are thin and only handle HTTP concerns
 
 **Benefits**:
+
 - Business logic is reusable
 - Easy to test business rules
 - Controllers remain simple
@@ -502,11 +524,13 @@ export const User = mongoose.model('User', userSchema);
 **Purpose**: Ensure single instance of resources
 
 **Used For**:
+
 - Database connections (MongoDB, Redis)
 - External service clients (OpenFGA, Elasticsearch)
 - Logger instance
 
 **Example**:
+
 ```javascript
 // connectRedis.js
 import Redis from 'ioredis';
@@ -532,23 +556,25 @@ export { redisClient };
 **Purpose**: Handle cross-cutting concerns
 
 **Types**:
+
 - **Global Middleware**: Applied to all routes (security, logging)
 - **Feature Middleware**: Applied to specific feature routes (auth guards)
 - **Route Middleware**: Applied to individual routes (validation)
 
 **Example**:
+
 ```javascript
 // authMiddleware.js
 export const authMiddleware = asyncHandler(async (req, res, next) => {
   const token = req.cookies.accessToken || req.headers.authorization?.split(' ')[1];
-  
+
   if (!token) {
     return httpError(next, new Error('Unauthorized'), req, 401);
   }
-  
+
   const decoded = verifyToken(token, process.env.ACCESS_TOKEN_SECRET);
   req.user = await authRepository.findUserById(decoded.userId);
-  
+
   next();
 });
 ```
@@ -558,11 +584,13 @@ export const authMiddleware = asyncHandler(async (req, res, next) => {
 **Purpose**: Create objects without specifying exact class
 
 **Used For**:
+
 - Error creation (`httpError` utility)
 - Response formatting (`httpResponse` utility)
 - Logger creation
 
 **Example**:
+
 ```javascript
 // httpError.js
 export const httpError = (next, error, req, statusCode) => {
@@ -579,6 +607,7 @@ export const httpError = (next, error, req, statusCode) => {
 **Purpose**: Inject dependencies instead of hardcoding them
 
 **Implementation**:
+
 - Services receive dependencies as parameters
 - Easy to mock for testing
 - Loose coupling between modules
@@ -589,31 +618,31 @@ export const httpError = (next, error, req, statusCode) => {
 
 ### Core Technologies
 
-| Layer | Technology | Purpose |
-|-------|-----------|---------|
-| **Runtime** | Node.js 22.14+ | JavaScript runtime |
-| **Framework** | Express.js | Web framework |
-| **Language** | JavaScript (ES2020+) | Programming language |
-| **Database** | MongoDB 7.0+ | Primary database |
-| **Cache** | Redis 7.0+ | Caching & session storage |
-| **Search** | Elasticsearch 8.0+ | Full-text search & analytics |
+| Layer         | Technology           | Purpose                      |
+| ------------- | -------------------- | ---------------------------- |
+| **Runtime**   | Node.js 22.14+       | JavaScript runtime           |
+| **Framework** | Express.js           | Web framework                |
+| **Language**  | JavaScript (ES2020+) | Programming language         |
+| **Database**  | MongoDB 7.0+         | Primary database             |
+| **Cache**     | Redis 7.0+           | Caching & session storage    |
+| **Search**    | Elasticsearch 8.0+   | Full-text search & analytics |
 
 ### Key Dependencies
 
-| Category | Libraries | Purpose |
-|----------|-----------|---------|
-| **Authentication** | jsonwebtoken, bcryptjs | JWT tokens, password hashing |
-| **Validation** | Joi | Schema validation |
-| **Security** | helmet, cors, express-rate-limit | Security headers, CORS, rate limiting |
-| **Logging** | winston, winston-loki | Structured logging |
-| **Monitoring** | prom-client | Prometheus metrics |
-| **Messaging** | amqplib, kafkajs | RabbitMQ & Kafka integration |
-| **Notifications** | @novu/node | Multi-channel notifications |
-| **Payments** | razorpay | Payment processing |
-| **Storage** | @aws-sdk/client-s3 | AWS S3 file storage |
-| **Authorization** | @openfga/sdk | Fine-grained permissions |
-| **AI** | @google/genai | Google Gemini AI |
-| **Email** | resend | Transactional emails |
+| Category           | Libraries                        | Purpose                               |
+| ------------------ | -------------------------------- | ------------------------------------- |
+| **Authentication** | jsonwebtoken, bcryptjs           | JWT tokens, password hashing          |
+| **Validation**     | Joi                              | Schema validation                     |
+| **Security**       | helmet, cors, express-rate-limit | Security headers, CORS, rate limiting |
+| **Logging**        | winston, winston-loki            | Structured logging                    |
+| **Monitoring**     | prom-client                      | Prometheus metrics                    |
+| **Messaging**      | amqplib, kafkajs                 | RabbitMQ & Kafka integration          |
+| **Notifications**  | @novu/node                       | Multi-channel notifications           |
+| **Payments**       | razorpay                         | Payment processing                    |
+| **Storage**        | @aws-sdk/client-s3               | AWS S3 file storage                   |
+| **Authorization**  | @openfga/sdk                     | Fine-grained permissions              |
+| **AI**             | @google/genai                    | Google Gemini AI                      |
+| **Email**          | resend                           | Transactional emails                  |
 
 ---
 
@@ -818,17 +847,20 @@ Client
 ### Performance Optimizations
 
 1. **Database Optimization**
+
    - Mongoose indexes on frequently queried fields
    - `.lean()` for read-only queries
    - `.select()` to limit returned fields
    - Connection pooling
 
 2. **Caching Strategy**
+
    - Redis cache with appropriate TTL
    - Cache-aside pattern
    - Cache invalidation on updates
 
 3. **Response Optimization**
+
    - Compression middleware
    - Response pagination
    - Field filtering
@@ -890,6 +922,7 @@ Application Core
 ```
 
 **Use Cases**:
+
 - Payment confirmation → Email notification
 - User registration → Welcome email
 - Subscription renewal → Billing service
@@ -953,26 +986,31 @@ services:
 ### ✅ **Advantages**
 
 1. **Domain-Driven Organization**
+
    - Features map to business domains
    - Easy to understand for business stakeholders
    - Clear ownership of features
 
 2. **Scalability**
+
    - Features can be extracted into microservices
    - Independent scaling of features
    - Parallel development by teams
 
 3. **Maintainability**
+
    - All related code in one place
    - Easy to locate and modify feature code
    - Reduced cognitive load
 
 4. **Testability**
+
    - Features can be tested independently
    - Clear boundaries for unit/integration tests
    - Mock dependencies easily
 
 5. **Reusability**
+
    - Shared utilities in helpers/utils
    - Reusable patterns across features
    - Consistent architecture
@@ -985,6 +1023,7 @@ services:
 ### 📊 **When to Use This Architecture**
 
 ✅ **Good For**:
+
 - Monoliths with plans to scale
 - Medium to large teams
 - Domain-driven design
@@ -992,6 +1031,7 @@ services:
 - Gradual microservices migration
 
 ❌ **Not Ideal For**:
+
 - Very small projects (< 3 features)
 - Prototypes or MVPs
 - Single-developer projects
@@ -1004,15 +1044,18 @@ services:
 ### Potential Architectural Evolution
 
 1. **Microservices Migration**
+
    - Extract auth feature → Auth Microservice
    - Extract payments feature → Payments Microservice
    - API Gateway (Kong/Nginx)
 
 2. **Event Sourcing**
+
    - Event store for audit trail
    - CQRS pattern implementation
 
 3. **GraphQL API**
+
    - GraphQL layer on top of REST
    - Schema stitching for features
 
