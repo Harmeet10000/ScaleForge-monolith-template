@@ -1,0 +1,289 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kong-declarative-config
+  namespace: platform
+data:
+  kong.yml: |
+    _format_version: "3.0"
+    _transform: true
+
+    services:
+    - name: fastapi-service
+      url: http://fastapi-service.apps.svc.cluster.local:80
+      plugins:
+      - name: rate-limiting
+        config:
+          minute: 100
+          hour: 1000
+          policy: local
+      - name: cors
+        config:
+          origins:
+          - "https://app.example.com"
+          - "https://chat.example.com"
+          methods:
+          - GET
+          - POST
+          - PUT
+          - DELETE
+          - OPTIONS
+          headers:
+          - Accept
+          - Accept-Version
+          - Content-Length
+          - Content-MD5
+          - Content-Type
+          - Date
+          - Authorization
+          exposed_headers:
+          - X-Auth-Token
+          credentials: true
+          max_age: 3600
+      routes:
+      - name: api-route
+        hosts:
+        - api.example.com
+        paths:
+        - /api/v1
+        strip_path: false
+        preserve_host: true
+        protocols:
+        - https
+        - http
+
+    - name: express-service
+      url: http://express-service.apps.svc.cluster.local:80
+      plugins:
+      - name: rate-limiting
+        config:
+          minute: 200
+          hour: 2000
+          policy: local
+      - name: cors
+        config:
+          origins:
+          - "https://app.example.com"
+          - "https://chat.example.com"
+          methods:
+          - GET
+          - POST
+          - PUT
+          - DELETE
+          - OPTIONS
+          headers:
+          - Accept
+          - Accept-Version
+          - Content-Length
+          - Content-MD5
+          - Content-Type
+          - Date
+          - Authorization
+          exposed_headers:
+          - X-Auth-Token
+          credentials: true
+          max_age: 3600
+      routes:
+      - name: chat-route
+        hosts:
+        - chat.example.com
+        paths:
+        - /
+        strip_path: false
+        preserve_host: true
+        protocols:
+        - https
+        - http
+
+    plugins:
+    - name: prometheus
+      config:
+        per_consumer: true
+        status_code_metrics: true
+        latency_metrics: true
+        bandwidth_metrics: true
+
+    - name: request-id
+      config:
+        header_name: X-Request-ID
+        echo_downstream: true
+
+    - name: request-transformer
+      config:
+        add:
+          headers:
+          - "X-Forwarded-Proto:https"
+          - "X-Real-IP:$remote_addr"
+
+    consumers:
+    - username: api-client
+      keyauth_credentials:
+      - key: api-key-placeholder
+      plugins:
+      - name: rate-limiting
+        config:
+          minute: 500
+          hour: 5000
+          policy: local
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kong-gateway
+  namespace: platform
+  labels:
+    app: kong-gateway
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: kong-gateway
+  template:
+    metadata:
+      labels:
+        app: kong-gateway
+    spec:
+      containers:
+        - name: kong
+          image: kong:3.4.2
+          env:
+            - name: KONG_DATABASE
+              value: 'off'
+            - name: KONG_DECLARATIVE_CONFIG
+              value: '/kong/declarative/kong.yml'
+            - name: KONG_PROXY_ACCESS_LOG
+              value: '/dev/stdout'
+            - name: KONG_ADMIN_ACCESS_LOG
+              value: '/dev/stdout'
+            - name: KONG_PROXY_ERROR_LOG
+              value: '/dev/stderr'
+            - name: KONG_ADMIN_ERROR_LOG
+              value: '/dev/stderr'
+            - name: KONG_ADMIN_LISTEN
+              value: '0.0.0.0:8001'
+            - name: KONG_PROXY_LISTEN
+              value: '0.0.0.0:8000, 0.0.0.0:8443 ssl'
+            - name: KONG_PLUGINS
+              value: 'bundled,prometheus'
+            - name: KONG_LOG_LEVEL
+              value: 'info'
+            - name: KONG_STATUS_LISTEN
+              value: '0.0.0.0:8100'
+          ports:
+            - containerPort: 8000
+              name: proxy
+              protocol: TCP
+            - containerPort: 8443
+              name: proxy-ssl
+              protocol: TCP
+            - containerPort: 8001
+              name: admin
+              protocol: TCP
+            - containerPort: 8100
+              name: status
+              protocol: TCP
+            - containerPort: 9542
+              name: metrics
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /status
+              port: 8100
+              scheme: HTTP
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /status/ready
+              port: 8100
+              scheme: HTTP
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: 200m
+              memory: 256Mi
+            limits:
+              cpu: 1000m
+              memory: 512Mi
+          volumeMounts:
+            - name: kong-declarative-config
+              mountPath: /kong/declarative
+              readOnly: true
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+      volumes:
+        - name: kong-declarative-config
+          configMap:
+            name: kong-declarative-config
+      securityContext:
+        fsGroup: 1000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kong-proxy
+  namespace: platform
+  labels:
+    app: kong-gateway
+    service: proxy
+spec:
+  type: LoadBalancer
+  ports:
+    - name: proxy
+      port: 80
+      targetPort: 8000
+      protocol: TCP
+    - name: proxy-ssl
+      port: 443
+      targetPort: 8443
+      protocol: TCP
+  selector:
+    app: kong-gateway
+  sessionAffinity: None
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kong-admin
+  namespace: platform
+  labels:
+    app: kong-gateway
+    service: admin
+spec:
+  type: ClusterIP
+  ports:
+    - name: admin
+      port: 8001
+      targetPort: 8001
+      protocol: TCP
+  selector:
+    app: kong-gateway
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kong-metrics
+  namespace: platform
+  labels:
+    app: kong-gateway
+    service: metrics
+spec:
+  type: ClusterIP
+  ports:
+    - name: metrics
+      port: 9542
+      targetPort: 9542
+      protocol: TCP
+  selector:
+    app: kong-gateway

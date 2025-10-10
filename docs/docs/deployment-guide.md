@@ -7,6 +7,7 @@ This guide provides step-by-step instructions for deploying the platform infrast
 ## Prerequisites
 
 ### Required Tools
+
 - AWS CLI v2.x configured with appropriate credentials
 - Terraform v1.5+
 - kubectl v1.28+
@@ -15,6 +16,7 @@ This guide provides step-by-step instructions for deploying the platform infrast
 - Git v2.30+
 
 ### AWS Permissions Required
+
 - EC2 Full Access
 - EKS Full Access
 - RDS Full Access
@@ -25,6 +27,7 @@ This guide provides step-by-step instructions for deploying the platform infrast
 - ElastiCache Full Access
 
 ### Environment Variables
+
 ```bash
 export AWS_REGION=us-west-2
 export ENVIRONMENT=dev|stage|prod
@@ -35,6 +38,7 @@ export ECR_REGISTRY=123456789012.dkr.ecr.us-west-2.amazonaws.com
 ## Phase 1: Infrastructure Deployment
 
 ### Step 1: Initialize Terraform Backend
+
 ```bash
 # Navigate to infrastructure directory
 cd infrastructure
@@ -53,6 +57,7 @@ terraform apply ${ENVIRONMENT}.tfplan
 ```
 
 ### Step 2: Verify Infrastructure
+
 ```bash
 # Check VPC creation
 aws ec2 describe-vpcs --filters "Name=tag:Name,Values=platform-${ENVIRONMENT}-vpc"
@@ -68,6 +73,7 @@ aws elasticache describe-cache-clusters --cache-cluster-id platform-redis-${ENVI
 ```
 
 ### Step 3: Configure kubectl
+
 ```bash
 # Update kubeconfig
 aws eks update-kubeconfig --region ${AWS_REGION} --name ${CLUSTER_NAME}
@@ -82,6 +88,7 @@ kubectl get nodes
 ## Phase 2: Platform Foundation
 
 ### Step 1: Deploy Core Platform Services
+
 ```bash
 # Create namespaces
 kubectl apply -f k8s/platform-foundation/namespaces.yaml
@@ -97,6 +104,7 @@ kubectl wait --for=condition=ready pod -l app=cert-manager -n cert-manager --tim
 ```
 
 ### Step 2: Deploy Gateway and Ingress
+
 ```bash
 # Deploy AWS Load Balancer Controller
 kubectl apply -f k8s/gateway/aws-load-balancer-controller.yaml
@@ -113,6 +121,7 @@ kubectl get ingress -n platform
 ```
 
 ### Step 3: Deploy Secrets Management
+
 ```bash
 # Deploy External Secrets Operator
 kubectl apply -f k8s/secrets/external-secrets-operator.yaml
@@ -131,6 +140,7 @@ kubectl get secrets -n workers
 ## Phase 3: Observability Stack
 
 ### Step 1: Deploy Monitoring
+
 ```bash
 # Deploy Prometheus Operator
 kubectl apply -f k8s/observability/prometheus-operator.yaml
@@ -146,6 +156,7 @@ kubectl get pods -n observability
 ```
 
 ### Step 2: Deploy Logging
+
 ```bash
 # Deploy Loki
 kubectl apply -f k8s/observability/loki.yaml
@@ -159,6 +170,7 @@ kubectl logs -n observability -l app=fluent-bit
 ```
 
 ### Step 3: Configure Alerting
+
 ```bash
 # Deploy AlertManager
 kubectl apply -f k8s/observability/alertmanager.yaml
@@ -170,6 +182,7 @@ kubectl get pods -n observability -l app=alertmanager
 ## Phase 4: Application Deployment
 
 ### Step 1: Build and Push Images
+
 ```bash
 # Login to ECR
 aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${ECR_REGISTRY}
@@ -188,6 +201,7 @@ docker push ${ECR_REGISTRY}/langchain-worker:${IMAGE_TAG}
 ```
 
 ### Step 2: Deploy Applications
+
 ```bash
 # Deploy FastAPI application
 envsubst < k8s/apps/fastapi-deployment.yaml | kubectl apply -f -
@@ -204,6 +218,7 @@ kubectl get services -n apps
 ```
 
 ### Step 3: Configure Autoscaling
+
 ```bash
 # Deploy HPA configurations
 kubectl apply -f k8s/apps/fastapi-hpa.yaml
@@ -216,6 +231,7 @@ kubectl get hpa -n apps
 ## Phase 5: Post-Deployment Verification
 
 ### Step 1: Health Checks
+
 ```bash
 # Check application health
 kubectl get pods -n apps
@@ -228,6 +244,7 @@ curl -k https://api.${DOMAIN}/ready
 ```
 
 ### Step 2: Monitoring Verification
+
 ```bash
 # Access Grafana dashboard
 kubectl port-forward -n observability svc/grafana 3000:80
@@ -240,6 +257,7 @@ kubectl logs -n observability -l app=fluent-bit
 ```
 
 ### Step 3: Security Verification
+
 ```bash
 # Check network policies
 kubectl get networkpolicies -A
@@ -254,6 +272,7 @@ kubectl get externalsecrets -A
 ## Rollback Procedures
 
 ### Application Rollback
+
 ```bash
 # Rollback to previous deployment
 kubectl rollout undo deployment/fastapi-app -n apps
@@ -265,6 +284,7 @@ kubectl rollout status deployment/express-app -n apps
 ```
 
 ### Infrastructure Rollback
+
 ```bash
 # Rollback Terraform changes
 cd infrastructure
@@ -275,18 +295,21 @@ terraform apply -destroy -var-file=environments/${ENVIRONMENT}.tfvars
 ## Environment-Specific Configurations
 
 ### Development Environment
+
 - Single node group with spot instances
 - Minimal resource allocation
 - Debug logging enabled
 - No SSL/TLS requirements
 
 ### Staging Environment
+
 - Production-like configuration
 - SSL/TLS enabled
 - Performance testing enabled
 - Canary deployment testing
 
 ### Production Environment
+
 - Multi-AZ deployment
 - High availability configuration
 - SSL/TLS required
@@ -296,6 +319,7 @@ terraform apply -destroy -var-file=environments/${ENVIRONMENT}.tfvars
 ## Troubleshooting Common Issues
 
 ### Pod Startup Issues
+
 ```bash
 # Check pod status
 kubectl describe pod <pod-name> -n <namespace>
@@ -308,6 +332,7 @@ kubectl get events -n <namespace> --sort-by='.lastTimestamp'
 ```
 
 ### Network Connectivity Issues
+
 ```bash
 # Test DNS resolution
 kubectl run -it --rm debug --image=busybox --restart=Never -- nslookup kubernetes.default
@@ -317,6 +342,7 @@ kubectl run -it --rm debug --image=curlimages/curl --restart=Never -- curl http:
 ```
 
 ### Storage Issues
+
 ```bash
 # Check PVC status
 kubectl get pvc -A
@@ -331,11 +357,13 @@ kubectl describe pod <pod-name> -n <namespace>
 ## Maintenance Windows
 
 ### Scheduled Maintenance
+
 - **Development**: Anytime during business hours
 - **Staging**: Weekends 02:00-06:00 UTC
 - **Production**: Sundays 02:00-06:00 UTC
 
 ### Emergency Maintenance
+
 - Follow incident response procedures
 - Notify stakeholders immediately
 - Document all changes made
@@ -343,11 +371,13 @@ kubectl describe pod <pod-name> -n <namespace>
 ## Contact Information
 
 ### On-Call Rotation
+
 - **Primary**: DevOps Team Lead
 - **Secondary**: Platform Engineer
 - **Escalation**: Engineering Manager
 
 ### Emergency Contacts
+
 - **PagerDuty**: +1-xxx-xxx-xxxx
 - **Slack**: #platform-alerts
 - **Email**: platform-team@company.com

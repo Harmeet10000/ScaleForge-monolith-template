@@ -1,0 +1,110 @@
+# Application Monitoring Configuration
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: fastapi-metrics
+  namespace: apps
+  labels:
+    app: fastapi-app
+spec:
+  selector:
+    matchLabels:
+      app: fastapi-app
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 30s
+      scrapeTimeout: 10s
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: express-metrics
+  namespace: apps
+  labels:
+    app: express-app
+spec:
+  selector:
+    matchLabels:
+      app: express-app
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 30s
+      scrapeTimeout: 10s
+---
+# PrometheusRule for Application Alerts
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: application-alerts
+  namespace: apps
+  labels:
+    prometheus: kube-prometheus
+    role: alert-rules
+spec:
+  groups:
+    - name: application.rules
+      rules:
+        - alert: HighErrorRate
+          expr: |
+            (
+              rate(http_requests_total{status=~"5.."}[5m]) /
+              rate(http_requests_total[5m])
+            ) > 0.05
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: 'High error rate detected'
+            description: 'Application {{ $labels.app }} has error rate above 5% for 5 minutes'
+
+        - alert: HighResponseTime
+          expr: |
+            histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 1
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: 'High response time detected'
+            description: 'Application {{ $labels.app }} 95th percentile response time is above 1s'
+
+        - alert: PodCrashLooping
+          expr: |
+            rate(kube_pod_container_status_restarts_total[15m]) > 0
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: 'Pod is crash looping'
+            description: 'Pod {{ $labels.pod }} in namespace {{ $labels.namespace }} is crash looping'
+
+        - alert: PodNotReady
+          expr: |
+            kube_pod_status_ready{condition="false"} == 1
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: 'Pod not ready'
+            description: 'Pod {{ $labels.pod }} in namespace {{ $labels.namespace }} has been not ready for 10 minutes'
+
+        - alert: DeploymentReplicasMismatch
+          expr: |
+            kube_deployment_spec_replicas != kube_deployment_status_available_replicas
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: 'Deployment replicas mismatch'
+            description: 'Deployment {{ $labels.deployment }} in namespace {{ $labels.namespace }} has mismatched replicas'
+
+        - alert: HPAScalingIssue
+          expr: |
+            kube_horizontalpodautoscaler_status_current_replicas > kube_horizontalpodautoscaler_spec_max_replicas
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: 'HPA scaling issue'
+            description: 'HPA {{ $labels.horizontalpodautoscaler }} in namespace {{ $labels.namespace }} has scaling issues'

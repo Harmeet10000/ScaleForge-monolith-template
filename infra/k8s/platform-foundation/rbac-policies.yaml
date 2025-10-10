@@ -1,0 +1,230 @@
+# Service Account for FastAPI applications
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: fastapi-sa
+  namespace: apps
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::ACCOUNT_ID:role/fastapi-service-role
+---
+# Service Account for Express applications
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: express-sa
+  namespace: apps
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::ACCOUNT_ID:role/express-service-role
+---
+# Service Account for LangChain workers
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: langchain-sa
+  namespace: workers
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::ACCOUNT_ID:role/langchain-worker-role
+---
+# Service Account for batch jobs
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: batch-sa
+  namespace: batch
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::ACCOUNT_ID:role/batch-job-role
+---
+# Role for application services (apps namespace)
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  namespace: apps
+  name: app-service-role
+rules:
+  - apiGroups: ['']
+    resources: ['secrets', 'configmaps']
+    verbs: ['get', 'list', 'watch']
+  - apiGroups: ['']
+    resources: ['pods']
+    verbs: ['get', 'list', 'watch']
+  - apiGroups: ['']
+    resources: ['services']
+    verbs: ['get', 'list', 'watch']
+---
+# Role binding for FastAPI service account
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: fastapi-binding
+  namespace: apps
+subjects:
+  - kind: ServiceAccount
+    name: fastapi-sa
+    namespace: apps
+roleRef:
+  kind: Role
+  name: app-service-role
+  apiGroup: rbac.authorization.k8s.io
+---
+# Role binding for Express service account
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: express-binding
+  namespace: apps
+subjects:
+  - kind: ServiceAccount
+    name: express-sa
+    namespace: apps
+roleRef:
+  kind: Role
+  name: app-service-role
+  apiGroup: rbac.authorization.k8s.io
+---
+# Role for worker services (workers namespace)
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  namespace: workers
+  name: worker-service-role
+rules:
+  - apiGroups: ['']
+    resources: ['secrets', 'configmaps']
+    verbs: ['get', 'list', 'watch']
+  - apiGroups: ['']
+    resources: ['pods']
+    verbs: ['get', 'list', 'watch']
+  - apiGroups: ['']
+    resources: ['services']
+    verbs: ['get', 'list', 'watch']
+  - apiGroups: ['batch']
+    resources: ['jobs']
+    verbs: ['get', 'list', 'watch', 'create']
+---
+# Role binding for LangChain worker service account
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: langchain-binding
+  namespace: workers
+subjects:
+  - kind: ServiceAccount
+    name: langchain-sa
+    namespace: workers
+roleRef:
+  kind: Role
+  name: worker-service-role
+  apiGroup: rbac.authorization.k8s.io
+---
+# Role for batch jobs (batch namespace)
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  namespace: batch
+  name: batch-job-role
+rules:
+  - apiGroups: ['']
+    resources: ['secrets', 'configmaps']
+    verbs: ['get', 'list', 'watch']
+  - apiGroups: ['']
+    resources: ['pods']
+    verbs: ['get', 'list', 'watch']
+  - apiGroups: ['batch']
+    resources: ['jobs', 'cronjobs']
+    verbs: ['get', 'list', 'watch', 'create', 'update', 'patch']
+---
+# Role binding for batch service account
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: batch-binding
+  namespace: batch
+subjects:
+  - kind: ServiceAccount
+    name: batch-sa
+    namespace: batch
+roleRef:
+  kind: Role
+  name: batch-job-role
+  apiGroup: rbac.authorization.k8s.io
+---
+# Cluster role for cross-namespace communication
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: platform-cross-namespace-role
+rules:
+  - apiGroups: ['']
+    resources: ['services', 'endpoints']
+    verbs: ['get', 'list', 'watch']
+  - apiGroups: ['networking.k8s.io']
+    resources: ['networkpolicies']
+    verbs: ['get', 'list', 'watch']
+---
+# Cluster role binding for platform services
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: platform-cross-namespace-binding
+subjects:
+  - kind: ServiceAccount
+    name: fastapi-sa
+    namespace: apps
+  - kind: ServiceAccount
+    name: express-sa
+    namespace: apps
+  - kind: ServiceAccount
+    name: langchain-sa
+    namespace: workers
+roleRef:
+  kind: ClusterRole
+  name: platform-cross-namespace-role
+  apiGroup: rbac.authorization.k8s.io
+---
+# Pod Security Policy for apps namespace
+apiVersion: policy/v1beta1
+kind: PodSecurityPolicy
+metadata:
+  name: apps-psp
+spec:
+  privileged: false
+  allowPrivilegeEscalation: false
+  requiredDropCapabilities:
+    - ALL
+  volumes:
+    - 'configMap'
+    - 'emptyDir'
+    - 'projected'
+    - 'secret'
+    - 'downwardAPI'
+    - 'persistentVolumeClaim'
+  runAsUser:
+    rule: 'MustRunAsNonRoot'
+  seLinux:
+    rule: 'RunAsAny'
+  fsGroup:
+    rule: 'RunAsAny'
+---
+# Pod Security Policy for workers namespace
+apiVersion: policy/v1beta1
+kind: PodSecurityPolicy
+metadata:
+  name: workers-psp
+spec:
+  privileged: false
+  allowPrivilegeEscalation: false
+  requiredDropCapabilities:
+    - ALL
+  volumes:
+    - 'configMap'
+    - 'emptyDir'
+    - 'projected'
+    - 'secret'
+    - 'downwardAPI'
+    - 'persistentVolumeClaim'
+  runAsUser:
+    rule: 'MustRunAsNonRoot'
+  seLinux:
+    rule: 'RunAsAny'
+  fsGroup:
+    rule: 'RunAsAny'

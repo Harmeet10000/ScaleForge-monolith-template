@@ -9,6 +9,7 @@ This document outlines comprehensive cost optimization strategies and resource m
 ### 1. Compute Optimization
 
 #### EC2 Instance Optimization
+
 - **Spot Instances**: Use spot instances for non-critical workloads (development, testing, batch processing)
 - **Reserved Instances**: Purchase 1-year or 3-year reserved instances for predictable workloads
 - **Instance Right-sizing**: Regularly analyze and adjust instance types based on actual usage
@@ -23,16 +24,16 @@ metadata:
 
 nodeGroups:
   - name: general-spot
-    instanceTypes: ["m5.large", "m5.xlarge", "m4.large", "m4.xlarge"]
+    instanceTypes: ['m5.large', 'm5.xlarge', 'm4.large', 'm4.xlarge']
     spot: true
     minSize: 2
     maxSize: 10
     desiredCapacity: 3
     volumeSize: 50
     volumeType: gp3
-    
+
   - name: critical-ondemand
-    instanceTypes: ["m5.large"]
+    instanceTypes: ['m5.large']
     spot: false
     minSize: 1
     maxSize: 5
@@ -42,6 +43,7 @@ nodeGroups:
 ```
 
 #### Container Resource Optimization
+
 ```yaml
 # Resource requests and limits optimization
 apiVersion: apps/v1
@@ -52,26 +54,27 @@ spec:
   template:
     spec:
       containers:
-      - name: fastapi
-        resources:
-          requests:
-            cpu: 100m      # Start small
-            memory: 256Mi  # Start small
-          limits:
-            cpu: 500m      # Allow bursting
-            memory: 1Gi    # Prevent OOM
+        - name: fastapi
+          resources:
+            requests:
+              cpu: 100m # Start small
+              memory: 256Mi # Start small
+            limits:
+              cpu: 500m # Allow bursting
+              memory: 1Gi # Prevent OOM
 ```
 
 ### 2. Storage Optimization
 
 #### S3 Storage Classes and Lifecycle Policies
+
 ```json
 {
   "Rules": [
     {
       "ID": "DocumentLifecycle",
       "Status": "Enabled",
-      "Filter": {"Prefix": "documents/"},
+      "Filter": { "Prefix": "documents/" },
       "Transitions": [
         {
           "Days": 30,
@@ -90,7 +93,7 @@ spec:
     {
       "ID": "LogsLifecycle",
       "Status": "Enabled",
-      "Filter": {"Prefix": "logs/"},
+      "Filter": { "Prefix": "logs/" },
       "Transitions": [
         {
           "Days": 7,
@@ -108,7 +111,7 @@ spec:
     {
       "ID": "BackupsLifecycle",
       "Status": "Enabled",
-      "Filter": {"Prefix": "backups/"},
+      "Filter": { "Prefix": "backups/" },
       "Transitions": [
         {
           "Days": 30,
@@ -128,6 +131,7 @@ spec:
 ```
 
 #### EBS Volume Optimization
+
 ```hcl
 # Terraform configuration for cost-optimized EBS volumes
 resource "aws_ebs_volume" "app_data" {
@@ -137,7 +141,7 @@ resource "aws_ebs_volume" "app_data" {
   iops              = 3000   # Baseline performance
   throughput        = 125    # Baseline throughput
   encrypted         = true
-  
+
   tags = {
     Name = "platform-app-data"
     CostCenter = "platform"
@@ -148,28 +152,29 @@ resource "aws_ebs_volume" "app_data" {
 ### 3. Database Optimization
 
 #### RDS Cost Optimization
+
 ```hcl
 resource "aws_db_instance" "postgres" {
   identifier = "platform-postgres-${var.environment}"
-  
+
   # Use burstable instances for non-production
   instance_class = var.environment == "prod" ? "db.r6g.large" : "db.t4g.medium"
-  
+
   # Enable storage autoscaling
   allocated_storage     = 100
   max_allocated_storage = 1000
   storage_type          = "gp3"
   storage_encrypted     = true
-  
+
   # Optimize backup retention
   backup_retention_period = var.environment == "prod" ? 30 : 7
   backup_window          = "03:00-04:00"
   maintenance_window     = "sun:04:00-sun:05:00"
-  
+
   # Enable performance insights for optimization
   performance_insights_enabled = true
   performance_insights_retention_period = 7
-  
+
   tags = {
     Environment = var.environment
     CostCenter  = "platform"
@@ -178,21 +183,22 @@ resource "aws_db_instance" "postgres" {
 ```
 
 #### ElastiCache Optimization
+
 ```hcl
 resource "aws_elasticache_replication_group" "redis" {
   replication_group_id       = "platform-redis-${var.environment}"
   description                = "Redis cluster for platform"
-  
+
   # Use smaller instances for non-production
   node_type = var.environment == "prod" ? "cache.r6g.large" : "cache.t4g.micro"
-  
+
   # Optimize number of replicas
   num_cache_clusters = var.environment == "prod" ? 3 : 1
-  
+
   # Enable automatic failover only for production
   automatic_failover_enabled = var.environment == "prod"
   multi_az_enabled          = var.environment == "prod"
-  
+
   tags = {
     Environment = var.environment
     CostCenter  = "platform"
@@ -203,14 +209,15 @@ resource "aws_elasticache_replication_group" "redis" {
 ### 4. Network Optimization
 
 #### NAT Gateway Optimization
+
 ```hcl
 # Use single NAT Gateway for non-production environments
 resource "aws_nat_gateway" "main" {
   count = var.environment == "prod" ? length(var.public_subnets) : 1
-  
+
   allocation_id = aws_eip.nat[count.index].id
   subnet_id     = aws_subnet.public[count.index].id
-  
+
   tags = {
     Name = "platform-nat-${count.index + 1}"
     Environment = var.environment
@@ -219,18 +226,19 @@ resource "aws_nat_gateway" "main" {
 ```
 
 #### Load Balancer Optimization
+
 ```hcl
 resource "aws_lb" "main" {
   name               = "platform-alb-${var.environment}"
   internal           = false
   load_balancer_type = "application"
-  
+
   # Use fewer subnets for non-production
   subnets = var.environment == "prod" ? aws_subnet.public[*].id : [aws_subnet.public[0].id, aws_subnet.public[1].id]
-  
+
   # Enable deletion protection only for production
   enable_deletion_protection = var.environment == "prod"
-  
+
   tags = {
     Environment = var.environment
     CostCenter  = "platform"
@@ -243,6 +251,7 @@ resource "aws_lb" "main" {
 ### 1. Kubernetes Resource Quotas
 
 #### Namespace Resource Quotas
+
 ```yaml
 apiVersion: v1
 kind: ResourceQuota
@@ -251,14 +260,14 @@ metadata:
   namespace: apps
 spec:
   hard:
-    requests.cpu: "4"
+    requests.cpu: '4'
     requests.memory: 8Gi
-    limits.cpu: "8"
+    limits.cpu: '8'
     limits.memory: 16Gi
-    persistentvolumeclaims: "10"
-    services: "10"
-    secrets: "20"
-    configmaps: "20"
+    persistentvolumeclaims: '10'
+    services: '10'
+    secrets: '20'
+    configmaps: '20'
 
 ---
 apiVersion: v1
@@ -268,14 +277,15 @@ metadata:
   namespace: workers
 spec:
   hard:
-    requests.cpu: "8"
+    requests.cpu: '8'
     requests.memory: 16Gi
-    limits.cpu: "16"
+    limits.cpu: '16'
     limits.memory: 32Gi
-    persistentvolumeclaims: "5"
+    persistentvolumeclaims: '5'
 ```
 
 #### Limit Ranges
+
 ```yaml
 apiVersion: v1
 kind: LimitRange
@@ -284,25 +294,26 @@ metadata:
   namespace: apps
 spec:
   limits:
-  - default:
-      cpu: 500m
-      memory: 1Gi
-    defaultRequest:
-      cpu: 100m
-      memory: 256Mi
-    type: Container
-  - max:
-      cpu: 2000m
-      memory: 4Gi
-    min:
-      cpu: 50m
-      memory: 128Mi
-    type: Container
+    - default:
+        cpu: 500m
+        memory: 1Gi
+      defaultRequest:
+        cpu: 100m
+        memory: 256Mi
+      type: Container
+    - max:
+        cpu: 2000m
+        memory: 4Gi
+      min:
+        cpu: 50m
+        memory: 128Mi
+      type: Container
 ```
 
 ### 2. Horizontal Pod Autoscaler (HPA) Policies
 
 #### Cost-Optimized HPA Configuration
+
 ```yaml
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
@@ -317,36 +328,37 @@ spec:
   minReplicas: 2
   maxReplicas: 10
   metrics:
-  - type: Resource
-    resource:
-      name: cpu
-      target:
-        type: Utilization
-        averageUtilization: 70
-  - type: Resource
-    resource:
-      name: memory
-      target:
-        type: Utilization
-        averageUtilization: 80
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 80
   behavior:
     scaleDown:
       stabilizationWindowSeconds: 300
       policies:
-      - type: Percent
-        value: 50
-        periodSeconds: 60
+        - type: Percent
+          value: 50
+          periodSeconds: 60
     scaleUp:
       stabilizationWindowSeconds: 60
       policies:
-      - type: Percent
-        value: 100
-        periodSeconds: 60
+        - type: Percent
+          value: 100
+          periodSeconds: 60
 ```
 
 ### 3. Vertical Pod Autoscaler (VPA) Policies
 
 #### VPA for Resource Optimization
+
 ```yaml
 apiVersion: autoscaling.k8s.io/v1
 kind: VerticalPodAutoscaler
@@ -359,22 +371,23 @@ spec:
     kind: Deployment
     name: fastapi-app
   updatePolicy:
-    updateMode: "Auto"
+    updateMode: 'Auto'
   resourcePolicy:
     containerPolicies:
-    - containerName: fastapi
-      maxAllowed:
-        cpu: 2000m
-        memory: 4Gi
-      minAllowed:
-        cpu: 100m
-        memory: 256Mi
-      controlledResources: ["cpu", "memory"]
+      - containerName: fastapi
+        maxAllowed:
+          cpu: 2000m
+          memory: 4Gi
+        minAllowed:
+          cpu: 100m
+          memory: 256Mi
+        controlledResources: ['cpu', 'memory']
 ```
 
 ### 4. Cluster Autoscaler Policies
 
 #### Node Group Scaling Configuration
+
 ```yaml
 apiVersion: v1
 kind: ConfigMap
@@ -382,13 +395,13 @@ metadata:
   name: cluster-autoscaler-status
   namespace: kube-system
 data:
-  nodes.max: "20"
-  nodes.min: "2"
-  scale-down-delay-after-add: "10m"
-  scale-down-unneeded-time: "10m"
-  scale-down-utilization-threshold: "0.5"
-  skip-nodes-with-local-storage: "false"
-  skip-nodes-with-system-pods: "false"
+  nodes.max: '20'
+  nodes.min: '2'
+  scale-down-delay-after-add: '10m'
+  scale-down-unneeded-time: '10m'
+  scale-down-utilization-threshold: '0.5'
+  skip-nodes-with-local-storage: 'false'
+  skip-nodes-with-system-pods: 'false'
 ```
 
 ## Cost Monitoring and Alerting
@@ -396,6 +409,7 @@ data:
 ### 1. AWS Cost and Usage Reports
 
 #### Cost Allocation Tags
+
 ```hcl
 # Terraform configuration for consistent tagging
 locals {
@@ -410,7 +424,7 @@ locals {
 
 resource "aws_instance" "example" {
   # ... other configuration
-  
+
   tags = merge(local.common_tags, {
     Name = "platform-worker-${var.environment}"
     Component = "compute"
@@ -419,6 +433,7 @@ resource "aws_instance" "example" {
 ```
 
 #### Cost Budget Alerts
+
 ```hcl
 resource "aws_budgets_budget" "platform_monthly" {
   name         = "platform-monthly-budget"
@@ -426,13 +441,13 @@ resource "aws_budgets_budget" "platform_monthly" {
   limit_amount = "1000"
   limit_unit   = "USD"
   time_unit    = "MONTHLY"
-  
+
   cost_filters = {
     Tag = {
       "Project" = ["platform"]
     }
   }
-  
+
   notification {
     comparison_operator        = "GREATER_THAN"
     threshold                 = 80
@@ -440,7 +455,7 @@ resource "aws_budgets_budget" "platform_monthly" {
     notification_type         = "ACTUAL"
     subscriber_email_addresses = ["platform-team@company.com"]
   }
-  
+
   notification {
     comparison_operator        = "GREATER_THAN"
     threshold                 = 100
@@ -454,6 +469,7 @@ resource "aws_budgets_budget" "platform_monthly" {
 ### 2. Kubernetes Cost Monitoring
 
 #### Prometheus Metrics for Cost Tracking
+
 ```yaml
 apiVersion: v1
 kind: ServiceMonitor
@@ -465,16 +481,17 @@ spec:
     matchLabels:
       app: kube-state-metrics
   endpoints:
-  - port: http-metrics
-    interval: 30s
-    path: /metrics
-    relabelings:
-    - sourceLabels: [__name__]
-      regex: 'kube_pod_container_resource_requests|kube_pod_container_resource_limits|kube_node_status_allocatable'
-      action: keep
+    - port: http-metrics
+      interval: 30s
+      path: /metrics
+      relabelings:
+        - sourceLabels: [__name__]
+          regex: 'kube_pod_container_resource_requests|kube_pod_container_resource_limits|kube_node_status_allocatable'
+          action: keep
 ```
 
 #### Grafana Dashboard for Cost Visualization
+
 ```json
 {
   "dashboard": {
@@ -556,10 +573,10 @@ done
 kubectl top pods --all-namespaces --containers | while read namespace pod container cpu memory; do
     if [[ $cpu =~ ^[0-9]+m$ ]]; then
         cpu_value=${cpu%m}
-        
+
         # Get resource requests
         requests=$(kubectl get pod $pod -n $namespace -o jsonpath='{.spec.containers[?(@.name=="'$container'")].resources.requests}')
-        
+
         if [[ $cpu_value -lt 50 ]]; then
             echo "RECOMMENDATION: Pod $namespace/$pod container $container is underutilized (CPU: $cpu)"
             echo "  Current requests: $requests"
@@ -588,35 +605,35 @@ spec:
         app: spot-interrupt-handler
     spec:
       containers:
-      - name: spot-interrupt-handler
-        image: amazon/aws-node-termination-handler:v1.19.0
-        env:
-        - name: NODE_NAME
-          valueFrom:
-            fieldRef:
-              fieldPath: spec.nodeName
-        - name: POD_NAME
-          valueFrom:
-            fieldRef:
-              fieldPath: metadata.name
-        - name: NAMESPACE
-          valueFrom:
-            fieldRef:
-              fieldPath: metadata.namespace
-        - name: SPOT_POD_IP
-          valueFrom:
-            fieldRef:
-              fieldPath: status.podIP
-        securityContext:
-          privileged: true
-        volumeMounts:
-        - name: uptime
-          mountPath: /proc/uptime
-          readOnly: true
+        - name: spot-interrupt-handler
+          image: amazon/aws-node-termination-handler:v1.19.0
+          env:
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: SPOT_POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+          securityContext:
+            privileged: true
+          volumeMounts:
+            - name: uptime
+              mountPath: /proc/uptime
+              readOnly: true
       volumes:
-      - name: uptime
-        hostPath:
-          path: /proc/uptime
+        - name: uptime
+          hostPath:
+            path: /proc/uptime
       hostNetwork: true
       serviceAccountName: spot-interrupt-handler
 ```
@@ -624,18 +641,21 @@ spec:
 ## Cost Optimization Checklist
 
 ### Daily Tasks
+
 - [ ] Review resource utilization dashboards
 - [ ] Check for failed or stuck pods consuming resources
 - [ ] Monitor spot instance interruptions
 - [ ] Review cost alerts and anomalies
 
 ### Weekly Tasks
+
 - [ ] Analyze VPA recommendations
 - [ ] Review HPA scaling patterns
 - [ ] Check for unused resources (volumes, snapshots, AMIs)
 - [ ] Validate resource quotas and limits
 
 ### Monthly Tasks
+
 - [ ] Review AWS Cost and Usage Reports
 - [ ] Analyze Reserved Instance utilization
 - [ ] Update instance types based on usage patterns
@@ -643,6 +663,7 @@ spec:
 - [ ] Conduct cost optimization workshop with team
 
 ### Quarterly Tasks
+
 - [ ] Review and update cost budgets
 - [ ] Evaluate new AWS services for cost optimization
 - [ ] Conduct comprehensive infrastructure cost review
@@ -651,12 +672,14 @@ spec:
 ## Cost Optimization Metrics and KPIs
 
 ### Key Performance Indicators
+
 1. **Cost per Transaction**: Total infrastructure cost / Number of API requests
 2. **Resource Utilization**: Average CPU/Memory utilization across all nodes
-3. **Cost Efficiency**: (Actual usage / Provisioned capacity) * 100
+3. **Cost Efficiency**: (Actual usage / Provisioned capacity) \* 100
 4. **Waste Reduction**: Amount saved through optimization initiatives
 
 ### Target Metrics
+
 - CPU Utilization: 60-80%
 - Memory Utilization: 70-85%
 - Cost Growth Rate: < 10% month-over-month

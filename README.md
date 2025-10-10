@@ -23,7 +23,6 @@
 
 ![Project Summary](https://raw.githubusercontent.com/Harmeet10000/production-grade-auth-template/js-mongoDB/tests/performance/Production-Grade%20Authentication%20Service%20-%20Project%20Summary%20-%20visual%20selection.png)
 
-
 <details open>
 <summary>📑 Table of Contents</summary>
 

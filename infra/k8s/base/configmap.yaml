@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+  namespace: apps
+  labels:
+    app: auth-service
+data:
+  LOG_LEVEL: 'info'
+  ACCESS_TOKEN_EXPIRY: '15m'
+  REFRESH_TOKEN_EXPIRY: '7d'
+  FRONTEND_URL: 'https://app.example.com'
+  AWS_REGION: 'us-west-2'
+  REDIS_PORT: '6379'
+  DB_POOL_SIZE: '10'

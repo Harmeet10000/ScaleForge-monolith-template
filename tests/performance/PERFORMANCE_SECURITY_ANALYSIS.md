@@ -10,11 +10,11 @@
 1.  add ELK stack for logging and monitoring - ABANDONED
 1.  Add LangChain, LangGraph, LangSmith, LangServe - Undergoing
 1.  properly implement RabbitMQ for message queuing for modularity and decoupling - Undergoing
-1. add S3 CORS config for multipart upload - Undergoing
+1.  add S3 CORS config for multipart upload - Undergoing
 1.  Improve the idempotency in payments, subscription and audit trail
 1.  recheck all the logic in payment, audit trail and subscriptions
 1.  Figure out what will be subscription id in payments
-1.          message: 'Cannot modify cancelled subscription except to reactivate', actually changed to suspended
+1.           message: 'Cannot modify cancelled subscription except to reactivate', actually changed to suspended
 1.  make a branch for drizzle + JS for AI features and Postgres extensions
 1.  explore Postgres Extensions for enhanced functionality
 1.  check if I can deploy it on AWS Lambda or Google Cloud Functions for serverless architecture and also check about cloudflare WAF

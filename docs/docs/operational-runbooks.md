@@ -13,6 +13,7 @@ This document contains detailed runbooks for common operational tasks, maintenan
 **Owner**: On-call Engineer
 
 #### Checklist
+
 ```bash
 # 1. Check cluster health
 kubectl get nodes
@@ -41,6 +42,7 @@ curl -s https://chat.platform.company.com/health | jq .
 ```
 
 #### Expected Results
+
 - All nodes in Ready state
 - All critical pods in Running state
 - CPU usage < 70%, Memory usage < 80%
@@ -49,6 +51,7 @@ curl -s https://chat.platform.company.com/health | jq .
 - Health endpoints return 200 OK
 
 #### Escalation
+
 If any checks fail, follow the troubleshooting procedures in the [Troubleshooting Guide](troubleshooting-guide.md).
 
 ### Weekly Maintenance Tasks
@@ -58,6 +61,7 @@ If any checks fail, follow the troubleshooting procedures in the [Troubleshootin
 **Owner**: Platform Team
 
 #### Pre-Maintenance Checklist
+
 ```bash
 # 1. Notify stakeholders
 # Send maintenance notification 24 hours in advance
@@ -74,6 +78,7 @@ kubectl scale deployment non-essential-service --replicas=0 -n workers
 ```
 
 #### Maintenance Tasks
+
 ```bash
 # 1. Update node AMIs (if available)
 aws eks update-nodegroup-version --cluster-name platform-prod --nodegroup-name general
@@ -95,6 +100,7 @@ kubectl patch daemonset aws-node -n kube-system -p '{"spec":{"template":{"spec":
 ```
 
 #### Post-Maintenance Verification
+
 ```bash
 # 1. Verify all services are running
 kubectl get pods --all-namespaces | grep -v Running
@@ -123,6 +129,7 @@ kubectl scale deployment non-essential-service --replicas=3 -n workers
 **Owner**: Development Team / DevOps Engineer
 
 #### Pre-Deployment Checklist
+
 ```bash
 # 1. Verify image exists in ECR
 aws ecr describe-images --repository-name fastapi-app --image-ids imageTag=${IMAGE_TAG}
@@ -139,6 +146,7 @@ kubectl get deployment fastapi-app -n apps -o yaml > fastapi-backup-$(date +%Y%m
 ```
 
 #### Deployment Steps
+
 ```bash
 # 1. Update deployment image
 kubectl set image deployment/fastapi-app fastapi=${ECR_REGISTRY}/fastapi-app:${IMAGE_TAG} -n apps
@@ -158,6 +166,7 @@ curl -s https://api.platform.company.com/ready | jq .
 ```
 
 #### Post-Deployment Verification
+
 ```bash
 # 1. Verify all pods are ready
 kubectl get pods -n apps -l app=fastapi-app | grep Running
@@ -176,6 +185,7 @@ kubectl apply -f k8s/tests/integration-tests.yaml
 ```
 
 #### Rollback Procedure
+
 ```bash
 # If deployment fails, rollback immediately
 kubectl rollout undo deployment/fastapi-app -n apps
@@ -194,6 +204,7 @@ curl -s https://api.platform.company.com/health
 **Owner**: Platform Engineer
 
 #### Pre-Update Checklist
+
 ```bash
 # 1. Create infrastructure backup
 cd infrastructure
@@ -215,6 +226,7 @@ terraform plan -var-file=environments/prod.tfvars -out=prod.tfplan
 ```
 
 #### Update Steps
+
 ```bash
 # 1. Apply infrastructure changes
 terraform apply prod.tfplan
@@ -232,6 +244,7 @@ aws rds describe-db-instances --db-instance-identifier platform-postgres-prod
 ```
 
 #### Post-Update Verification
+
 ```bash
 # 1. Verify all nodes are ready
 kubectl get nodes | grep Ready
@@ -258,6 +271,7 @@ kubectl logs -n kube-system -l app=aws-load-balancer-controller
 **Owner**: On-call Engineer
 
 #### Immediate Response (0-15 minutes)
+
 ```bash
 # 1. Acknowledge incident
 # Update incident status in PagerDuty
@@ -277,6 +291,7 @@ kubectl logs <failing-pod> -n <namespace> --tail=100
 ```
 
 #### Investigation (15-30 minutes)
+
 ```bash
 # 1. Check infrastructure health
 aws eks describe-cluster --name platform-prod
@@ -296,6 +311,7 @@ kubectl logs -n infrastructure -l app=prometheus --since=1h | grep ERROR
 ```
 
 #### Resolution Actions
+
 ```bash
 # Option 1: Restart failing services
 kubectl rollout restart deployment/fastapi-app -n apps
@@ -315,6 +331,7 @@ kubectl drain <problematic-node> --ignore-daemonsets --delete-emptydir-data
 ```
 
 #### Recovery Verification
+
 ```bash
 # 1. Verify service health
 curl -s https://api.platform.company.com/health | jq .
@@ -337,6 +354,7 @@ kubectl apply -f k8s/tests/critical-path-tests.yaml
 **Owner**: Database Administrator / Platform Engineer
 
 #### Assessment
+
 ```bash
 # 1. Check RDS metrics
 aws cloudwatch get-metric-statistics \
@@ -363,6 +381,7 @@ kubectl logs -n apps -l app=fastapi-app | grep -i "connection\|pool"
 ```
 
 #### Investigation
+
 ```bash
 # 1. Connect to database for analysis
 kubectl run -it --rm debug --image=postgres:15 --restart=Never -- psql -h <rds-endpoint> -U <username> -d <database>
@@ -387,6 +406,7 @@ WHERE NOT blocked_locks.granted;
 ```
 
 #### Resolution Actions
+
 ```bash
 # Option 1: Scale RDS instance
 aws rds modify-db-instance \
@@ -418,6 +438,7 @@ r = redis.Redis(host='redis-cluster-endpoint')
 **Owner**: Platform Engineer
 
 #### Assessment
+
 ```bash
 # 1. Check PVC status
 kubectl get pvc --all-namespaces
@@ -435,6 +456,7 @@ kubectl describe nodes | grep -A 10 "Allocated resources"
 ```
 
 #### Investigation
+
 ```bash
 # 1. Check for storage alerts
 kubectl get events --all-namespaces | grep -i storage
@@ -450,6 +472,7 @@ kubectl get volumeattachments
 ```
 
 #### Resolution Actions
+
 ```bash
 # Option 1: Expand existing PVC
 kubectl patch pvc <pvc-name> -n <namespace> -p '{"spec":{"resources":{"requests":{"storage":"200Gi"}}}}'
@@ -482,6 +505,7 @@ aws ec2 delete-volume --volume-id <unused-volume-id>
 **Owner**: Automated (CronJob)
 
 #### Manual Backup Procedure
+
 ```bash
 # 1. Create RDS snapshot
 aws rds create-db-snapshot \
@@ -503,6 +527,7 @@ aws rds start-export-task \
 ```
 
 #### Backup Verification
+
 ```bash
 # 1. Check backup job status
 kubectl get jobs -n batch | grep backup
@@ -542,6 +567,7 @@ EOF
 **Owner**: Database Administrator
 
 #### Point-in-Time Recovery
+
 ```bash
 # 1. Identify recovery point
 aws rds describe-db-instances \
@@ -569,6 +595,7 @@ kubectl rollout restart deployment/express-app -n apps
 ```
 
 #### Snapshot Recovery
+
 ```bash
 # 1. List available snapshots
 aws rds describe-db-snapshots \
@@ -592,6 +619,7 @@ kubectl run -it --rm debug --image=postgres:15 --restart=Never -- psql -h <recov
 **Owner**: Platform Engineer
 
 #### S3 Data Recovery
+
 ```bash
 # 1. List available backups
 aws s3 ls s3://platform-backups-prod/application-data/
@@ -639,6 +667,7 @@ kubectl logs job/data-recovery -n batch -f
 **Owner**: Security Team / On-call Engineer
 
 #### Immediate Actions
+
 ```bash
 # 1. Isolate affected resources
 kubectl cordon <compromised-node>
@@ -657,6 +686,7 @@ aws cloudtrail lookup-events --lookup-attributes AttributeKey=EventName,Attribut
 ```
 
 #### Investigation
+
 ```bash
 # 1. Analyze container images
 docker history <suspicious-image>
@@ -678,6 +708,7 @@ kubectl exec -it <network-monitoring-pod> -n infrastructure -- tcpdump -i any -w
 **Owner**: cert-manager (automated) / Platform Engineer (manual)
 
 #### Manual Certificate Rotation
+
 ```bash
 # 1. Check certificate expiration
 kubectl get certificates --all-namespaces
@@ -700,6 +731,7 @@ curl -vI https://<domain> 2>&1 | grep "expire date"
 **Owner**: Platform Engineer
 
 #### Database Password Rotation
+
 ```bash
 # 1. Generate new password
 NEW_PASSWORD=$(openssl rand -base64 32)
@@ -730,6 +762,7 @@ kubectl exec -it deployment/fastapi-app -n apps -- python -c "import psycopg2; p
 **Owner**: Platform Engineer
 
 #### Resource Analysis
+
 ```bash
 # 1. Analyze resource usage
 kubectl top nodes
@@ -748,6 +781,7 @@ kubectl describe hpa <hpa-name> -n <namespace>
 ```
 
 #### Optimization Actions
+
 ```bash
 # 1. Right-size resource requests
 kubectl patch deployment <deployment-name> -n <namespace> -p '{"spec":{"template":{"spec":{"containers":[{"name":"<container-name>","resources":{"requests":{"cpu":"500m","memory":"1Gi"},"limits":{"cpu":"1000m","memory":"2Gi"}}}]}}}}'

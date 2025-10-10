@@ -2,26 +2,29 @@ import './config/dotenvConfig.js';
 import app from './app.js';
 import mongoose from 'mongoose';
 import { connectDB } from './connections/connectDB.js';
+import { connectPostgres, disconnectPostgres } from './connections/connectPostgres.js';
+import { runMigrations } from './db/migrate.js';
 import { connectRedis, redisClient } from './connections/connectRedis.js';
 import { createConnection, closeConnection } from './connections/connectRabbitMQ.js';
 // import { connectKafkaProducer, consumer, producer } from './connections/connectKafka.js';
 import { logger } from './utils/logger.js';
 import asyncHandler from 'express-async-handler';
 
-Promise.all([connectDB(), connectRedis(), createConnection()])
-  .then(() => {
+Promise.all([connectDB(), connectPostgres(), connectRedis(), createConnection()])
+  .then(async () => {
+    // Run PostgreSQL migrations after connection
+    try {
+      await runMigrations();
+      logger.info('Database migrations completed');
+    } catch (error) {
+      logger.error('Migration failed, but continuing startup:', {
+        meta: { error: error.message }
+      });
+    }
     const server = app.listen(process.env.PORT, () => {
       logger.info(
         `Server is running at port: ${process.env.PORT}, in ${process.env.NODE_ENV} mode`
       );
-
-      // Start recurring billing service
-      if (
-        process.env.NODE_ENV === 'production' ||
-        process.env.ENABLE_RECURRING_BILLING === 'true'
-      ) {
-        logger.info('Recurring billing service started');
-      }
     });
 
     // Graceful shutdown function
@@ -33,6 +36,7 @@ Promise.all([connectDB(), connectRedis(), createConnection()])
         await Promise.all([
           disconnectRedis(),
           disconnectMongo(),
+          disconnectPostgresDB(),
           disconnectRabbitMQ()
           // disconnectKafka()
         ]);
@@ -57,12 +61,13 @@ Promise.all([connectDB(), connectRedis(), createConnection()])
   })
   .catch((err) => {
     logger.error('Application startup failed!', { meta: { error: err } });
-    // Attempt to disconnect Redis, DB, RabbitMQ, Novu, and Kafka even on startup failure
+    // Attempt to disconnect Redis, DB, PostgreSQL, RabbitMQ, and Kafka even on startup failure
     Promise.allSettled([
       redisClient.status === 'ready' || redisClient.status === 'connect'
         ? redisClient.quit()
         : Promise.resolve(),
       mongoose.connection.readyState === 1 ? mongoose.disconnect() : Promise.resolve(),
+      disconnectPostgres().catch(() => Promise.resolve()),
       closeConnection().catch(() => Promise.resolve())
       // disconnectKafka().catch(() => Promise.resolve())
     ]).finally(() => {
@@ -82,6 +87,11 @@ const disconnectRedis = asyncHandler(async () => {
 const disconnectMongo = asyncHandler(async () => {
   await mongoose.disconnect();
   logger.info('MongoDB disconnected gracefully.');
+});
+
+const disconnectPostgresDB = asyncHandler(async () => {
+  await disconnectPostgres();
+  logger.info('PostgreSQL disconnected gracefully.');
 });
 
 const disconnectRabbitMQ = asyncHandler(async () => {
