@@ -136,12 +136,3 @@ app.all('*', (req, res, next) => {
 app.use(globalErrorHandler);
 
 export default app;
-
-//react three fiber
-//react 360
-// react DND
-//  magic ui
-// react AG Grid
-// spline
-// micro animations
-//  origin ui

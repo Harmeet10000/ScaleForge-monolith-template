@@ -1,0 +1,42 @@
+# Minimal Gitpod config for this repo
+image:
+  # Use a Node image compatible with engines.node (>=22.14.0)
+  file: .gitpod.Dockerfile
+
+ports:
+  - port: 8000
+    onOpen: open-preview
+    # Expose Swagger docs at /api-docs if server runs on 8000
+
+tasks:
+  - init: |
+      # prefer pnpm if present (repo has pnpm-lock), fall back to npm
+      if command -v pnpm >/dev/null 2>&1; then
+        pnpm install --frozen-lockfile || pnpm install
+      else
+        npm ci || npm install
+      fi
+      # copy example env if present; do not commit secrets in Gitpod
+      if [ -f .env.development.example ]; then
+        cp .env.development.example .env.development
+      else
+        echo "# Create a .env.development in the workspace or set Gitpod variables" > .env.development
+        echo "PORT=8000" >> .env.development
+      fi
+      # Optional: run DB codegen/migrations in prebuild (comment/uncomment as needed)
+      # pnpm run db:generate || true
+      # pnpm run db:migrate || true
+    command: |
+      # Start dev server. Nodemon is used in package.json dev script.
+      npm run dev
+
+vscode:
+  extensions:
+    - dbaeumer.vscode-eslint
+    - esbenp.prettier-vscode
+    - ms-azuretools.vscode-docker
+
+tasks:
+  - command: npm run dev
+    name: Start dev server
+    openMode: split-right

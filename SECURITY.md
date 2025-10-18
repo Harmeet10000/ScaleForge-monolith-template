@@ -80,9 +80,12 @@ Do NOT post exploit details publicly until a fix or mitigation is available.
 
 ## Dependency Management
 
-- Regularly run automated dependency security scans (npm audit, Snyk, Dependabot).
-- Pin major third-party runtime dependencies and update on a schedule.
-- Remove unused packages (use `pnpm remove ...`) and scan for leftover imports.
+- **Snyk Integration**: Automated vulnerability scanning via CI/CD with severity thresholds (high/critical fail builds)
+- **Automated Security Patches**: Weekly Snyk fix PRs for vulnerable dependencies
+- **Continuous Monitoring**: Real-time vulnerability alerts via Snyk dashboard
+- Pin major third-party runtime dependencies and update on a schedule
+- Remove unused packages (use `pnpm remove ...`) and scan for leftover imports
+- Available commands: `npm run security:test`, `npm run security:fix`, `npm run security:monitor`
 
 ## CI / CD Security
 

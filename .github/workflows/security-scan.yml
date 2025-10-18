@@ -33,13 +33,28 @@ jobs:
           npm audit --audit-level=moderate --json > npm-audit-results.json || true
           npm audit --audit-level=moderate
 
-      - name: Run Snyk security scan
+      - name: Run Snyk dependency scan
+        uses: snyk/actions/node@master
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --severity-threshold=high --json-file-output=snyk-results.json
+          command: test
+
+      - name: Run Snyk code analysis
         uses: snyk/actions/node@master
         continue-on-error: true
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
-          args: --severity-threshold=medium --json-file-output=snyk-results.json
+          args: --severity-threshold=medium --json-file-output=snyk-code-results.json
+          command: code test
+
+      - name: Upload Snyk results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: snyk.sarif
 
       - name: Upload security scan results
         uses: actions/upload-artifact@v4
@@ -49,6 +64,8 @@ jobs:
           path: |
             npm-audit-results.json
             snyk-results.json
+            snyk-code-results.json
+            snyk.sarif
           retention-days: 30
 
   code-scan:
@@ -130,6 +147,14 @@ jobs:
         run: |
           docker build -f docker/prod.Dockerfile -t security-scan:latest .
 
+      - name: Run Snyk container scan
+        uses: snyk/actions/docker@master
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          image: security-scan:latest
+          args: --severity-threshold=high --json-file-output=snyk-docker-results.json
+
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
         with:
@@ -158,10 +183,70 @@ jobs:
         with:
           sarif_file: ${{ steps.grype-scan.outputs.sarif }}
 
+      - name: Upload container scan results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: container-scan-results
+          path: snyk-docker-results.json
+          retention-days: 30
+
+  snyk-monitor:
+    name: Snyk Monitor
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
+    needs: [dependency-scan]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22.x"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci --prefer-offline --no-audit
+
+      - name: Run Snyk monitor
+        uses: snyk/actions/node@master
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          command: monitor
+          args: --project-name=${{ github.repository }}
+
+  iac-scan:
+    name: Infrastructure as Code Scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Snyk IaC scan
+        uses: snyk/actions/iac@master
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --severity-threshold=medium --json-file-output=snyk-iac-results.json
+
+      - name: Upload IaC scan results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: iac-scan-results
+          path: snyk-iac-results.json
+          retention-days: 30
+
   security-summary:
     name: Security Summary
     runs-on: ubuntu-latest
-    needs: [dependency-scan, code-scan, secret-scan, container-scan]
+    needs: [dependency-scan, code-scan, secret-scan, container-scan, snyk-monitor, iac-scan]
     if: always()
 
     steps:
@@ -175,7 +260,14 @@ jobs:
           echo "| Code Analysis | ${{ needs.code-scan.result == 'success' && '✅' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Secret Detection | ${{ needs.secret-scan.result == 'success' && '✅' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Container Scan | ${{ (needs.container-scan.result == 'success' || needs.container-scan.result == 'skipped') && '✅' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Snyk Monitor | ${{ (needs.snyk-monitor.result == 'success' || needs.snyk-monitor.result == 'skipped') && '✅' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| IaC Scan | ${{ needs.iac-scan.result == 'success' && '✅' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Scan Date:** $(date -u)" >> $GITHUB_STEP_SUMMARY
           echo "**Repository:** ${{ github.repository }}" >> $GITHUB_STEP_SUMMARY
           echo "**Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📋 Next Steps" >> $GITHUB_STEP_SUMMARY
+          echo "- Review security findings in the [Security tab](https://github.com/${{ github.repository }}/security)" >> $GITHUB_STEP_SUMMARY
+          echo "- Check Snyk dashboard for detailed vulnerability information" >> $GITHUB_STEP_SUMMARY
+          echo "- Monitor for automated security patch PRs" >> $GITHUB_STEP_SUMMARY

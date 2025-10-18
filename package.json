@@ -24,7 +24,7 @@
     "migrate:exec": "pnpm run db:migrate",
     "seed": "pnpm run db:seed",
     "studio": "pnpm run db:studio",
-    "mig:push":"pnpm run db:push",
+    "mig:push": "pnpm run db:push",
     "backup:start": "node scripts/dbBackup.js",
     "backup:once": "cross-env RUN_BACKUP_ONCE=true node scripts/dbBackup.js",
     "db:generate": "drizzle-kit generate",
@@ -32,7 +32,12 @@
     "db:seed": "node src/db/seeders/index.js",
     "db:studio": "drizzle-kit studio",
     "db:push": "drizzle-kit push",
-    "db:drop": "drizzle-kit drop"
+    "db:drop": "drizzle-kit drop",
+    "security:test": "snyk test",
+    "security:monitor": "snyk monitor",
+    "security:fix": "snyk fix",
+    "security:wizard": "snyk wizard",
+    "snyk:setup": "bash scripts/snyk-setup.sh"
   },
   "keywords": [],
   "author": "Harmeet Singh",

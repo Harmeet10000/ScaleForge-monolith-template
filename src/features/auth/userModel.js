@@ -104,6 +104,11 @@ const userSchema = new Schema(
       type: Boolean,
       required: true
     },
+    active: {
+      type: Boolean,
+      default: true,
+      select: false
+    },
     // Notification-related fields
     novuSubscriberId: {
       type: String,
