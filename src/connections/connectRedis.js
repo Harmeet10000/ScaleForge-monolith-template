@@ -54,3 +54,12 @@ export const connectRedis = asyncHandler(async () => {
 
   await redisClient.connect();
 });
+
+export const disconnectRedis = asyncHandler(async () => {
+  if (redisClient.status === 'ready' || redisClient.status === 'connect') {
+    await redisClient.quit();
+    logger.info('Redis client disconnected gracefully.');
+  } else {
+    logger.warn('Redis client not connected or already disconnected.');
+  }
+});

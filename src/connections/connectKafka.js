@@ -1,6 +1,7 @@
 import { Kafka, logLevel } from 'kafkajs';
 import 'dotenv/config';
 import { logger } from '../utils/logger.js';
+import asyncHandler from 'express-async-handler';
 
 const TOPIC_NAME = process.env.KAFKA_TOPIC || 'chats';
 
@@ -22,24 +23,26 @@ const kafka = new Kafka({
 export const producer = kafka.producer();
 export const consumer = kafka.consumer({ groupId: process.env.KAFKA_GROUP_ID || 'chats' });
 
-export const connectKafkaProducer = async () => {
+export const connectKafkaProducer = asyncHandler(async () => {
   await producer.connect();
   logger.info('KafkaJS Producer connected');
   return producer;
-};
+});
 
-export const connectKafkaConsumer = async (topic = TOPIC_NAME, fromBeginning = true) => {
-  await consumer.connect();
-  await consumer.subscribe({ topic, fromBeginning });
-  logger.info(`KafkaJS Consumer connected and subscribed to topic: ${topic}`);
-  return consumer;
-};
+export const connectKafkaConsumer = asyncHandler(
+  async (topic = TOPIC_NAME, fromBeginning = true) => {
+    await consumer.connect();
+    await consumer.subscribe({ topic, fromBeginning });
+    logger.info(`KafkaJS Consumer connected and subscribed to topic: ${topic}`);
+    return consumer;
+  }
+);
 
-export const disconnectKafka = async () => {
+export const disconnectKafka = asyncHandler(async () => {
   await producer.disconnect();
   await consumer.disconnect();
   logger.info('KafkaJS Producer and Consumer disconnected');
-};
+});
 
 // import { Kafka } from 'kafkajs';
 // import path from 'path';
@@ -49,7 +52,8 @@ export const disconnectKafka = async () => {
 // import { logger } from '../utils/logger.js';
 
 // const __filename = fileURLToPath(import.meta.url);
-// const __dirname = path.dirname(__filename);
+// const __dirname = path.dirname(__import { asyncHandler } from "express-async-handler";
+// filename);
 
 // const TOPIC_NAME = process.env.KAFKA_TOPIC || 'chats';
 // const KAFKA_BROKERS = process.env.KAFKA_BROKER

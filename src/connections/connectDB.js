@@ -58,3 +58,8 @@ export const connectDB = asyncHandler(async () => {
 
   return true;
 });
+
+export const disconnectMongo = asyncHandler(async () => {
+  await mongoose.disconnect();
+  logger.info('MongoDB disconnected gracefully.');
+});

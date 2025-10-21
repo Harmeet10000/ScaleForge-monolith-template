@@ -88,3 +88,8 @@ export const closeConnection = asyncHandler(async () => {
   connection = null;
   isClosing = false;
 });
+
+export const disconnectRabbitMQ = asyncHandler(async () => {
+  await closeConnection();
+  logger.info('RabbitMQ disconnected gracefully.');
+});

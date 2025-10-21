@@ -7,6 +7,9 @@ export let db = null;
 export let sql = null;
 
 export const connectPostgres = asyncHandler(async () => {
+  if (db && sql) {
+    return { db, sql };
+  }
   // Initialize Neon connection
   sql = neon(process.env.POSTGRES_DATABASE_URL);
 
@@ -43,17 +46,11 @@ export const getSQL = () => {
 };
 
 // Graceful shutdown
-export const disconnectPostgres = async () => {
-  try {
-    if (sql) {
-      // Neon serverless connections are automatically managed
-      logger.info('PostgreSQL connection closed');
-      db = null;
-      sql = null;
-    }
-  } catch (error) {
-    logger.error('Error closing PostgreSQL connection:', {
-      meta: { error: error.message }
-    });
+export const disconnectPostgres = asyncHandler(async () => {
+  if (sql) {
+    // Neon serverless connections are automatically managed
+    logger.info('PostgreSQL connection closed');
+    db = null;
+    sql = null;
   }
-};
+});

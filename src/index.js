@@ -1,14 +1,18 @@
 import './config/dotenvConfig.js';
 import app from './app.js';
 import mongoose from 'mongoose';
-import { connectDB } from './connections/connectDB.js';
+import { connectDB, disconnectMongo } from './connections/connectDB.js';
 import { connectPostgres, disconnectPostgres } from './connections/connectPostgres.js';
 import { runMigrations } from './db/migrate.js';
-import { connectRedis, redisClient } from './connections/connectRedis.js';
-import { createConnection, closeConnection } from './connections/connectRabbitMQ.js';
+import { connectRedis, disconnectRedis, redisClient } from './connections/connectRedis.js';
+import {
+  createConnection,
+  closeConnection,
+  disconnectRabbitMQ
+} from './connections/connectRabbitMQ.js';
 // import { connectKafkaProducer, consumer, producer } from './connections/connectKafka.js';
+// import { connectElasticsearch, disconnectElasticsearch} from './connections/connectElasticSearch.js';
 import { logger } from './utils/logger.js';
-import asyncHandler from 'express-async-handler';
 
 Promise.all([connectDB(), connectPostgres(), connectRedis(), createConnection()])
   .then(async () => {
@@ -36,8 +40,9 @@ Promise.all([connectDB(), connectPostgres(), connectRedis(), createConnection()]
         await Promise.all([
           disconnectRedis(),
           disconnectMongo(),
-          disconnectPostgresDB(),
+          disconnectPostgres(),
           disconnectRabbitMQ()
+          // disconnectElasticsearch()
           // disconnectKafka()
         ]);
 
@@ -69,41 +74,9 @@ Promise.all([connectDB(), connectPostgres(), connectRedis(), createConnection()]
       mongoose.connection.readyState === 1 ? mongoose.disconnect() : Promise.resolve(),
       disconnectPostgres().catch(() => Promise.resolve()),
       closeConnection().catch(() => Promise.resolve())
+      // disconnectElasticsearch().catch(() => Promise.resolve()),
       // disconnectKafka().catch(() => Promise.resolve())
     ]).finally(() => {
       process.exit(1);
     });
   });
-
-const disconnectRedis = asyncHandler(async () => {
-  if (redisClient.status === 'ready' || redisClient.status === 'connect') {
-    await redisClient.quit();
-    logger.info('Redis client disconnected gracefully.');
-  } else {
-    logger.warn('Redis client not connected or already disconnected.');
-  }
-});
-
-const disconnectMongo = asyncHandler(async () => {
-  await mongoose.disconnect();
-  logger.info('MongoDB disconnected gracefully.');
-});
-
-const disconnectPostgresDB = asyncHandler(async () => {
-  await disconnectPostgres();
-  logger.info('PostgreSQL disconnected gracefully.');
-});
-
-const disconnectRabbitMQ = asyncHandler(async () => {
-  await closeConnection();
-  logger.info('RabbitMQ disconnected gracefully.');
-});
-
-// const disconnectKafka = asyncHandler(async () => {
-//   await producer.disconnect();
-//   logger.info('Kafka producer disconnected');
-//   await consumer.destroy();
-//   logger.info('Kafka consumer destroyed');
-//   // await disconnectAdmin();
-//   // logger.info('Kafka Admin client disconnected');
-// });
