@@ -8,7 +8,7 @@ export const client = new Client({
     apiKey: process.env.ELASTICSEARCH_API_KEY
   },
   maxRetries: 3,
-  requestTimeout: 30000,
+  requestTimeout: 40000,
   sniffOnStart: false,
   sniffInterval: false,
   compression: 'gzip',

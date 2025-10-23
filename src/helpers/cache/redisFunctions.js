@@ -37,12 +37,7 @@ export const getCache = asyncHandler(async (objectType, key, parseJson = true) =
   }
 
   if (parseJson) {
-    try {
-      return JSON.parse(result);
-    } catch (e) {
-      logger.error('Error parsing cache JSON', { meta: { cacheKey, error: e } });
-      return;
-    }
+    return deserializeHashData({ value: result }).value;
   }
 
   return result;
@@ -55,6 +50,25 @@ export const deleteCache = asyncHandler(async (objectType, key) => {
 
   logger.info(`Cache deleted: ${cacheKey}, Result: ${result}`);
   return result > 0;
+});
+
+export const executePipeline = asyncHandler(async (operations) => {
+  const pipeline = redisClient.pipeline();
+  // usage example:
+  // await executePipeline([
+  //   { command: 'set', args: ['key1', 'value1'] },
+  //   { command: 'set', args: ['key2', 'value2'] },
+  //   { command: 'hset', args: ['hash1', 'field', 'value'] },
+  //   { command: 'expire', args: ['key1', 3600] }
+  // ]);
+
+  operations.forEach(({ command, args }) => {
+    pipeline[command](...args);
+  });
+
+  const results = await pipeline.exec();
+  logger.info(`Pipeline executed: ${operations.length} operations`);
+  return results.map(([err, result]) => (err ? { error: err } : result));
 });
 
 // Redis Hash CRUD Operations
@@ -140,13 +154,12 @@ export const getListItems = asyncHandler(
       return [];
     }
 
-    // Parse JSON strings if requested and possible
     if (parseJson) {
-      return items.map((item) => {
+      return items.map((item, index) => {
         try {
-          return JSON.parse(item);
+          return deserializeHashData({ value: item }).value;
         } catch (e) {
-          logger.error('Error parsing list item JSON', { meta: { cacheKey, error: e } });
+          logger.error('Error deserializing list item', { meta: { cacheKey, index, error: e } });
           return item;
         }
       });

@@ -165,7 +165,7 @@ const levels = {
   debug: 3
 };
 
-const baseLogger = createLogger({
+const Logger = createLogger({
   levels,
   defaultMeta: {
     meta: {}
@@ -175,8 +175,8 @@ const baseLogger = createLogger({
 
 // Async logger wrapper
 export const logger = {
-  info: (message, meta) => setImmediate(() => baseLogger.info(message, meta)),
-  error: (message, meta) => setImmediate(() => baseLogger.error(message, meta)),
-  warn: (message, meta) => setImmediate(() => baseLogger.warn(message, meta)),
-  debug: (message, meta) => setImmediate(() => baseLogger.debug(message, meta))
+  info: (message, meta) => Logger.info(message, meta),
+  error: (message, meta) => Logger.error(message, meta),
+  warn: (message, meta) => Logger.warn(message, meta),
+  debug: (message, meta) => Logger.debug(message, meta)
 };
