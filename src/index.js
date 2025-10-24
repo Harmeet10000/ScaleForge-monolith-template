@@ -4,17 +4,17 @@ import mongoose from 'mongoose';
 import { connectDB, disconnectMongo } from './connections/connectDB.js';
 import { connectPostgres, disconnectPostgres } from './connections/connectPostgres.js';
 import { runMigrations } from './db/migrate.js';
-import { connectRedis, disconnectRedis, redisClient } from './connections/connectRedis.js';
-import {
-  createConnection,
-  closeConnection,
-  disconnectRabbitMQ
-} from './connections/connectRabbitMQ.js';
+// import { connectRedis, disconnectRedis, redisClient } from './connections/connectRedis.js';
+// import {
+//   createConnection,
+//   closeConnection,
+//   disconnectRabbitMQ
+// } from './connections/connectRabbitMQ.js';
 // import { connectKafkaProducer, consumer, producer } from './connections/connectKafka.js';
 // import { connectElasticsearch, disconnectElasticsearch} from './connections/connectElasticSearch.js';
 import { logger } from './utils/logger.js';
 
-Promise.all([connectDB(), connectPostgres(), connectRedis(), createConnection()])
+Promise.all([connectDB(), connectPostgres()])
   .then(async () => {
     // Run PostgreSQL migrations after connection
     try {
@@ -38,10 +38,10 @@ Promise.all([connectDB(), connectPostgres(), connectRedis(), createConnection()]
         logger.info('HTTP server closed.');
 
         await Promise.all([
-          disconnectRedis(),
+          // disconnectRedis(),
           disconnectMongo(),
-          disconnectPostgres(),
-          disconnectRabbitMQ()
+          disconnectPostgres()
+          // disconnectRabbitMQ()
           // disconnectElasticsearch()
           // disconnectKafka()
         ]);
@@ -68,12 +68,12 @@ Promise.all([connectDB(), connectPostgres(), connectRedis(), createConnection()]
     logger.error('Application startup failed!', { meta: { error: err } });
     // Attempt to disconnect Redis, DB, PostgreSQL, RabbitMQ, and Kafka even on startup failure
     Promise.allSettled([
-      redisClient.status === 'ready' || redisClient.status === 'connect'
-        ? redisClient.quit()
-        : Promise.resolve(),
+      // redisClient.status === 'ready' || redisClient.status === 'connect'
+      //   ? redisClient.quit()
+      //   : Promise.resolve(),
       mongoose.connection.readyState === 1 ? mongoose.disconnect() : Promise.resolve(),
-      disconnectPostgres().catch(() => Promise.resolve()),
-      closeConnection().catch(() => Promise.resolve())
+      disconnectPostgres().catch(() => Promise.resolve())
+      // closeConnection().catch(() => Promise.resolve())
       // disconnectElasticsearch().catch(() => Promise.resolve()),
       // disconnectKafka().catch(() => Promise.resolve())
     ]).finally(() => {
