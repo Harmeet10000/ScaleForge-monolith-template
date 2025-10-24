@@ -112,7 +112,7 @@
     "cors": "^2.8.5",
     "countries-and-timezones": "^3.7.2",
     "cross-env": "^7.0.3",
-    "dayjs": "^1.11.13",
+    "dayjs": "^1.11.18",
     "dotenv-flow": "4.1.0",
     "drizzle-orm": "0.44.6",
     "express": "^4.21.2",
