@@ -5,6 +5,7 @@ This document outlines the comprehensive testing strategy implemented for the he
 ## 🧪 Testing Framework
 
 We use **Node.js built-in test runner** with the following benefits:
+
 - No external dependencies required
 - Native ES modules support
 - Built-in assertion library
@@ -36,6 +37,7 @@ tests/
 **Purpose**: Test individual functions in isolation
 
 **Coverage**:
+
 - ✅ `getSystemHealth()` - System metrics collection
 - ✅ `getApplicationHealth()` - Application metrics collection
 - ✅ `checkMemory()` - Memory usage validation
@@ -43,6 +45,7 @@ tests/
 - ✅ Response format validation
 
 **Key Features**:
+
 - No external dependencies
 - Fast execution (< 100ms)
 - Focused on pure functions
@@ -53,6 +56,7 @@ tests/
 **Purpose**: Test API endpoints with real HTTP requests
 
 **Coverage**:
+
 - ✅ `GET /api/v1/health/self` endpoint
 - ✅ `GET /api/v1/health/health` endpoint
 - ✅ Response structure validation
@@ -60,6 +64,7 @@ tests/
 - ✅ Concurrent request handling
 
 **Key Features**:
+
 - Uses supertest for HTTP testing
 - Tests actual Express app
 - Validates complete request/response cycle
@@ -70,6 +75,7 @@ tests/
 **Purpose**: Test complete workflows in production-like environment
 
 **Coverage**:
+
 - ✅ Server startup and health check workflow
 - ✅ Load balancer health check simulation
 - ✅ Performance under sustained load
@@ -77,6 +83,7 @@ tests/
 - ✅ Error scenario handling
 
 **Key Features**:
+
 - Spawns actual server process
 - Tests real network communication
 - Performance and reliability testing
@@ -85,12 +92,14 @@ tests/
 ## 🛠️ Test Utilities
 
 ### Fixtures (`tests/fixtures/healthFixtures.js`)
+
 - Consistent test data
 - Mock response templates
 - Environment configurations
 - Helper functions for creating test data
 
 ### Helpers (`tests/helpers/testHelpers.js`)
+
 - Common testing utilities
 - Mock object creators
 - Performance measurement tools
@@ -100,21 +109,25 @@ tests/
 ## 🚀 Running Tests
 
 ### All Tests
+
 ```bash
 npm test
 ```
 
 ### With Coverage
+
 ```bash
 npm run test:coverage
 ```
 
 ### Watch Mode
+
 ```bash
 npm run test:watch
 ```
 
 ### Specific Test Types
+
 ```bash
 # Unit tests only
 TEST_PATTERN="unit/**/*.test.js" npm test
@@ -129,12 +142,14 @@ TEST_PATTERN="e2e/**/*.test.js" npm test
 ## 📊 Test Metrics
 
 ### Current Coverage
+
 - **Unit Tests**: 15 test cases
 - **Integration Tests**: 12 test cases
 - **E2E Tests**: 8 test cases
 - **Total**: 35 test cases
 
 ### Performance Benchmarks
+
 - Unit tests: < 100ms total
 - Integration tests: < 5s total
 - E2E tests: < 30s total
@@ -142,6 +157,7 @@ TEST_PATTERN="e2e/**/*.test.js" npm test
 ## 🔧 Test Configuration
 
 ### Environment Variables
+
 ```bash
 NODE_ENV=test                    # Test environment
 TEST_TIMEOUT=30000              # Test timeout (30s)
@@ -150,6 +166,7 @@ LOG_LEVEL=error                 # Reduce log noise
 ```
 
 ### Test Runner Configuration
+
 - **Timeout**: 30 seconds per test
 - **Concurrency**: 4 parallel tests
 - **Coverage**: Available with --coverage flag
@@ -158,26 +175,31 @@ LOG_LEVEL=error                 # Reduce log noise
 ## 🎨 Best Practices Implemented
 
 ### 1. Test Isolation
+
 - Each test is independent
 - No shared state between tests
 - Proper setup/teardown
 
 ### 2. Realistic Test Data
+
 - Use fixtures for consistent data
 - Mock external dependencies appropriately
 - Test edge cases and error scenarios
 
 ### 3. Performance Testing
+
 - Response time validation
 - Concurrent request handling
 - Load testing scenarios
 
 ### 4. Error Handling
+
 - Test failure scenarios
 - Validate error responses
 - Test timeout handling
 
 ### 5. Documentation
+
 - Clear test descriptions
 - Comprehensive comments
 - Usage examples
