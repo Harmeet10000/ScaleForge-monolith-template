@@ -5,16 +5,16 @@ import { connectDB, disconnectMongo } from './connections/connectDB.js';
 import { connectPostgres, disconnectPostgres } from './connections/connectPostgres.js';
 import { runMigrations } from './db/migrate.js';
 import { connectRedis, disconnectRedis, redisClient } from './connections/connectRedis.js';
-import {
-  createConnection,
-  closeConnection,
-  disconnectRabbitMQ
-} from './connections/connectRabbitMQ.js';
+// import {
+//   createConnection,
+//   closeConnection,
+//   disconnectRabbitMQ
+// } from './connections/connectRabbitMQ.js';
 // import { connectKafkaProducer, consumer, producer } from './connections/connectKafka.js';
 // import { connectElasticsearch, disconnectElasticsearch} from './connections/connectElasticSearch.js';
 import { logger } from './utils/logger.js';
 
-Promise.all([connectDB(), connectPostgres(), connectRedis(), createConnection()])
+Promise.all([connectDB(), connectPostgres(), connectRedis()])
   .then(async () => {
     // Run PostgreSQL migrations after connection
     try {
@@ -40,8 +40,8 @@ Promise.all([connectDB(), connectPostgres(), connectRedis(), createConnection()]
         await Promise.all([
           disconnectRedis(),
           disconnectMongo(),
-          disconnectPostgres(),
-          disconnectRabbitMQ()
+          disconnectPostgres()
+          // disconnectRabbitMQ()
           // disconnectElasticsearch()
           // disconnectKafka()
         ]);
@@ -72,8 +72,8 @@ Promise.all([connectDB(), connectPostgres(), connectRedis(), createConnection()]
         ? redisClient.quit()
         : Promise.resolve(),
       mongoose.connection.readyState === 1 ? mongoose.disconnect() : Promise.resolve(),
-      disconnectPostgres().catch(() => Promise.resolve()),
-      closeConnection().catch(() => Promise.resolve())
+      disconnectPostgres().catch(() => Promise.resolve())
+      // closeConnection().catch(() => Promise.resolve())
       // disconnectElasticsearch().catch(() => Promise.resolve()),
       // disconnectKafka().catch(() => Promise.resolve())
     ]).finally(() => {
