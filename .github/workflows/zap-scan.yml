@@ -1,0 +1,63 @@
+name: OWASP ZAP Security Scan
+
+on:
+  pull_request:
+    branches: [ main ]
+  push:
+    branches: [ main ]
+
+jobs:
+  zap-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.14.0'
+
+      - name: Start MongoDB
+        run: |
+          docker run -d -p 27017:27017 --name mongo mongo:latest
+
+      - name: Install Backend Dependencies
+        working-directory: ./backend
+        run: npm install
+
+      - name: Start Backend API
+        working-directory: ./backend
+        env:
+          PORT: 8000
+          MONGODB_URI: mongodb://localhost:27017/emailapp
+          BETTER_AUTH_SECRET: test-secret-key-for-ci
+          BETTER_AUTH_URL: http://localhost:8000
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          npm run dev &
+          sleep 10
+
+      - name: ZAP Full Scan (OWASP Top 10)
+        uses: zaproxy/action-full-scan@v0.10.0
+        with:
+          target: 'http://localhost:8000'
+          rules_file_name: '.github/zap-rules.tsv'
+          cmd_options: '-a -j -l INFO -z "-config api.disablekey=true"'
+          fail_action: true
+          allow_issue_writing: false
+
+      - name: Upload ZAP Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: zap-security-report
+          path: report_html.html
+
+      - name: Cleanup
+        if: always()
+        run: |
+          docker stop mongo || true
+          docker rm mongo || true

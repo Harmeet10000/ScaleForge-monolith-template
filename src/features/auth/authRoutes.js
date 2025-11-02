@@ -12,7 +12,6 @@ import {
   googleOAuthLoginHandler
 } from './authController.js';
 import { protect } from './authMiddleware.js';
-import { betterAuthHandler } from './betterAuthController.js';
 
 const router = express.Router();
 
@@ -767,17 +766,5 @@ router.post('/google-oauth/signup', googleOAuthSignupHandler);
  *               $ref: '#/components/schemas/AuthError'
  */
 router.post('/google-oauth/login', googleOAuthLoginHandler);
-
-// Better Auth specific routes
-router.post('/sign-in/email', betterAuthHandler);
-router.post('/sign-up/email', betterAuthHandler);
-router.get('/sign-in/social', betterAuthHandler);
-router.post('/sign-in/social', betterAuthHandler);
-router.get('/callback/google', betterAuthHandler);
-router.post('/callback/google', betterAuthHandler);
-router.post('/sign-out', betterAuthHandler);
-router.get('/get-session', betterAuthHandler);
-router.post('/get-session', betterAuthHandler);
-router.get('/error', betterAuthHandler);
 
 export default router;

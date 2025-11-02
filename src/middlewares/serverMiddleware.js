@@ -9,12 +9,20 @@ import helmet from 'helmet';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import overloadProtection from 'overload-protection';
+import Bottleneck from 'bottleneck';
+
+// import asyncLocalStorage from '../utils/asyncLocalStorage.js';
 
 const RedisStore = RedisStoreImport.default || RedisStoreImport;
 
 export const correlationIdMiddleware = (req, res, next) => {
-  req.correlationId = nanoid();
+  const correlationId = nanoid();
+  req.correlationId = correlationId;
+
+  // asyncLocalStorage.run({ correlationId }, () => {
   next();
+  // });
 };
 
 const __filename = fileURLToPath(import.meta.url);
@@ -72,6 +80,33 @@ export const limiter = rateLimit({
 //   windowMs: 15 * 60 * 1000,
 //   message: 'Too many requests from this IP, please try again in an hour!'
 // });
+
+export const extLimiter = new Bottleneck({
+  minTime: 200, // 5 req/sec
+  maxConcurrent: 5,
+  reservoir: 10, // Initial burst
+  datastore: 'redis', // Use your redisClient
+  id: 'my-app-group'
+});
+// app.get('/expensive', limiter.wrap(async (req, res) => {
+// Your async work here
+// }));
+
+// overload protection config
+const protectCfg = {
+  production: process.env.NODE_ENV === 'production', // Expose less info in prod
+  clientRetrySecs: 1, // Retry-After header value in seconds
+  sampleInterval: 5, // Poll metrics every 5ms
+  maxEventLoopDelay: 100, // Shed if event loop lags >100ms (tune this!)
+  maxHeapUsedBytes: 0, // 0 disables; set e.g., 500 * 1024 * 1024 for 500MB limit
+  maxRssBytes: 0, // 0 disables; RSS is total process memory
+  errorPropagationMode: true, // Let Express handle errors (true propagates to next middleware)
+  logging: (message) => logger.warn(message), // Log warnings using the project's logger
+  logStatsOnReq: false, // Log full stats per request (use sparingly)
+  // Custom error response for overload
+  errorResponse: 'Server is overloaded. Please try again later.'
+};
+export const overloadProtector = overloadProtection('express', protectCfg);
 
 // Enhanced helmet configuration
 export const securityHeaders = helmet({

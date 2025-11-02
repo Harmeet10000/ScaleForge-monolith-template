@@ -1,1 +1,48 @@
+# Git
+.git
+.gitignore
+.gitattributes
+.github
+
+# Node
 node_modules
+npm-debug.log
+
+# Editor
+.vscode
+.idea
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Misc
+.env
+.env.*
+!/.env.example
+.dockerignore
+docker-compose.yml
+README.md
+LICENSE
+.nvmrc
+.prettierrc
+.prettierignore
+.editorconfig
+.snyk
+.babelrc
+commitlint.config.js
+drizzle.config.js
+eslint.config.js
+test-runner.js
+webpack.config.js
+.husky
+.kiro
+certs
+dist
+docker
+docs
+infra
+logs
+nginx
+scripts
+tests

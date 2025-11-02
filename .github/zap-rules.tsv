@@ -1,0 +1,3 @@
+10202	Absence of Anti-CSRF Tokens	IGNORE
+10096	Timestamp Disclosure	IGNORE
+10015	Re-examine Cache-control Directives	IGNORE
