@@ -18,6 +18,7 @@ const RedisStore = RedisStoreImport.default || RedisStoreImport;
 
 export const correlationIdMiddleware = (req, res, next) => {
   const correlationId = nanoid();
+  req.headers['x-correlation-id'] = correlationId;
   req.correlationId = correlationId;
 
   // asyncLocalStorage.run({ correlationId }, () => {
@@ -85,7 +86,8 @@ export const extLimiter = new Bottleneck({
   minTime: 200, // 5 req/sec
   maxConcurrent: 5,
   reservoir: 10, // Initial burst
-  datastore: 'redis', // Use your redisClient
+  datastore: 'ioredis',
+  client: redisClient,
   id: 'my-app-group'
 });
 // app.get('/expensive', limiter.wrap(async (req, res) => {

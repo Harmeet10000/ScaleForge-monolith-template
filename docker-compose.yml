@@ -28,8 +28,6 @@ services:
       - .env.development
     environment:
       - SERVER_ID=auth-service-1
-    depends_on:
-      - redis
     restart: unless-stopped
     volumes:
       - ./src:/usr/src/backend-app/src
@@ -60,8 +58,6 @@ services:
       - .env.development
     environment:
       - SERVER_ID=auth-service-2
-    depends_on:
-      - redis
     restart: unless-stopped
     volumes:
       - ./src:/usr/src/backend-app/src

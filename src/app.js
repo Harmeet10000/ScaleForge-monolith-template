@@ -45,6 +45,8 @@ app.use(
     }
   })
 );
+// Corelational ID for request tracking
+app.use(correlationIdMiddleware);
 
 // Set security HTTP headers and  Data sanitization against XSS
 app.use(securityHeaders);
@@ -108,8 +110,6 @@ app.use(
     }
   })
 );
-
-app.use(correlationIdMiddleware);
 
 // Endpoint to serve the swagger.json file
 app.get('/swagger.json', (req, res) => {
