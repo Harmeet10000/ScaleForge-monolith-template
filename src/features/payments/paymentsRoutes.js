@@ -6,7 +6,8 @@ import {
   getPaymentStatusController,
   processRefundController,
   retryPaymentController,
-  getRazorpayKey
+  getRazorpayKey,
+  handleRazorpayWebhook
 } from './paymentController.js';
 import { protect } from '../auth/authMiddleware.js';
 
@@ -451,5 +452,82 @@ router.post('/retry/:paymentId', retryPaymentController);
  *               $ref: '#/components/schemas/PaymentError'
  */
 router.get('/key', getRazorpayKey);
+
+/**
+ * @swagger
+ * /payments/webhooks/razorpay:
+ *   post:
+ *     summary: Razorpay webhook handler
+ *     description: |
+ *       Handles Razorpay webhook events for payment and subscription updates.
+ *
+ *       **Security Note:** This endpoint verifies the x-razorpay-signature header using HMAC-SHA256 with RAZORPAY_WEBHOOK_SECRET.
+ *       Only requests with valid signatures are processed.
+ *
+ *       **Event Types:**
+ *       - payment.authorized: Payment authorized (processing started)
+ *       - payment.captured: Payment successfully captured
+ *       - payment.failed: Payment failed
+ *       - payment.refunded: Payment refunded
+ *       - subscription.completed: Subscription completed
+ *       - subscription.halted: Subscription halted/failed
+ *
+ *       **Processing Guarantees:**
+ *       - All updates are atomic transactions
+ *       - Correlation IDs are logged for tracing
+ *       - Invalid signatures are rejected with security logging
+ *       - Always returns 200 to prevent webhook retries (idempotent)
+ *     tags: [Payments]
+ *     parameters:
+ *       - name: x-razorpay-signature
+ *         in: header
+ *         required: true
+ *         description: HMAC-SHA256 signature for webhook verification
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - event
+ *               - payload
+ *             properties:
+ *               event:
+ *                 type: string
+ *                 enum:
+ *                   - payment.authorized
+ *                   - payment.captured
+ *                   - payment.failed
+ *                   - payment.refunded
+ *                   - subscription.completed
+ *                   - subscription.halted
+ *               created_at:
+ *                 type: number
+ *                 description: Unix timestamp
+ *               payload:
+ *                 type: object
+ *                 description: Event-specific payload
+ *     responses:
+ *       200:
+ *         description: Webhook acknowledged (always 200 for idempotency)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 correlationId:
+ *                   type: string
+ *                 processed:
+ *                   type: boolean
+ *                 error:
+ *                   type: string
+ *                   description: Error message if processing failed
+ */
+router.post('/webhooks/razorpay', handleRazorpayWebhook);
 
 export default router;

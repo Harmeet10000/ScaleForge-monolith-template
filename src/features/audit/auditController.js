@@ -84,6 +84,48 @@ export const getAuditByCorrelationId = asyncHandler(async (req, res, next) => {
 });
 
 /**
+ * Get complete audit trail by correlation ID with PII masking
+ */
+export const getAuditTrailByCorrelationId = asyncHandler(async (req, res, next) => {
+  const { error, value } = validateJoiSchema(validateGetAuditByCorrelationId, req.params);
+  if (error) {
+    return httpError(next, error, req, 422);
+  }
+
+  const { correlationId } = value;
+  const filters = {};
+
+  if (req.query.entityType) {
+    filters.entityType = req.query.entityType;
+  }
+  if (req.query.operationType) {
+    filters.operationType = req.query.operationType;
+  }
+  if (req.query.userId) {
+    filters.userId = req.query.userId;
+  }
+  if (req.query.dateFrom || req.query.dateTo) {
+    filters.dateRange = {};
+    if (req.query.dateFrom) {
+      filters.dateRange.start = req.query.dateFrom;
+    }
+    if (req.query.dateTo) {
+      filters.dateRange.end = req.query.dateTo;
+    }
+  }
+
+  const auditTrail = await auditService.getAuditTrailByCorrelationId(correlationId, filters);
+
+  return httpResponse(
+    req,
+    res,
+    200,
+    'Audit trail with PII masking retrieved successfully',
+    auditTrail
+  );
+});
+
+/**
  * Search audit entries
  */
 export const searchAuditEntries = asyncHandler(async (req, res, next) => {

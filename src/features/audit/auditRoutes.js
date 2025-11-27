@@ -3,6 +3,7 @@ import { protect } from '../auth/authMiddleware.js';
 import {
   createAuditEntry,
   getAuditByCorrelationId,
+  getAuditTrailByCorrelationId,
   getAuditDashboard,
   getEntityAuditTrail,
   getOperationStats,
@@ -413,6 +414,114 @@ router.get('/organization/:organizationId', getOrganizationAuditTrail);
  *               $ref: '#/components/schemas/AuditError'
  */
 router.get('/correlation/:correlationId', getAuditByCorrelationId);
+
+/**
+ * @swagger
+ * /audit/trail/correlation/{correlationId}:
+ *   get:
+ *     summary: Get complete audit trail by correlation ID with PII masking
+ *     description: Retrieve all audit entries associated with a correlation ID with automatic PII masking for compliance
+ *     tags: [Audit]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: correlationId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Correlation ID to retrieve audit trail for
+ *       - in: query
+ *         name: entityType
+ *         schema:
+ *           type: string
+ *           enum: [payment, subscription, user, plan, invoice, refund, webhook, api_key, organization, billing_address]
+ *         description: Filter by entity type
+ *       - in: query
+ *         name: operationType
+ *         schema:
+ *           type: string
+ *         description: Filter by operation type
+ *       - in: query
+ *         name: userId
+ *         schema:
+ *           type: string
+ *         description: Filter by user ID
+ *       - in: query
+ *         name: dateFrom
+ *         schema:
+ *           type: string
+ *           format: date-time
+ *         description: Filter from this date
+ *       - in: query
+ *         name: dateTo
+ *         schema:
+ *           type: string
+ *           format: date-time
+ *         description: Filter to this date
+ *     responses:
+ *       200:
+ *         description: Audit trail retrieved successfully with PII masking applied
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "Audit trail with PII masking retrieved successfully"
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     correlationId:
+ *                       type: string
+ *                       example: "abc-123-def-456"
+ *                     totalEntries:
+ *                       type: integer
+ *                       example: 5
+ *                     entries:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           _id:
+ *                             type: string
+ *                           entityType:
+ *                             type: string
+ *                           operationType:
+ *                             type: string
+ *                           timestamp:
+ *                             type: string
+ *                             format: date-time
+ *                           status:
+ *                             type: string
+ *                             enum: [success, failure, error, pending]
+ *                           metadata:
+ *                             type: object
+ *                             description: Metadata with PII masked
+ *                           changes:
+ *                             type: object
+ *                             description: Changes object with PII masked
+ *                     retrievedAt:
+ *                       type: string
+ *                       format: date-time
+ *       400:
+ *         description: Bad request - Missing or invalid correlation ID
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/AuditError'
+ *       401:
+ *         description: Unauthorized - Authentication required
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/AuditError'
+ */
+router.get('/trail/correlation/:correlationId', protect, getAuditTrailByCorrelationId);
 
 /**
  * @swagger

@@ -3,40 +3,66 @@ import asyncHandler from 'express-async-handler';
 import { httpError } from '../../utils/httpError.js';
 import { EPaymentStatus } from './paymentConstants.js';
 
+/**
+ * Helper to add session to query options if provided
+ * @param {mongoose.ClientSession} session - Optional session for transactions
+ * @returns {Object} Options object with session if provided
+ */
+const getSessionOptions = (session = null) => (session ? { session } : {});
+
 export const createPaymentWithIdempotency = asyncHandler(
-  async (paymentData, idempotencyKey, requestHash) =>
-    await Payment.createWithIdempotency(paymentData, idempotencyKey, requestHash)
+  async (paymentData, idempotencyKey, requestHash, session = null) =>
+    await Payment.createWithIdempotency(paymentData, idempotencyKey, requestHash, session)
 );
 
-export const findPaymentByIdempotencyKey = asyncHandler(
-  async (idempotencyKey) => await Payment.findByIdempotencyKey(idempotencyKey)
+export const findPaymentByIdempotencyKey = asyncHandler(async (idempotencyKey, session = null) => {
+  const options = getSessionOptions(session);
+  return await Payment.findByIdempotencyKey(idempotencyKey, options);
+});
+
+export const findPaymentById = asyncHandler(async (paymentId, session = null) => {
+  const options = getSessionOptions(session);
+  return await Payment.findById(paymentId)
+    .session(session || null)
+    .exec();
+});
+
+export const findPaymentByCorrelationId = asyncHandler(async (correlationId, session = null) => {
+  const options = getSessionOptions(session);
+  return await Payment.findByCorrelationId(correlationId, options);
+});
+
+export const findPaymentByRazorpayOrderId = asyncHandler(
+  async (razorpayOrderId, session = null) => {
+    const options = getSessionOptions(session);
+    return await Payment.findOne({ razorpayOrderId })
+      .session(session || null)
+      .exec();
+  }
 );
 
-export const findPaymentById = asyncHandler(async (paymentId) => await Payment.findById(paymentId));
-
-export const findPaymentByCorrelationId = asyncHandler(
-  async (correlationId) => await Payment.findByCorrelationId(correlationId)
+export const findPaymentsByCustomer = asyncHandler(
+  async (customerId, options = {}, session = null) => {
+    const baseOptions = { ...options };
+    if (session) {
+      baseOptions.session = session;
+    }
+    return await Payment.findByCustomer(customerId, baseOptions);
+  }
 );
 
-export const findPaymentByRazorpayOrderId = asyncHandler(async (razorpayOrderId) => {
-  const payment = await Payment.findOne({ razorpayOrderId });
-  return payment;
+export const findPendingPayments = asyncHandler(async (session = null) => {
+  const options = getSessionOptions(session);
+  return await Payment.findPendingPayments(options);
 });
 
-export const findPaymentsByCustomer = asyncHandler(async (customerId, options = {}) => {
-  const result = await Payment.findByCustomer(customerId, options);
-  return result;
-});
+export const updatePaymentById = asyncHandler(async (paymentId, updateData, session = null) => {
+  const options = { new: true, runValidators: true };
+  if (session) {
+    options.session = session;
+  }
 
-export const findPendingPayments = asyncHandler(async () => {
-  await Payment.findPendingPayments();
-});
-
-export const updatePaymentById = asyncHandler(async (paymentId, updateData) => {
-  const payment = await Payment.findByIdAndUpdate(paymentId, updateData, {
-    new: true,
-    runValidators: true
-  });
+  const payment = await Payment.findByIdAndUpdate(paymentId, updateData, options);
 
   if (!payment) {
     throw new httpError('Payment not found', 404);
@@ -45,27 +71,36 @@ export const updatePaymentById = asyncHandler(async (paymentId, updateData) => {
   return payment;
 });
 
-export const updatePaymentStatus = asyncHandler(async (paymentId, status, additionalData = {}) => {
-  const updateData = {
-    status,
-    ...additionalData
-  };
+export const updatePaymentStatus = asyncHandler(
+  async (paymentId, status, additionalData = {}, session = null) => {
+    const updateData = {
+      status,
+      ...additionalData
+    };
 
-  // Set completion timestamp for completed payments
-  if (status === EPaymentStatus.COMPLETED && !additionalData.completedAt) {
-    updateData.completedAt = new Date();
+    // Set completion timestamp for completed payments
+    if (status === EPaymentStatus.COMPLETED && !additionalData.completedAt) {
+      updateData.completedAt = new Date();
+    }
+
+    return await updatePaymentById(paymentId, updateData, session);
   }
+);
 
-  return await updatePaymentById(paymentId, updateData);
-});
-
-export const incrementPaymentRetryCount = asyncHandler(async (paymentId) => {
-  const payment = await Payment.findById(paymentId);
+export const incrementPaymentRetryCount = asyncHandler(async (paymentId, session = null) => {
+  const payment = await Payment.findById(paymentId)
+    .session(session || null)
+    .exec();
   if (!payment) {
     throw new httpError('Payment not found', 404);
   }
 
   await payment.incrementRetry();
+  if (session) {
+    await payment.save({ session });
+  } else {
+    await payment.save();
+  }
   return payment;
 });
 
@@ -79,9 +114,12 @@ export const addPaymentAuditEntry = asyncHandler(
     ipAddress,
     userAgent,
     status,
-    errorMessage
+    errorMessage,
+    session = null
   ) => {
-    const payment = await Payment.findById(paymentId);
+    const payment = await Payment.findById(paymentId)
+      .session(session || null)
+      .exec();
     if (!payment) {
       throw new httpError('Payment not found', 404);
     }
@@ -97,57 +135,98 @@ export const addPaymentAuditEntry = asyncHandler(
       errorMessage
     );
 
+    if (session) {
+      await payment.save({ session });
+    } else {
+      await payment.save();
+    }
+
     return payment;
   }
 );
 
-export const canPaymentBeRetried = asyncHandler(async (paymentId, maxRetries = 3) => {
-  const payment = await Payment.findById(paymentId);
-  if (!payment) {
-    throw new httpError('Payment not found', 404);
+export const canPaymentBeRetried = asyncHandler(
+  async (paymentId, maxRetries = 3, session = null) => {
+    const payment = await Payment.findById(paymentId)
+      .session(session || null)
+      .exec();
+    if (!payment) {
+      throw new httpError('Payment not found', 404);
+    }
+
+    return payment.canRetry(maxRetries);
   }
+);
 
-  return payment.canRetry(maxRetries);
-});
-
-export const markPaymentAsCompleted = asyncHandler(async (paymentId) => {
-  const payment = await Payment.findById(paymentId);
+export const markPaymentAsCompleted = asyncHandler(async (paymentId, session = null) => {
+  const payment = await Payment.findById(paymentId)
+    .session(session || null)
+    .exec();
   if (!payment) {
     throw new httpError('Payment not found', 404);
   }
 
   await payment.markAsCompleted();
+  if (session) {
+    await payment.save({ session });
+  } else {
+    await payment.save();
+  }
   return payment;
 });
 
-export const markPaymentAsFailed = asyncHandler(async (paymentId, reason) => {
-  const payment = await Payment.findById(paymentId);
+export const markPaymentAsFailed = asyncHandler(async (paymentId, reason, session = null) => {
+  const payment = await Payment.findById(paymentId)
+    .session(session || null)
+    .exec();
   if (!payment) {
     throw new httpError('Payment not found', 404);
   }
 
   await payment.markAsFailed(reason);
-  return payment;
-});
-
-export const setPaymentIdempotencyKey = asyncHandler(async (paymentId, key, requestHash) => {
-  const payment = await Payment.findById(paymentId);
-  if (!payment) {
-    throw new httpError('Payment not found', 404);
+  if (session) {
+    await payment.save({ session });
+  } else {
+    await payment.save();
   }
-
-  await payment.setIdempotencyKey(key, requestHash);
   return payment;
 });
 
-export const findPaymentsByIds = asyncHandler(
-  async (paymentIds) => await Payment.find({ _id: { $in: paymentIds } })
+export const setPaymentIdempotencyKey = asyncHandler(
+  async (paymentId, key, requestHash, session = null) => {
+    const payment = await Payment.findById(paymentId)
+      .session(session || null)
+      .exec();
+    if (!payment) {
+      throw new httpError('Payment not found', 404);
+    }
+
+    await payment.setIdempotencyKey(key, requestHash);
+    if (session) {
+      await payment.save({ session });
+    } else {
+      await payment.save();
+    }
+    return payment;
+  }
 );
 
-export const findPaymentsByStatus = asyncHandler(async (status, options = {}) => {
+export const findPaymentsByIds = asyncHandler(async (paymentIds, session = null) => {
+  const query = Payment.find({ _id: { $in: paymentIds } });
+  if (session) {
+    query.session(session);
+  }
+  return await query.exec();
+});
+
+export const findPaymentsByStatus = asyncHandler(async (status, options = {}, session = null) => {
   const query = Payment.find({
     status: Array.isArray(status) ? { $in: status } : status
   });
+
+  if (session) {
+    query.session(session);
+  }
 
   if (options.limit) {
     query.limit(options.limit);
@@ -163,40 +242,46 @@ export const findPaymentsByStatus = asyncHandler(async (status, options = {}) =>
     query.populate(options.populate);
   }
 
-  return await query;
+  return await query.exec();
 });
 
-export const findPaymentsByDateRange = asyncHandler(async (startDate, endDate, options = {}) => {
-  const query = Payment.find({
-    createdAt: {
-      $gte: startDate,
-      $lte: endDate
+export const findPaymentsByDateRange = asyncHandler(
+  async (startDate, endDate, options = {}, session = null) => {
+    const query = Payment.find({
+      createdAt: {
+        $gte: startDate,
+        $lte: endDate
+      }
+    });
+
+    if (session) {
+      query.session(session);
     }
-  });
 
-  if (options.status) {
-    query.where('status', options.status);
+    if (options.status) {
+      query.where('status', options.status);
+    }
+
+    if (options.customerId) {
+      query.where('customerId', options.customerId);
+    }
+
+    if (options.limit) {
+      query.limit(options.limit);
+    }
+
+    if (options.sort) {
+      query.sort(options.sort);
+    } else {
+      query.sort({ createdAt: -1 });
+    }
+
+    return await query.exec();
   }
+);
 
-  if (options.customerId) {
-    query.where('customerId', options.customerId);
-  }
-
-  if (options.limit) {
-    query.limit(options.limit);
-  }
-
-  if (options.sort) {
-    query.sort(options.sort);
-  } else {
-    query.sort({ createdAt: -1 });
-  }
-
-  return await query;
-});
-
-export const getCustomerPaymentStats = asyncHandler(async (customerId) => {
-  const stats = await Payment.aggregate([
+export const getCustomerPaymentStats = asyncHandler(async (customerId, session = null) => {
+  const statsQuery = Payment.aggregate([
     { $match: { customerId } },
     {
       $group: {
@@ -207,11 +292,27 @@ export const getCustomerPaymentStats = asyncHandler(async (customerId) => {
     }
   ]);
 
-  const totalPayments = await Payment.countDocuments({ customerId });
-  const totalAmount = await Payment.aggregate([
+  if (session) {
+    statsQuery.session(session);
+  }
+
+  const stats = await statsQuery.exec();
+
+  const totalPaymentsQuery = Payment.countDocuments({ customerId });
+  if (session) {
+    totalPaymentsQuery.session(session);
+  }
+  const totalPayments = await totalPaymentsQuery.exec();
+
+  const totalAmountQuery = Payment.aggregate([
     { $match: { customerId, status: EPaymentStatus.COMPLETED } },
     { $group: { _id: null, total: { $sum: '$amount' } } }
   ]);
+
+  if (session) {
+    totalAmountQuery.session(session);
+  }
+  const totalAmount = await totalAmountQuery.exec();
 
   return {
     totalPayments,
@@ -221,24 +322,34 @@ export const getCustomerPaymentStats = asyncHandler(async (customerId) => {
 });
 
 export const deletePaymentById = asyncHandler(
-  async (paymentId) =>
-    await updatePaymentStatus(paymentId, EPaymentStatus.CANCELLED, {
-      metadata: {
-        deletedAt: new Date(),
-        deleted: true
-      }
-    })
+  async (paymentId, session = null) =>
+    await updatePaymentStatus(
+      paymentId,
+      EPaymentStatus.CANCELLED,
+      {
+        metadata: {
+          deletedAt: new Date(),
+          deleted: true
+        }
+      },
+      session
+    )
 );
 
-export const findExpiredPayments = asyncHandler(
-  async () =>
-    await Payment.find({
-      status: { $in: [EPaymentStatus.PENDING, EPaymentStatus.PROCESSING] },
-      expiresAt: { $lt: new Date() }
-    })
-);
+export const findExpiredPayments = asyncHandler(async (session = null) => {
+  const query = Payment.find({
+    status: { $in: [EPaymentStatus.PENDING, EPaymentStatus.PROCESSING] },
+    expiresAt: { $lt: new Date() }
+  });
 
-export const bulkUpdatePayments = asyncHandler(async (updates) => {
+  if (session) {
+    query.session(session);
+  }
+
+  return await query.exec();
+});
+
+export const bulkUpdatePayments = asyncHandler(async (updates, session = null) => {
   const bulkOps = updates.map((update) => ({
     updateOne: {
       filter: { _id: update.paymentId },
@@ -247,5 +358,10 @@ export const bulkUpdatePayments = asyncHandler(async (updates) => {
     }
   }));
 
-  return await Payment.bulkWrite(bulkOps);
+  const options = {};
+  if (session) {
+    options.session = session;
+  }
+
+  return await Payment.bulkWrite(bulkOps, options);
 });

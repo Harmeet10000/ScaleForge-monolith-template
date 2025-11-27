@@ -1,3 +1,4 @@
+```js
 6.  add prometheus, loki and grafana for monitoring and alerting - DONE
 1.  Implement a OpenFGA to enhance scalability, reliability, and security of your authentication service. with permissions - DONE
 1.  make a fucking awesome documentation for the same in Postman or Swagger - DONE
@@ -8,32 +9,23 @@
 1.  add recommendation system using Convex or AWS personalise/GCP equivalent - DONE
 1.  Shift audit trail to new model - DONE
 1.  make a branch for drizzle + JS for AI features and Postgres extensions - DONE
+1.  add S3 CORS config for multipart upload - DONE
 1.  add ELK stack for logging and monitoring - ABANDONED
 1.  Add LangChain, LangGraph, LangSmith, LangServe - Undergoing
 1.  properly implement RabbitMQ for message queuing for modularity and decoupling - Undergoing
-1.  add S3 CORS config for multipart upload - Undergoing
 1.  explore Postgres Extensions for enhanced functionality - Undergoing
 1.  lastly make a Bun + Elysia.js version - Undergoing
 1.  Improve the idempotency in payments, subscription and audit trail
 1.  recheck all the logic in payment, audit trail and subscriptions
 1.  Figure out what will be subscription id in payments
-1.                 message: 'Cannot modify cancelled subscription except to reactivate', actually changed to suspended
+1.                  message: 'Cannot modify cancelled subscription except to reactivate', actually changed to suspended
 1.  check if I can deploy it on AWS Lambda or Google Cloud Functions for serverless architecture and also check about cloudflare WAF
 1.  check performance/stress testing using grafana k6
 1.  add tests in CI before deploying to production
 1.  make a Golang version of the same
 1.  add SAGA pattern for managing complex workflows and state transitions
-"Context7": {
-"command": "npx",
-"args": [
-"-y",
-"@upstash/context7-mcp",
-"--api-key",
-"ctx7sk-a2d18ca1-6143-4e6e-896a-8eb982f16e60"
-],
-"env": {},
-"working_directory": null
-}
+```
+
 <!-- react three fiber
 react 360
  react DND
@@ -42,7 +34,7 @@ react 360
  spline
  micro animations
   origin ui -->
-
+```js
 to de done now
 {{baseUrl}}/api/v1/permissions/organizations/org123/users/bulk
 
@@ -169,7 +161,7 @@ to de done now
 # type: 'document_parsing_exception',
 
 # reason: '[1:11] Field [_index] is a metadata field and cannot be added inside a document. Use the index API request parameters.'
-
+```
 **Current Architecture:**
 
 ```

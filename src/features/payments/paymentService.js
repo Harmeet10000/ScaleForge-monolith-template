@@ -5,7 +5,9 @@ import { httpError } from '../../utils/httpError.js';
 import { logger } from '../../utils/logger.js';
 import { EPaymentStatus, RETRY_CONFIG, DEFAULT_VALUES } from './paymentConstants.js';
 import * as paymentRepository from './paymentRepository.js';
+import * as subscriptionRepository from '../subscription/subscriptionRepository.js';
 import * as auditUtils from '../audit/auditUtils.js';
+import { executeInTransaction } from '../../utils/transactionManager.js';
 
 // Initialize Razorpay instance
 const razorpayInstance = new Razorpay({
@@ -264,96 +266,150 @@ export const verifyPayment = asyncHandler(
   async (verificationData, correlationId, userId, requestContext = {}, req, next) => {
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = verificationData;
 
-    // Find payment by Razorpay order ID
-    const payment = await paymentRepository.findPaymentByRazorpayOrderId(razorpay_order_id);
-    if (!payment) {
-      return httpError(next, new Error('Payment not found for the given order'), req, 404);
+    // Check idempotency first (before transaction) to prevent redundant processing
+    const existingPayment = await paymentRepository.findPaymentByRazorpayOrderId(razorpay_order_id);
+    if (existingPayment?.status === EPaymentStatus.COMPLETED) {
+      logger.info('Payment already verified, returning cached result', {
+        meta: { correlationId, paymentId: existingPayment._id }
+      });
+      return {
+        payment: existingPayment,
+        isIdempotent: true
+      };
     }
 
-    // Verify signature
-    const body = `${razorpay_order_id}|${razorpay_payment_id}`;
-    const expectedSignature = crypto
-      .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
-      .update(body.toString())
-      .digest('hex');
-
-    const isSignatureValid = expectedSignature === razorpay_signature;
-
-    if (!isSignatureValid) {
-      // Mark payment as failed due to signature verification failure
-      await updatePaymentStatus(
-        payment.paymentId,
-        EPaymentStatus.FAILED,
-        { failureReason: 'Signature verification failed' },
-        userId,
-        requestContext,
-        req,
-        next
-      );
-
-      return httpError(next, new Error('Payment signature verification failed'), req, 400);
-    }
-
-    // Get payment details from Razorpay
-    const razorpayPaymentDetails = await getPaymentStatusFromRazorpay(
-      razorpay_payment_id,
-      req,
-      next
-    );
-
-    // Update payment status based on Razorpay status
-    let newStatus = EPaymentStatus.COMPLETED;
-    if (razorpayPaymentDetails.status === 'failed') {
-      newStatus = EPaymentStatus.FAILED;
-    } else if (razorpayPaymentDetails.status === 'authorized' && !razorpayPaymentDetails.captured) {
-      newStatus = EPaymentStatus.PROCESSING;
-    }
-
-    const updatedPayment = await updatePaymentStatus(
-      payment.paymentId,
-      newStatus,
-      {
-        razorpayPaymentId: razorpay_payment_id,
-        paymentMethod: razorpayPaymentDetails.method,
-        metadata: {
-          ...payment.metadata,
-          razorpayPaymentDetails
+    // Execute payment verification in atomic transaction
+    return await executeInTransaction(
+      async (session) => {
+        // Find payment by Razorpay order ID within transaction
+        const payment = await paymentRepository.findPaymentByRazorpayOrderId(
+          razorpay_order_id,
+          session
+        );
+        if (!payment) {
+          throw new httpError('Payment not found for the given order', 404);
         }
+
+        // Verify signature
+        const body = `${razorpay_order_id}|${razorpay_payment_id}`;
+        const expectedSignature = crypto
+          .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
+          .update(body.toString())
+          .digest('hex');
+
+        const isSignatureValid = expectedSignature === razorpay_signature;
+
+        if (!isSignatureValid) {
+          // Update payment status to failed atomically
+          await paymentRepository.updatePaymentStatus(
+            payment._id,
+            EPaymentStatus.FAILED,
+            { failureReason: 'Signature verification failed' },
+            session
+          );
+
+          // Add audit entry for failed verification
+          await paymentRepository.addPaymentAuditEntry(
+            payment._id,
+            'Payment signature verification failed',
+            'payment_verify_failed',
+            userId,
+            { signature: razorpay_signature, expectedSignature },
+            requestContext.ipAddress,
+            requestContext.userAgent,
+            'failed',
+            'Signature verification failed',
+            session
+          );
+
+          throw new Error('Payment signature verification failed');
+        }
+
+        // Get payment details from Razorpay
+        const razorpayPaymentDetails = await getPaymentStatusFromRazorpay(
+          razorpay_payment_id,
+          req,
+          next
+        );
+
+        // Determine new status based on Razorpay status
+        let newStatus = EPaymentStatus.COMPLETED;
+        if (razorpayPaymentDetails.status === 'failed') {
+          newStatus = EPaymentStatus.FAILED;
+        } else if (
+          razorpayPaymentDetails.status === 'authorized' &&
+          !razorpayPaymentDetails.captured
+        ) {
+          newStatus = EPaymentStatus.PROCESSING;
+        }
+
+        // Update payment status atomically
+        const updatedPayment = await paymentRepository.updatePaymentStatus(
+          payment._id,
+          newStatus,
+          {
+            razorpayPaymentId: razorpay_payment_id,
+            paymentMethod: razorpayPaymentDetails.method,
+            metadata: {
+              ...payment.metadata,
+              razorpayPaymentDetails
+            }
+          },
+          session
+        );
+        // Update linked subscription if payment is completed
+        let updatedSubscription = null;
+        if (newStatus === EPaymentStatus.COMPLETED && payment.subscriptionId) {
+          updatedSubscription = await subscriptionRepository.updateSubscriptionStatus(
+            payment.subscriptionId,
+            'active',
+            {},
+            session
+          );
+
+          logger.debug('Subscription activated for verified payment', {
+            meta: { correlationId, subscriptionId: payment.subscriptionId }
+          });
+        }
+
+        // Add verification audit entry
+        await paymentRepository.addPaymentAuditEntry(
+          payment._id,
+          `Payment verified and status set to ${newStatus}`,
+          'payment_verified',
+          userId,
+          {
+            razorpayPaymentId: razorpay_payment_id,
+            paymentMethod: razorpayPaymentDetails.method
+          },
+          requestContext.ipAddress,
+          requestContext.userAgent,
+          'success',
+          null,
+          session
+        );
+
+        logger.info('Payment verified successfully in transaction', {
+          meta: {
+            correlationId,
+            paymentId: payment._id,
+            razorpayPaymentId: razorpay_payment_id,
+            newStatus
+          }
+        });
+
+        return {
+          payment: updatedPayment,
+          subscription: updatedSubscription,
+          isIdempotent: false
+        };
       },
-      userId,
-      requestContext,
-      req,
-      next
+      {
+        transactionName: `verify_payment_${correlationId}`,
+        transactionType: 'PAYMENT_VERIFICATION',
+        correlationId
+      }
     );
-
-    // Add verification audit entry using new audit system
-    await auditUtils.auditPaymentOperation('verify', updatedPayment, {
-      userId,
-      correlationId,
-      ipAddress: requestContext.ipAddress,
-      userAgent: requestContext.userAgent,
-      requestId: req?.id,
-      metadata: {
-        razorpayPaymentId: razorpay_payment_id,
-        signatureValid: isSignatureValid,
-        razorpayStatus: razorpayPaymentDetails.status
-      }
-    });
-
-    logger.info('Payment verification completed', {
-      meta: {
-        correlationId: payment.correlationId,
-        paymentId: payment.paymentId,
-        razorpayPaymentId: razorpay_payment_id,
-        status: newStatus
-      }
-    });
-
-    return {
-      payment: updatedPayment,
-      verified: true,
-      razorpayPaymentDetails
-    };
   }
 );
 

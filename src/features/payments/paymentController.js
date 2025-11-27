@@ -8,9 +8,12 @@ import {
 } from './paymentValidation.js';
 import * as paymentService from './paymentService.js';
 import * as paymentRepository from './paymentRepository.js';
+import * as webhookService from './webhookService.js';
 import asyncHandler from 'express-async-handler';
 import { httpResponse } from '../../utils/httpResponse.js';
 import { validateJoiSchema } from '../../helpers/generalHelper.js';
+import { executeInTransaction } from '../../utils/transactionManager.js';
+import { logger } from '../../utils/logger.js';
 
 export const checkout = asyncHandler(async (req, res, next) => {
   const { error, value } = validateJoiSchema(validateCheckout, req.body);
@@ -216,4 +219,94 @@ export const getRazorpayKey = asyncHandler(async (req, res) => {
     key: process.env.RAZORPAY_KEY_ID
   };
   httpResponse(req, res, 200, 'Razorpay API key retrieved', result);
+});
+
+/**
+ * Handle Razorpay webhooks
+ * Verifies signature, processes event atomically, acknowledges webhook
+ *
+ * POST /api/v1/payments/webhooks/razorpay
+ * Headers: x-razorpay-signature
+ * Body: { event: string, created_at: number, contains: string[], payload: {...} }
+ */
+export const handleRazorpayWebhook = asyncHandler(async (req, res, _next) => {
+  const signature = req.headers['x-razorpay-signature'];
+  const correlationId = req.correlationId || `webhook_${Date.now()}`;
+
+  logger.debug('Webhook received', {
+    meta: { correlationId, event: req.body?.event }
+  });
+
+  // Verify webhook signature
+  const isValid = webhookService.verifyWebhookSignature(req.rawBody || req.body, signature);
+  if (!isValid) {
+    logger.warn('Invalid Razorpay webhook signature', {
+      meta: { correlationId, timestamp: new Date().toISOString() }
+    });
+
+    // Still return 200 to prevent webhook retries, but don't process
+    return res.status(200).json({
+      success: false,
+      error: 'Invalid signature',
+      correlationId
+    });
+  }
+
+  const { event, payload } = req.body;
+
+  try {
+    // Process webhook in transaction
+    const result = await executeInTransaction(
+      async (session) => {
+        const webhookResult = await webhookService.processWebhookEvent(
+          event,
+          payload,
+          correlationId,
+          session
+        );
+
+        // Log webhook processing
+        logger.info('Webhook processed in transaction', {
+          meta: {
+            event,
+            correlationId,
+            processed: webhookResult.processed
+          }
+        });
+
+        return webhookResult;
+      },
+      {
+        transactionName: `webhook_${event}_${correlationId}`,
+        transactionType: 'WEBHOOK',
+        correlationId
+      }
+    );
+
+    logger.info('Webhook processed successfully', {
+      meta: { event, correlationId, result: result.processed }
+    });
+
+    // Always return 200 to acknowledge webhook (idempotency)
+    return res.status(200).json({
+      success: true,
+      correlationId,
+      processed: result.processed
+    });
+  } catch (error) {
+    logger.error('Webhook processing failed', {
+      meta: {
+        event,
+        correlationId,
+        error: error.message
+      }
+    });
+
+    // Still return 200 to acknowledge, but log failure
+    return res.status(200).json({
+      success: false,
+      error: error.message,
+      correlationId
+    });
+  }
 });

@@ -2,29 +2,48 @@ import { Subscription } from './subscriptionModel.js';
 import asyncHandler from 'express-async-handler';
 import { httpError } from '../../utils/httpError.js';
 
+/**
+ * Helper to add session to query options if provided
+ * @param {mongoose.ClientSession} session - Optional session for transactions
+ * @returns {Object} Options object with session if provided
+ */
+const getSessionOptions = (session = null) => (session ? { session } : {});
+
 export const createSubscriptionWithIdempotency = asyncHandler(
-  async (subscriptionData, idempotencyKey, requestHash) =>
-    await Subscription.createWithIdempotency(subscriptionData, idempotencyKey, requestHash)
+  async (subscriptionData, idempotencyKey, requestHash, session = null) =>
+    await Subscription.createWithIdempotency(subscriptionData, idempotencyKey, requestHash, session)
 );
 
 export const findSubscriptionByIdempotencyKey = asyncHandler(
-  async (idempotencyKey) => await Subscription.findByIdempotencyKey(idempotencyKey)
+  async (idempotencyKey, session = null) => {
+    const options = getSessionOptions(session);
+    return await Subscription.findByIdempotencyKey(idempotencyKey, options);
+  }
 );
 
-export const findSubscriptionById = asyncHandler(async (subscriptionId, options = {}) => {
-  // Use _id since subscriptionId parameter is actually the MongoDB _id
-  let query = Subscription.findById(subscriptionId);
+export const findSubscriptionById = asyncHandler(
+  async (subscriptionId, options = {}, session = null) => {
+    let query = Subscription.findById(subscriptionId);
 
-  if (options.populate) {
-    query = query.populate(options.populate);
+    if (session) {
+      query = query.session(session);
+    }
+
+    if (options.populate) {
+      query = query.populate(options.populate);
+    }
+
+    return await query.exec();
   }
-
-  return await query;
-});
+);
 
 export const findSubscriptionsByCustomer = asyncHandler(
-  async (customerId, filters = {}, pagination = {}) => {
+  async (customerId, filters = {}, pagination = {}, session = null) => {
     let query = Subscription.find({ customerId });
+
+    if (session) {
+      query = query.session(session);
+    }
 
     if (filters.status) {
       query = query.where('status', filters.status);
@@ -58,24 +77,28 @@ export const findSubscriptionsByCustomer = asyncHandler(
     const sort = pagination.sort || { createdAt: -1 };
     query = query.sort(sort);
 
-    return await query;
+    return await query.exec();
   }
 );
 
-export const updateSubscriptionById = asyncHandler(async (subscriptionId, updates, next, req) => {
-  const subscription = await Subscription.findByIdAndUpdate(subscriptionId, updates, {
-    new: true,
-    runValidators: true
-  });
-  if (!subscription) {
-    return httpError(next, new Error('Subscription not found'), req, 404);
-  }
+export const updateSubscriptionById = asyncHandler(
+  async (subscriptionId, updates, session = null) => {
+    const options = { new: true, runValidators: true };
+    if (session) {
+      options.session = session;
+    }
 
-  return subscription;
-});
+    const subscription = await Subscription.findByIdAndUpdate(subscriptionId, updates, options);
+    if (!subscription) {
+      throw new httpError('Subscription not found', 404);
+    }
+
+    return subscription;
+  }
+);
 
 export const updateSubscriptionStatus = asyncHandler(
-  async (subscriptionId, status, additionalData = {}) => {
+  async (subscriptionId, status, additionalData = {}, session = null) => {
     const updateData = {
       status,
       ...additionalData
@@ -85,94 +108,122 @@ export const updateSubscriptionStatus = asyncHandler(
       updateData.cancelledAt = new Date();
     }
 
-    return await updateSubscriptionById(subscriptionId, updateData);
+    return await updateSubscriptionById(subscriptionId, updateData, session);
   }
 );
 
-export const findSubscriptionsDueForRenewal = asyncHandler(async (bufferHours = 24) => {
-  const bufferTime = new Date(Date.now() + bufferHours * 60 * 60 * 1000);
+export const findSubscriptionsDueForRenewal = asyncHandler(
+  async (bufferHours = 24, session = null) => {
+    const bufferTime = new Date(Date.now() + bufferHours * 60 * 60 * 1000);
 
-  return await Subscription.find({
+    let query = Subscription.find({
+      status: 'active',
+      nextBillingDate: { $lte: bufferTime }
+    }).sort({ nextBillingDate: 1 });
+
+    if (session) {
+      query = query.session(session);
+    }
+
+    return await query.exec();
+  }
+);
+
+export const findExpiredSubscriptions = asyncHandler(async (session = null) => {
+  let query = Subscription.find({
     status: 'active',
-    nextBillingDate: { $lte: bufferTime }
-  }).sort({ nextBillingDate: 1 });
+    currentPeriodEnd: { $lt: new Date() }
+  }).sort({ currentPeriodEnd: 1 });
+
+  if (session) {
+    query = query.session(session);
+  }
+
+  return await query.exec();
 });
 
-export const findExpiredSubscriptions = asyncHandler(
-  async () =>
-    await Subscription.find({
-      status: 'active',
-      currentPeriodEnd: { $lt: new Date() }
-    }).sort({ currentPeriodEnd: 1 })
-);
-
-export const findActiveSubscriptionsByPlan = asyncHandler(
-  async (planId) =>
-    await Subscription.find({
-      planId,
-      status: 'active',
-      currentPeriodEnd: { $gt: new Date() }
-    })
-);
-
-export const findSubscriptionsByStatus = asyncHandler(async (status, options = {}) => {
-  const query = Subscription.find({
-    status: Array.isArray(status) ? { $in: status } : status
+export const findActiveSubscriptionsByPlan = asyncHandler(async (planId, session = null) => {
+  let query = Subscription.find({
+    planId,
+    status: 'active',
+    currentPeriodEnd: { $gt: new Date() }
   });
 
-  if (options.limit) {
-    query.limit(options.limit);
+  if (session) {
+    query = query.session(session);
   }
 
-  if (options.sort) {
-    query.sort(options.sort);
-  } else {
-    query.sort({ createdAt: -1 });
-  }
-
-  if (options.populate) {
-    query.populate(options.populate);
-  }
-
-  return await query;
+  return await query.exec();
 });
 
+export const findSubscriptionsByStatus = asyncHandler(
+  async (status, options = {}, session = null) => {
+    let query = Subscription.find({
+      status: Array.isArray(status) ? { $in: status } : status
+    });
+
+    if (session) {
+      query = query.session(session);
+    }
+
+    if (options.limit) {
+      query = query.limit(options.limit);
+    }
+
+    if (options.sort) {
+      query = query.sort(options.sort);
+    } else {
+      query = query.sort({ createdAt: -1 });
+    }
+
+    if (options.populate) {
+      query = query.populate(options.populate);
+    }
+
+    return await query.exec();
+  }
+);
+
 export const findSubscriptionsByDateRange = asyncHandler(
-  async (startDate, endDate, options = {}) => {
-    const query = Subscription.find({
+  async (startDate, endDate, options = {}, session = null) => {
+    let query = Subscription.find({
       createdAt: {
         $gte: startDate,
         $lte: endDate
       }
     });
 
+    if (session) {
+      query = query.session(session);
+    }
+
     if (options.status) {
-      query.where('status', options.status);
+      query = query.where('status', options.status);
     }
 
     if (options.customerId) {
-      query.where('customerId', options.customerId);
+      query = query.where('customerId', options.customerId);
     }
 
     if (options.planId) {
-      query.where('planId', options.planId);
+      query = query.where('planId', options.planId);
     }
 
     if (options.limit) {
-      query.limit(options.limit);
+      query = query.limit(options.limit);
     }
 
     if (options.sort) {
-      query.sort(options.sort);
+      query = query.sort(options.sort);
     } else {
-      query.sort({ createdAt: -1 });
+      query = query.sort({ createdAt: -1 });
     }
 
-    return await query;
+    return await query.exec();
   }
 );
 
-export const getSubscriptionStatistics = asyncHandler(async (filters = {}) => {
+export const getSubscriptionStatistics = asyncHandler(async (filters = {}, session = null) => {
   const pipeline = [];
 
   const matchStage = {};
@@ -206,7 +257,12 @@ export const getSubscriptionStatistics = asyncHandler(async (filters = {}) => {
     }
   });
 
-  const results = await Subscription.aggregate(pipeline);
+  let query = Subscription.aggregate(pipeline);
+  if (session) {
+    query = query.session(session);
+  }
+
+  const results = await query.exec();
 
   const statistics = {
     byStatus: {},
@@ -249,8 +305,12 @@ export const getSubscriptionStatistics = asyncHandler(async (filters = {}) => {
   return statistics;
 });
 
-export const countSubscriptions = asyncHandler(async (filters = {}) => {
+export const countSubscriptions = asyncHandler(async (filters = {}, session = null) => {
   let query = Subscription.find();
+
+  if (session) {
+    query = query.session(session);
+  }
 
   if (filters.customerId) {
     query = query.where('customerId', filters.customerId);
@@ -278,12 +338,13 @@ export const addSubscriptionAuditEntry = asyncHandler(
     userAgent,
     status,
     errorMessage,
-    next,
-    req
+    session = null
   ) => {
-    const subscription = await Subscription.findById(subscriptionId);
+    const subscription = await Subscription.findById(subscriptionId)
+      .session(session || null)
+      .exec();
     if (!subscription) {
-      return httpError(next, new Error('Subscription not found'), req, 404);
+      throw new httpError('Subscription not found', 404);
     }
 
     await subscription.addAuditEntry(
@@ -297,31 +358,52 @@ export const addSubscriptionAuditEntry = asyncHandler(
       errorMessage
     );
 
+    if (session) {
+      await subscription.save({ session });
+    } else {
+      await subscription.save();
+    }
+
     return subscription;
   }
 );
 
 export const setSubscriptionIdempotencyKey = asyncHandler(
-  async (subscriptionId, key, requestHash, next, req) => {
-    const subscription = await Subscription.findOne({ subscriptionId });
+  async (subscriptionId, key, requestHash, session = null) => {
+    const subscription = await Subscription.findOne({ subscriptionId })
+      .session(session || null)
+      .exec();
     if (!subscription) {
-      return httpError(next, new Error('Subscription not found'), req, 404);
+      throw new httpError('Subscription not found', 404);
     }
 
     await subscription.setIdempotencyKey(key, requestHash);
+    if (session) {
+      await subscription.save({ session });
+    } else {
+      await subscription.save();
+    }
     return subscription;
   }
 );
 
-export const findSubscriptionsByIds = asyncHandler(
-  async (subscriptionIds) => await Subscription.find({ subscriptionId: { $in: subscriptionIds } })
-);
+export const findSubscriptionsByIds = asyncHandler(async (subscriptionIds, session = null) => {
+  let query = Subscription.find({ subscriptionId: { $in: subscriptionIds } });
+  if (session) {
+    query = query.session(session);
+  }
+  return await query.exec();
+});
 
-export const bulkUpdateSubscriptions = asyncHandler(
-  async (filter, updates) => await Subscription.updateMany(filter, updates)
-);
+export const bulkUpdateSubscriptions = asyncHandler(async (filter, updates, session = null) => {
+  const options = {};
+  if (session) {
+    options.session = session;
+  }
+  return await Subscription.updateMany(filter, updates, options);
+});
 
-export const bulkUpdateSubscriptionStatuses = asyncHandler(async (updates) => {
+export const bulkUpdateSubscriptionStatuses = asyncHandler(async (updates, session = null) => {
   const bulkOps = updates.map((update) => ({
     updateOne: {
       filter: { subscriptionId: update.subscriptionId },
@@ -330,70 +412,119 @@ export const bulkUpdateSubscriptionStatuses = asyncHandler(async (updates) => {
     }
   }));
 
-  return await Subscription.bulkWrite(bulkOps);
+  const options = {};
+  if (session) {
+    options.session = session;
+  }
+
+  return await Subscription.bulkWrite(bulkOps, options);
 });
 
 export const deleteSubscriptionById = asyncHandler(
-  async (subscriptionId) =>
-    await updateSubscriptionStatus(subscriptionId, 'cancelled', {
-      cancelledAt: new Date(),
-      'metadata.deletedAt': new Date(),
-      'metadata.deleted': true
-    })
+  async (subscriptionId, session = null) =>
+    await updateSubscriptionStatus(
+      subscriptionId,
+      'cancelled',
+      {
+        cancelledAt: new Date(),
+        'metadata.deletedAt': new Date(),
+        'metadata.deleted': true
+      },
+      session
+    )
 );
 
-export const markSubscriptionAsExpired = asyncHandler(async (subscriptionId, next, req) => {
-  const subscription = await Subscription.findOne({ subscriptionId });
+export const markSubscriptionAsExpired = asyncHandler(async (subscriptionId, session = null) => {
+  const subscription = await Subscription.findOne({ subscriptionId })
+    .session(session || null)
+    .exec();
   if (!subscription) {
-    return httpError(next, new Error('Subscription not found'), req, 404);
+    throw new httpError('Subscription not found', 404);
   }
 
   await subscription.expire();
+  if (session) {
+    await subscription.save({ session });
+  } else {
+    await subscription.save();
+  }
   return subscription;
 });
 
-export const markSubscriptionAsActive = asyncHandler(async (subscriptionId, next, req) => {
-  const subscription = await Subscription.findOne({ subscriptionId });
+export const markSubscriptionAsActive = asyncHandler(async (subscriptionId, session = null) => {
+  const subscription = await Subscription.findOne({ subscriptionId })
+    .session(session || null)
+    .exec();
   if (!subscription) {
-    return httpError(next, new Error('Subscription not found'), req, 404);
+    throw new httpError('Subscription not found', 404);
   }
 
   await subscription.activate();
-  return subscription;
-});
-
-export const cancelSubscriptionById = asyncHandler(async (subscriptionId, reason, next, req) => {
-  const subscription = await Subscription.findOne({ subscriptionId });
-  if (!subscription) {
-    return httpError(next, new Error('Subscription not found'), req, 404);
+  if (session) {
+    await subscription.save({ session });
+  } else {
+    await subscription.save();
   }
-
-  await subscription.cancel(reason);
   return subscription;
 });
 
-export const suspendSubscriptionById = asyncHandler(async (subscriptionId, reason, next, req) => {
-  const subscription = await Subscription.findOne({ subscriptionId });
-  if (!subscription) {
-    return httpError(next, new Error('Subscription not found'), req, 404);
+export const cancelSubscriptionById = asyncHandler(
+  async (subscriptionId, reason, session = null) => {
+    const subscription = await Subscription.findOne({ subscriptionId })
+      .session(session || null)
+      .exec();
+    if (!subscription) {
+      throw new httpError('Subscription not found', 404);
+    }
+
+    await subscription.cancel(reason);
+    if (session) {
+      await subscription.save({ session });
+    } else {
+      await subscription.save();
+    }
+    return subscription;
   }
+);
 
-  await subscription.suspend(reason);
-  return subscription;
-});
+export const suspendSubscriptionById = asyncHandler(
+  async (subscriptionId, reason, session = null) => {
+    const subscription = await Subscription.findOne({ subscriptionId })
+      .session(session || null)
+      .exec();
+    if (!subscription) {
+      throw new httpError('Subscription not found', 404);
+    }
 
-export const renewSubscriptionPeriod = asyncHandler(async (subscriptionId, next, req) => {
-  const subscription = await Subscription.findOne({ subscriptionId });
+    await subscription.suspend(reason);
+    if (session) {
+      await subscription.save({ session });
+    } else {
+      await subscription.save();
+    }
+    return subscription;
+  }
+);
+
+export const renewSubscriptionPeriod = asyncHandler(async (subscriptionId, session = null) => {
+  const subscription = await Subscription.findOne({ subscriptionId })
+    .session(session || null)
+    .exec();
   if (!subscription) {
-    return httpError(next, new Error('Subscription not found'), req, 404);
+    throw new httpError('Subscription not found', 404);
   }
 
   await subscription.renewPeriod();
+  if (session) {
+    await subscription.save({ session });
+  } else {
+    await subscription.save();
+  }
   return subscription;
 });
 
-export const getCustomerSubscriptionStats = asyncHandler(async (customerId) => {
-  const stats = await Subscription.aggregate([
+export const getCustomerSubscriptionStats = asyncHandler(async (customerId, session = null) => {
+  let statsQuery = Subscription.aggregate([
     { $match: { customerId } },
     {
       $group: {
@@ -404,11 +535,29 @@ export const getCustomerSubscriptionStats = asyncHandler(async (customerId) => {
     }
   ]);
 
-  const totalSubscriptions = await Subscription.countDocuments({ customerId });
-  const totalActiveAmount = await Subscription.aggregate([
+  if (session) {
+    statsQuery = statsQuery.session(session);
+  }
+
+  const stats = await statsQuery.exec();
+
+  let totalSubscriptionsQuery = Subscription.countDocuments({ customerId });
+  if (session) {
+    totalSubscriptionsQuery = totalSubscriptionsQuery.session(session);
+  }
+
+  const totalSubscriptions = await totalSubscriptionsQuery.exec();
+
+  let totalActiveAmountQuery = Subscription.aggregate([
     { $match: { customerId, status: 'active' } },
     { $group: { _id: null, total: { $sum: '$amount' } } }
   ]);
+
+  if (session) {
+    totalActiveAmountQuery = totalActiveAmountQuery.session(session);
+  }
+
+  const totalActiveAmount = await totalActiveAmountQuery.exec();
 
   return {
     totalSubscriptions,

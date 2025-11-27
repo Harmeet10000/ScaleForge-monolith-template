@@ -3,6 +3,9 @@ import { logger } from '../../utils/logger.js';
 import crypto from 'crypto';
 import asyncHandler from 'express-async-handler';
 import * as subscriptionRepository from './subscriptionRepository.js';
+import * as paymentRepository from '../payments/paymentRepository.js';
+import { executeInTransaction } from '../../utils/transactionManager.js';
+import { EPaymentStatus } from '../payments/paymentConstants.js';
 
 const generateIdempotencyKey = (correlationId, operationType) => {
   `${correlationId}_${operationType}`;
