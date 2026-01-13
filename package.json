@@ -91,7 +91,7 @@
     "webpack-node-externals": "^3.0.0"
   },
   "dependencies": {
-    "@aws-sdk/client-personalize": "3.896.0",
+    "@aws-sdk/client-personalize": "3.922.0",
     "@aws-sdk/client-personalize-events": "3.896.0",
     "@aws-sdk/client-personalize-runtime": "3.896.0",
     "@aws-sdk/client-s3": "3.901.0",
