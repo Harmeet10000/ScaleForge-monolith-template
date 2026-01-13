@@ -95,7 +95,7 @@
     "@aws-sdk/client-personalize-events": "3.896.0",
     "@aws-sdk/client-personalize-runtime": "3.896.0",
     "@aws-sdk/client-s3": "3.901.0",
-    "@aws-sdk/s3-request-presigner": "3.797.0",
+    "@aws-sdk/s3-request-presigner": "3.925.0",
     "@elastic/elasticsearch": "9.1.1",
     "@google/genai": "1.21.0",
     "@neondatabase/serverless": "1.0.2",
