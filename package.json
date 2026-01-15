@@ -128,7 +128,7 @@
     "joi": "^17.13.3",
     "jsonwebtoken": "^9.0.2",
     "libphonenumber-js": "^1.12.23",
-    "mongoose": "^8.10.1",
+    "mongoose": "^8.19.1",
     "nanoid": "5.1.5",
     "node-cron": "^3.0.3",
     "overload-protection": "1.2.3",
