@@ -7,6 +7,7 @@
 - [System Architecture](#system-architecture)
 - [Feature-Based Layered Architecture](#feature-based-layered-architecture)
 - [Design Patterns](#design-patterns)
+- [CRUD Factory Patterns](#crud-factory-patterns)
 - [Technology Stack](#technology-stack)
 - [Data Flow](#data-flow)
 - [Security Architecture](#security-architecture)

@@ -1,0 +1,42 @@
+{
+  "name": "leaderboard-server",
+  "version": "1.0.0",
+  "description": "Production-grade scalable leaderboard with Socket.IO",
+  "type": "module",
+  "main": "leaderboard-server.js",
+  "scripts": {
+    "start": "node leaderboard-server.js",
+    "dev": "NODE_ENV=development nodemon leaderboard-server.js",
+    "test": "node test-suite.js",
+    "test:stress": "node test-suite.js --stress",
+    "test:load": "node test-suite.js --load",
+    "docker:build": "docker build -t leaderboard:latest .",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "docker:logs": "docker-compose logs -f leaderboard-1",
+    "k8s:deploy": "kubectl apply -f k8s-deployment.yaml",
+    "k8s:delete": "kubectl delete -f k8s-deployment.yaml",
+    "k8s:scale": "kubectl scale deployment leaderboard --replicas=20"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "socket.io": "^4.5.4",
+    "socket.io-redis": "^6.1.0",
+    "ioredis": "^5.3.2",
+    "pg": "^8.10.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": [
+    "leaderboard",
+    "socket.io",
+    "realtime",
+    "redis",
+    "postgresql",
+    "scalable"
+  ]
+}
