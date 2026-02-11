@@ -1,5 +1,6 @@
 Recommended CDC Architecture
 This approach ensures:
+
 ```go
 MongoDB (with Change Streams)
     ↓
@@ -24,9 +25,9 @@ Update Redis cache asynchronously
 VS Code Extensions
 Here are helpful extensions for implementing and debugging this architecture:
 
-
 Basic Implementation Code Structure
 Create a new file src/services/cdcService.js:
+
 ```js
 // CDC Service - Listens to MongoDB Change Streams
 const { MongoClient } = require('mongodb');
@@ -48,13 +49,13 @@ class CDCService {
     // Connect to RabbitMQ
     this.connection = await amqp.connect(this.rabbitMqUri);
     this.channel = await this.connection.createChannel();
-    
+
     await this.channel.assertExchange('cache-updates', 'topic', { durable: true });
   }
 
   async watchCollection(collectionName) {
     const collection = this.db.collection(collectionName);
-    
+
     // Create change stream with pipeline to filter operations
     const changeStream = collection.watch([
       {
@@ -90,11 +91,7 @@ class CDCService {
 
     // Publish to RabbitMQ with routing key pattern
     const routingKey = `cache.${collectionName}.${change.operationType}`;
-    this.channel.publish(
-      'cache-updates',
-      routingKey,
-      Buffer.from(JSON.stringify(message))
-    );
+    this.channel.publish('cache-updates', routingKey, Buffer.from(JSON.stringify(message)));
   }
 
   async disconnect() {
@@ -105,7 +102,9 @@ class CDCService {
 
 module.exports = CDCService;
 ```
+
 Create src/services/cacheUpdateWorker.js:
+
 ```js
 // Cache Update Worker - Consumes events and updates Redis
 const amqp = require('amqplib');
@@ -124,7 +123,7 @@ class CacheUpdateWorker {
     // RabbitMQ connection
     this.connection = await amqp.connect(this.rabbitMqUri);
     this.channel = await this.connection.createChannel();
-    
+
     // Redis connection
     this.redisClient = redis.createClient(this.redisOptions);
     await this.redisClient.connect();
@@ -132,7 +131,7 @@ class CacheUpdateWorker {
 
   async startConsuming() {
     await this.channel.assertExchange('cache-updates', 'topic', { durable: true });
-    
+
     // Create queue for cache updates
     const queue = await this.channel.assertQueue('cache-update-queue', {
       durable: true,
@@ -150,10 +149,10 @@ class CacheUpdateWorker {
         try {
           const change = JSON.parse(msg.content.toString());
           this.queueCacheUpdate(change);
-          
+
           // Acknowledge after queuing (not after Redis update)
           this.channel.ack(msg);
-          
+
           // Trigger debounced flush
           this.debouncedFlush();
         } catch (error) {
@@ -169,7 +168,7 @@ class CacheUpdateWorker {
 
   queueCacheUpdate(change) {
     const cacheKey = `${change.collection}:${change.documentId}`;
-    
+
     // Deduplicate and batch updates
     this.pendingUpdates.set(cacheKey, change);
   }
@@ -203,7 +202,7 @@ class CacheUpdateWorker {
           JSON.stringify(change.fullDocument || change.updateDescription)
         );
         break;
-      
+
       case 'delete':
         await this.redisClient.del(cacheKey);
         break;
@@ -219,17 +218,16 @@ class CacheUpdateWorker {
 
 module.exports = CacheUpdateWorker;
 ```
+
 Create src/index-cdc.js to start the CDC service:
+
 ```js
 // Main CDC Service Runner
 const CDCService = require('./services/cdcService');
 const CacheUpdateWorker = require('./services/cacheUpdateWorker');
 
 async function startCDC() {
-  const CDC = new CDCService(
-    process.env.MONGODB_URI,
-    process.env.RABBITMQ_URI
-  );
+  const CDC = new CDCService(process.env.MONGODB_URI, process.env.RABBITMQ_URI);
 
   await CDC.connect();
   console.log('✅ CDC Service connected');
@@ -240,12 +238,9 @@ async function startCDC() {
   await CDC.watchCollection('organizations');
 
   // Start cache worker
-  const worker = new CacheUpdateWorker(
-    process.env.RABBITMQ_URI,
-    {
-      url: process.env.REDIS_URI
-    }
-  );
+  const worker = new CacheUpdateWorker(process.env.RABBITMQ_URI, {
+    url: process.env.REDIS_URI
+  });
 
   await worker.connect();
   await worker.startConsuming();
@@ -262,8 +257,10 @@ async function startCDC() {
 
 startCDC().catch(console.error);
 ```
+
 Docker Compose Setup
 Add this to your docker-compose.yml:
+
 ```yml
 cdc-service:
   build:
@@ -297,13 +294,16 @@ cache-worker:
   networks:
     - scaleforge-network
 ```
+
 Key Benefits of This Approach
 ✅ No thundering herd - Updates are batched and debounced
 ✅ Async processing - Requests don't wait for cache updates
 ✅ Decoupled architecture - Independent scaling of CDC and cache services
 ✅ Fault tolerance - Message queue ensures no updates are lost
 ✅ Monitoring - RabbitMQ
+
 1. CDC Architecture Overview
+
 ```js
 import { logger } from '../utils/logger.js';
 import asyncHandler from 'express-async-handler';
@@ -319,8 +319,8 @@ let cdcListeners = [];
  */
 export const initializeCDC = asyncHandler(async (sql) => {
   const environment = process.env.NODE_ENV;
-  const useLogicalReplication = process.env.CDC_USE_REPLICATION === 'true' && 
-                                 environment === 'production';
+  const useLogicalReplication =
+    process.env.CDC_USE_REPLICATION === 'true' && environment === 'production';
 
   if (useLogicalReplication) {
     // For traditional PostgreSQL with replication slot support
@@ -341,12 +341,16 @@ export const initializeCDC = asyncHandler(async (sql) => {
  */
 const initializePollingCDC = asyncHandler(async (sql) => {
   const POLL_INTERVAL = parseInt(process.env.CDC_POLL_INTERVAL || '5000', 10); // 5 seconds
-  
+
   const tables = [
     { name: 'users', cacheKey: 'users', handler: cdcHandlers.handleUserChanges },
     { name: 'audit_entries', cacheKey: 'audit', handler: cdcHandlers.handleAuditChanges },
     { name: 'payments', cacheKey: 'payments', handler: cdcHandlers.handlePaymentChanges },
-    { name: 'subscriptions', cacheKey: 'subscriptions', handler: cdcHandlers.handleSubscriptionChanges }
+    {
+      name: 'subscriptions',
+      cacheKey: 'subscriptions',
+      handler: cdcHandlers.handleSubscriptionChanges
+    }
   ];
 
   for (const table of tables) {
@@ -359,7 +363,7 @@ const initializePollingCDC = asyncHandler(async (sql) => {
     const pollInterval = setInterval(async () => {
       try {
         const changes = await pollTableChanges(sql, table.name, lastSyncTime);
-        
+
         if (changes.length > 0) {
           logger.debug(`CDC poll detected ${changes.length} changes in ${table.name}`, {
             meta: { table: table.name, changeCount: changes.length }
@@ -398,7 +402,7 @@ const initializeLogicalReplication = asyncHandler(async (sql) => {
         false
       )
     `;
-    
+
     logger.info('Replication slot created or already exists');
   } catch (error) {
     if (!error.message.includes('already exists')) {
@@ -408,17 +412,17 @@ const initializeLogicalReplication = asyncHandler(async (sql) => {
 
   // Create publication for tables
   const tables = ['users', 'audit_entries', 'payments', 'subscriptions'];
-  
+
   try {
     await sql`DROP PUBLICATION IF EXISTS scaleforge_cdc_publication`;
-    
+
     const tableList = tables.join(', ');
     await sql`CREATE PUBLICATION scaleforge_cdc_publication FOR TABLE ${sql(tableList)}`;
-    
+
     logger.info('CDC publication created successfully', { meta: { tables } });
   } catch (error) {
-    logger.error('Failed to create CDC publication', { 
-      meta: { error: error.message, tables } 
+    logger.error('Failed to create CDC publication', {
+      meta: { error: error.message, tables }
     });
     throw error;
   }
@@ -435,7 +439,7 @@ const pollTableChanges = asyncHandler(async (sql, tableName, sincTime) => {
       ORDER BY updated_at ASC
       LIMIT 1000
     `;
-    
+
     return result || [];
   } catch (error) {
     logger.error(`Error polling ${tableName}`, {
@@ -469,7 +473,7 @@ import { deleteCache, setCache, getCache } from './redisFunctions.js';
  */
 export const handleUserChanges = asyncHandler(async (change, sql) => {
   const { id, operation, after, before } = change;
-  
+
   const userId = after?.id || before?.id;
   const cacheKeys = [
     `user:${userId}`,
@@ -488,16 +492,14 @@ export const handleUserChanges = asyncHandler(async (change, sql) => {
     } else if (operation === 'UPDATE') {
       // Smart cache update - only if critical fields changed
       const criticalFields = ['email', 'role', 'status', 'permissions'];
-      const hasChanges = criticalFields.some(
-        (field) => before?.[field] !== after?.[field]
-      );
+      const hasChanges = criticalFields.some((field) => before?.[field] !== after?.[field]);
 
       if (hasChanges) {
         // Invalidate cache and trigger refresh
         for (const key of cacheKeys) {
           await deleteCache(key);
         }
-        
+
         // Pre-warm critical cache
         const userData = {
           id: after.id,
@@ -506,9 +508,9 @@ export const handleUserChanges = asyncHandler(async (change, sql) => {
           status: after.status
         };
         await setCache(`user:${userId}`, userData, 3600); // 1 hour TTL
-        
-        logger.debug('User cache updated on UPDATE', { 
-          meta: { userId, changedFields: criticalFields } 
+
+        logger.debug('User cache updated on UPDATE', {
+          meta: { userId, changedFields: criticalFields }
         });
       }
     } else if (operation === 'INSERT') {
@@ -520,7 +522,7 @@ export const handleUserChanges = asyncHandler(async (change, sql) => {
         status: after.status
       };
       await setCache(`user:${after.id}`, userData, 3600);
-      
+
       logger.debug('New user cache created on INSERT', { meta: { userId: after.id } });
     }
   } catch (error) {
@@ -542,7 +544,7 @@ export const handleAuditChanges = asyncHandler(async (change, sql) => {
       // Store audit entry in cache for quick access
       const correlationId = after.correlation_id;
       const auditKey = `audit:${correlationId}`;
-      
+
       const auditData = {
         id: after.id,
         entityType: after.entity_type,
@@ -553,14 +555,14 @@ export const handleAuditChanges = asyncHandler(async (change, sql) => {
 
       // Store with shorter TTL (24 hours for audit)
       await setCache(auditKey, auditData, 86400);
-      
+
       // Also add to audit trail list
       await redisClient.lpush(
         `audit:trail:${after.entity_type}:${after.entity_id}`,
         JSON.stringify(auditData)
       );
       await redisClient.expire(`audit:trail:${after.entity_type}:${after.entity_id}`, 604800); // 7 days
-      
+
       logger.debug('Audit entry cached', { meta: { correlationId } });
     } catch (error) {
       logger.error('Error caching audit entry', {
@@ -576,31 +578,31 @@ export const handleAuditChanges = asyncHandler(async (change, sql) => {
  */
 export const handlePaymentChanges = asyncHandler(async (change, sql) => {
   const { operation, after, before } = change;
-  
+
   const paymentId = after?.id || before?.id;
   const customerId = after?.customer_id || before?.customer_id;
 
   try {
     if (operation === 'UPDATE') {
       const statusChanged = before?.status !== after?.status;
-      
+
       if (statusChanged) {
         // Invalidate payment cache
         await deleteCache(`payment:${paymentId}`);
-        
+
         // Invalidate customer's payment list cache
         await deleteCache(`payments:customer:${customerId}`);
-        
+
         // If payment status affects subscription, invalidate subscription cache
         if (after.subscription_id) {
           await deleteCache(`subscription:${after.subscription_id}`);
-          
+
           // Trigger subscription status update if payment completed
           if (after.status === 'COMPLETED') {
             await handlePaymentCompleted(after, sql);
           }
         }
-        
+
         logger.debug('Payment cache invalidated on status change', {
           meta: { paymentId, oldStatus: before.status, newStatus: after.status }
         });
@@ -619,14 +621,14 @@ export const handlePaymentChanges = asyncHandler(async (change, sql) => {
  */
 export const handleSubscriptionChanges = asyncHandler(async (change, sql) => {
   const { operation, after, before } = change;
-  
+
   const subscriptionId = after?.id || before?.id;
   const customerId = after?.customer_id || before?.customer_id;
 
   try {
     if (operation === 'UPDATE') {
       const statusChanged = before?.status !== after?.status;
-      
+
       if (statusChanged) {
         const cacheKeys = [
           `subscription:${subscriptionId}`,
@@ -647,14 +649,14 @@ export const handleSubscriptionChanges = asyncHandler(async (change, sql) => {
           currentPeriodEnd: after.current_period_end?.toISOString(),
           nextBillingDate: after.next_billing_date?.toISOString()
         };
-        
+
         await setCache(`subscription:${subscriptionId}`, subscriptionData, 3600);
-        
+
         logger.debug('Subscription cache updated on status change', {
-          meta: { 
-            subscriptionId, 
-            oldStatus: before.status, 
-            newStatus: after.status 
+          meta: {
+            subscriptionId,
+            oldStatus: before.status,
+            newStatus: after.status
           }
         });
       }
@@ -698,7 +700,9 @@ const handlePaymentCompleted = asyncHandler(async (payment, sql) => {
   }
 });
 ```
+
 3. Integration with Database Connection
+
 ```js
 import { neon } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-http';
@@ -716,7 +720,7 @@ export const connectPostgres = asyncHandler(async () => {
 
   // Initialize Neon connection
   sql = neon(process.env.POSTGRES_DATABASE_URL);
-  
+
   // Initialize Drizzle with Neon
   db = drizzle(sql, {
     logger: process.env.NODE_ENV === 'development'
@@ -762,14 +766,16 @@ export const disconnectPostgres = asyncHandler(async () => {
   if (sql) {
     // Shutdown CDC listeners
     shutdownCDC();
-    
+
     logger.info('PostgreSQL connection closed');
     db = null;
     sql = null;
   }
 });
 ```
+
 4. Environment Configuration
+
 ```env
 # .env.development (ADD)
 # CDC Configuration
@@ -780,7 +786,9 @@ CDC_POLL_INTERVAL=5000
 # CDC_USE_REPLICATION=true
 # CDC_REPLICATION_SLOT_NAME=scaleforge_cdc_slot
 ```
+
 5. Cache Key Patterns Reference
+
 ```js
 export const CACHE_KEY_PATTERNS = {
   // User caches
@@ -788,29 +796,29 @@ export const CACHE_KEY_PATTERNS = {
   USER_PERMISSIONS: (userId) => `user:permissions:${userId}`,
   USER_ROLES: (userId) => `user:roles:${userId}`,
   USER_SETTINGS: (userId) => `user:settings:${userId}`,
-  
+
   // Payment caches
   PAYMENT: (paymentId) => `payment:${paymentId}`,
   PAYMENTS_BY_CUSTOMER: (customerId) => `payments:customer:${customerId}`,
-  
+
   // Subscription caches
   SUBSCRIPTION: (subscriptionId) => `subscription:${subscriptionId}`,
   SUBSCRIPTIONS_BY_CUSTOMER: (customerId) => `subscriptions:customer:${customerId}`,
   SUBSCRIPTION_STATUS: (subscriptionId) => `subscription:status:${subscriptionId}`,
-  
+
   // Audit caches
   AUDIT_TRAIL: (entityType, entityId) => `audit:trail:${entityType}:${entityId}`,
   AUDIT_BY_CORRELATION: (correlationId) => `audit:${correlationId}`,
-  
+
   // CDC sync tracking
   CDC_LAST_SYNC: (tableName) => `cdc:sync:${tableName}`
 };
 ```
-6. Key Advantages
-✅ Serverless-Compatible: Works with Neon using polling strategy
-✅ Smart Cache Invalidation: Only invalidates on relevant field changes
-✅ Automatic Cache Warming: Pre-populates cache on updates
-✅ Error Resilience: CDC failures don't crash the application
-✅ Configurable: Polling interval and replication strategy customizable
-✅ Audit Logging: All CDC operations logged for debugging
 
+6. Key Advantages
+   ✅ Serverless-Compatible: Works with Neon using polling strategy
+   ✅ Smart Cache Invalidation: Only invalidates on relevant field changes
+   ✅ Automatic Cache Warming: Pre-populates cache on updates
+   ✅ Error Resilience: CDC failures don't crash the application
+   ✅ Configurable: Polling interval and replication strategy customizable
+   ✅ Audit Logging: All CDC operations logged for debugging

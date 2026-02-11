@@ -245,15 +245,3 @@ export const deleteOldWebhookLogs = asyncHandler(async (daysOld = 90, session = 
 
   return await WebhookLog.deleteMany({ createdAt: { $lt: cutoffDate } }, options);
 });
-
-export default {
-  createWebhookLog,
-  findWebhookLogByCorrelationId,
-  findWebhookLogById,
-  findFailedWebhooksForRetry,
-  updateWebhookLogStatus,
-  incrementWebhookRetryCount,
-  findWebhookLogsByEventType,
-  getWebhookStatistics,
-  deleteOldWebhookLogs
-};

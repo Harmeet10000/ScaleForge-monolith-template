@@ -1,4 +1,3 @@
-
 to de done now
 {{baseUrl}}/api/v1/permissions/organizations/org123/users/bulk
 
@@ -125,21 +124,26 @@ to de done now
 # type: 'document_parsing_exception',
 
 # reason: '[1:11] Field [_index] is a metadata field and cannot be added inside a document. Use the index API request parameters.'
+
 ```
 
 **Current Architecture:**
 
 ```
+
 [Client] → [Single Auth Service] → [MongoDB + Redis]
+
 ```
 
 **Recommended Production Architecture:**
 
 ```
+
 [CDN/WAF] → [Load Balancer] → [Multiple Auth Services] → [Database Cluster]
-    ↓              ↓                    ↓                      ↓
-[Cloudflare]   [Nginx/HAProxy]    [Docker Swarm/K8s]    [MongoDB Replica Set]
-                                                              [Redis Cluster]
+↓ ↓ ↓ ↓
+[Cloudflare] [Nginx/HAProxy] [Docker Swarm/K8s] [MongoDB Replica Set]
+[Redis Cluster]
+
 ```
 
 ## 🚀 Performance Tuning Analysis
@@ -173,26 +177,28 @@ to de done now
 #### 3. Security Architecture
 
 ```
+
 ┌─────────────────┐
-│   WAF/CDN       │
-│   (Cloudflare)  │
+│ WAF/CDN │
+│ (Cloudflare) │
 └─────────────────┘
-         │
+│
 ┌─────────────────┐
-│  Load Balancer  │
-│  (Rate Limiting)│
+│ Load Balancer │
+│ (Rate Limiting)│
 └─────────────────┘
-         │
+│
 ┌─────────────────┐
-│  Auth Service   │
-│  (JWT + OAuth)  │
+│ Auth Service │
+│ (JWT + OAuth) │
 └─────────────────┘
-         │
+│
 ┌─────────────────┐
 │ Secrets Manager │
 │ (AWS/HashiCorp) │
 └─────────────────┘
-```
+
+````
 
 ---
 
@@ -227,7 +233,7 @@ services:
 
   kibana:
     image: docker.elastic.co/kibana/kibana:8.11.0
-```
+````
 
 ---
 

@@ -21,8 +21,8 @@ export const findPaymentByIdempotencyKey = asyncHandler(async (idempotencyKey, s
 });
 
 export const findPaymentById = asyncHandler(async (paymentId, session = null) => {
-  const options = getSessionOptions(session);
-  return await Payment.findById(paymentId)
+  // const options = getSessionOptions(session);
+  await Payment.findById(paymentId)
     .session(session || null)
     .exec();
 });
@@ -34,8 +34,8 @@ export const findPaymentByCorrelationId = asyncHandler(async (correlationId, ses
 
 export const findPaymentByRazorpayOrderId = asyncHandler(
   async (razorpayOrderId, session = null) => {
-    const options = getSessionOptions(session);
-    return await Payment.findOne({ razorpayOrderId })
+    // const options = getSessionOptions(session);
+    await Payment.findOne({ razorpayOrderId })
       .session(session || null)
       .exec();
   }

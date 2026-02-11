@@ -72,7 +72,7 @@ export const createConnection = async () => {
   return retryWithBackoff(connect, MAX_RETRY_ATTEMPTS, RETRY_INTERVAL);
 };
 
-export const closeConnection = asyncHandler(async () => {
+export const disconnectRabbitMQ = asyncHandler(async () => {
   if (!connection) {
     logger.info('No active RabbitMQ connection to close');
     return;
@@ -87,9 +87,4 @@ export const closeConnection = asyncHandler(async () => {
   await connection.close();
   connection = null;
   isClosing = false;
-});
-
-export const disconnectRabbitMQ = asyncHandler(async () => {
-  await closeConnection();
-  logger.info('RabbitMQ disconnected gracefully.');
 });
