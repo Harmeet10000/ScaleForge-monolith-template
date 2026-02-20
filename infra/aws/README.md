@@ -252,17 +252,14 @@ Creates S3 buckets with:
 ### Common Issues
 
 1. **Backend Setup Fails**
-
    - Ensure AWS CLI is configured with proper credentials
    - Check IAM permissions for S3 and DynamoDB operations
 
 2. **Terraform Init Fails**
-
    - Verify backend configuration files exist
    - Ensure S3 bucket and DynamoDB table were created
 
 3. **Plan/Apply Fails**
-
    - Check AWS service limits and quotas
    - Verify IAM permissions for resource creation
    - Ensure unique resource names across regions

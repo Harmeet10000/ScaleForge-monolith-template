@@ -33,7 +33,7 @@ export const connectKafkaConsumer = asyncHandler(
   async (topic = TOPIC_NAME, fromBeginning = true) => {
     await consumer.connect();
     await consumer.subscribe({ topic, fromBeginning });
-    logger.info(`KafkaJS Consumer connected and subscribed to topic: ${topic}`);
+    logger.info(`KafkaJS Consumer connected and subscribed to topic: ${JSON.stringify(topic)}`);
     return consumer;
   }
 );

@@ -9,7 +9,6 @@ This roadmap adapts your Novu-based guide to the **Knock** ecosystem. While the 
 ### 1. Understanding Knock
 
 - **What is Knock?**
-
   - SaaS notification infrastructure for complex logic.
   - API-first approach with a strong focus on observability.
   - Production-ready notification system with built-in analytics and debugging.

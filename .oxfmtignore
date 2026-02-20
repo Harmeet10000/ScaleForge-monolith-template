@@ -1,0 +1,36 @@
+# Build and dependency artifacts
+bun.lock
+pnpm-lock.yaml
+pnpm-lock.yml
+package-lock.json
+yarn.lock
+node_modules/
+dist/**
+build/
+coverage
+.nyc_output
+
+# Hidden directories and config
+.devcontainer
+.husky/
+.github/
+.amazonq/rules/
+
+# Docker and infrastructure
+docker/
+nginx/
+
+# Logs and temporary
+logs/
+
+# Documentation and tests
+docs/**
+test/**
+test-runner.js
+scripts/**
+
+# File extensions to ignore
+*.md
+*.json
+*.jsonc
+*.txt

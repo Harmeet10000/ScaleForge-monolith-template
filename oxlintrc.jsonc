@@ -1,0 +1,55 @@
+// oxlintrc.jsonc
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "ignores": [
+    "node_modules/",
+    "dist/**",
+    "build/",
+    ".husky/",
+    ".github/",
+    ".amazonq/rules/",
+    "docker/",
+    "logs/",
+    "scripts/**",
+    "nginx/",
+    "docs/**",
+    "test/**",
+    "test-runner.js"
+  ],
+  "rules": {
+    // Possible Errors (maps to your 'no-*' rules)
+    "no-console": "warn", // oxlint doesn't have env-based; use warn always or script
+    "no-debugger": "warn",
+    "no-unused-vars": "warn",
+    "no-undef": "error",
+    "no-empty": "error",
+    "no-extra-semi": "error",
+    "no-unreachable": "error",
+    // Best Practices
+    "eqeqeq": "error",
+    "curly": "error",
+    "no-shadow": "error",
+    "no-var": "error",
+    "prefer-const": "warn",
+    // Stylistic (oxlint focuses here; many match your quotes/semi)
+    "semi": "error",
+    "quotes": "error", // Enforces single quotes by default; matches yours
+    "comma-dangle": "error", // 'never' matches your 'never'
+    "arrow-body-style": "warn",
+    "object-shorthand": "warn",
+    "prefer-arrow-callback": "warn",
+    "no-multiple-empty-lines": "warn",
+    "no-trailing-spaces": "warn",
+    "eol-last": "warn",
+    // ES6+
+    "prefer-template": "warn",
+    "no-useless-constructor": "warn",
+    "prefer-destructuring": "warn",
+    // TypeScript-specific rules (tsgolint backend type-aware execution)
+    "typescript/no-floating-promises": "error",
+    "typescript/no-misused-promises": "error"
+  },
+  "parserOptions": {
+    "project": "./tsconfig.json"
+  }
+}

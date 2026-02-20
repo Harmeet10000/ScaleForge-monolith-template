@@ -67,7 +67,7 @@ export async function generateJson(prompt, schema, opts = {}) {
     config: {
       responseMimeType: 'application/json',
       responseSchema: schema,
-      ...(opts.config ?? {})
+      ...opts.config
     }
   });
   logger.info('gemini.generateJson', { meta: { model: opts.model ?? 'gemini-2.5-flash' } });

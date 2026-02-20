@@ -147,13 +147,11 @@ aws iam get-role --role-name PersonalizeS3Role --query 'Role.Arn' --output text
 
 1. **Open AWS Personalize Console**: https://console.aws.amazon.com/personalize/
 2. **Create Dataset Group**:
-
    - Click "Create dataset group"
    - Name: `my-recommendation-system`
    - Click "Next"
 
 3. **Create Interactions Schema**:
-
    - Click "Create new schema"
    - Name: `interactions-schema`
    - Schema definition:
@@ -188,7 +186,6 @@ aws iam get-role --role-name PersonalizeS3Role --query 'Role.Arn' --output text
    - Click "Next"
 
 4. **Create Interactions Dataset**:
-
    - Dataset name: `interactions-dataset`
    - Schema: Select the schema you just created
    - Click "Next"
@@ -203,7 +200,6 @@ aws iam get-role --role-name PersonalizeS3Role --query 'Role.Arn' --output text
 ### Step 5: Create Solution and Solution Version
 
 1. **Create Solution**:
-
    - Go to "Solutions and recipes"
    - Click "Create solution"
    - Solution name: `user-personalization-solution`
@@ -219,7 +215,6 @@ aws iam get-role --role-name PersonalizeS3Role --query 'Role.Arn' --output text
 ### Step 6: Create Campaign
 
 1. **Create Campaign**:
-
    - Go to "Campaigns"
    - Click "Create campaign"
    - Campaign name: `user-personalization-campaign`

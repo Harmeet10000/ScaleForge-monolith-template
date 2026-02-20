@@ -2,7 +2,7 @@ name: Security Scanning
 
 on:
   schedule:
-    - cron: "0 2 * * 1" # Weekly on Monday at 2 AM UTC
+    - cron: '0 2 * * 1' # Weekly on Monday at 2 AM UTC
   push:
     branches: [main, develop]
   pull_request:
@@ -22,8 +22,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "22.x"
-          cache: "npm"
+          node-version: '22.x'
+          cache: 'npm'
 
       - name: Install dependencies
         run: npm ci --prefer-offline --no-audit
@@ -91,7 +91,7 @@ jobs:
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
         with:
-          category: "/language:javascript"
+          category: '/language:javascript'
 
       - name: Run Semgrep
         uses: semgrep/semgrep-action@v1
@@ -104,7 +104,7 @@ jobs:
             p/mongodb
             p/jwt
             p/owasp-top-ten
-          generateSarif: "1"
+          generateSarif: '1'
         env:
           SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
 
@@ -158,22 +158,22 @@ jobs:
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: "security-scan:latest"
-          format: "sarif"
-          output: "trivy-results.sarif"
-          severity: "CRITICAL,HIGH,MEDIUM"
+          image-ref: 'security-scan:latest'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'CRITICAL,HIGH,MEDIUM'
 
       - name: Upload Trivy scan results
         uses: github/codeql-action/upload-sarif@v3
         if: always()
         with:
-          sarif_file: "trivy-results.sarif"
+          sarif_file: 'trivy-results.sarif'
 
       - name: Run Grype vulnerability scanner
         uses: anchore/scan-action@v3
         id: grype-scan
         with:
-          image: "security-scan:latest"
+          image: 'security-scan:latest'
           fail-build: false
           severity-cutoff: medium
 
@@ -205,8 +205,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "22.x"
-          cache: "npm"
+          node-version: '22.x'
+          cache: 'npm'
 
       - name: Install dependencies
         run: npm ci --prefer-offline --no-audit

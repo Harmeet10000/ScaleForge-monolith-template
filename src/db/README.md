@@ -184,13 +184,11 @@ NODE_ENV=production npm run db:migrate
 ### Common Issues
 
 1. **Connection Errors**
-
    - Verify POSTGRES_DATABASE_URL format
    - Check Neon database status
    - Ensure SSL configuration is correct
 
 2. **Migration Errors**
-
    - Check for schema conflicts
    - Verify migration order
    - Review generated SQL

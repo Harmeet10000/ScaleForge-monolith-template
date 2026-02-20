@@ -2,13 +2,13 @@ name: Continuous Integration
 
 on:
   push:
-    branches: [main, develop, "feature/*", "hotfix/*"]
+    branches: [main, develop, 'feature/*', 'hotfix/*']
   pull_request:
     branches: [main, develop]
   workflow_dispatch:
 
 env:
-  NODE_VERSION: "22.x"
+  NODE_VERSION: '22.x'
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
 
@@ -29,7 +29,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: "npm"
+          cache: 'npm'
 
       - name: Install dependencies
         run: npm ci --prefer-offline --no-audit
@@ -118,7 +118,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: "npm"
+          cache: 'npm'
 
       - name: Install dependencies
         run: npm ci --prefer-offline --no-audit
@@ -205,17 +205,17 @@ jobs:
       - name: Run Trivy vulnerability scanner (filesystem)
         uses: aquasecurity/trivy-action@master
         with:
-          scan-type: "fs"
-          scan-ref: "."
-          format: "sarif"
-          output: "trivy-fs-results.sarif"
-          severity: "CRITICAL,HIGH,MEDIUM"
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-fs-results.sarif'
+          severity: 'CRITICAL,HIGH,MEDIUM'
 
       - name: Upload Trivy scan results to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v3
         if: always()
         with:
-          sarif_file: "trivy-fs-results.sarif"
+          sarif_file: 'trivy-fs-results.sarif'
 
       - name: Run Semgrep security analysis
         uses: semgrep/semgrep-action@v1
@@ -226,7 +226,7 @@ jobs:
             p/nodejs
             p/express
             p/mongodb
-          generateSarif: "1"
+          generateSarif: '1'
         env:
           SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
 
@@ -313,14 +313,14 @@ jobs:
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
-          format: "sarif"
-          output: "trivy-image-results.sarif"
+          format: 'sarif'
+          output: 'trivy-image-results.sarif'
 
       - name: Upload Trivy image scan results
         uses: github/codeql-action/upload-sarif@v3
         if: always()
         with:
-          sarif_file: "trivy-image-results.sarif"
+          sarif_file: 'trivy-image-results.sarif'
 
   # Generate SBOM (Software Bill of Materials)
   generate-sbom:
@@ -373,7 +373,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: "npm"
+          cache: 'npm'
 
       - name: Install dependencies
         run: npm ci --prefer-offline --no-audit

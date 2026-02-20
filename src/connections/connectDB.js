@@ -18,8 +18,8 @@ export const connectDB = asyncHandler(async () => {
     readConcern: { level: 'majority' },
     // quality-of-life options
     retryReads: true,
-    retryWrites: true,
-    tzAware: true
+    retryWrites: true
+    // tzAware: true
   };
 
   const conn = await mongoose.connect(process.env.DATABASE, mongoOptions);

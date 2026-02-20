@@ -1,12 +1,20 @@
 {
   "name": "auth_service_backend",
   "version": "1.0.0",
-  "main": "index.js",
-  "type": "module",
-  "engines": {
-    "node": ">=22.14.0",
-    "npm": ">=10.7.0"
+  "description": "",
+  "keywords": [],
+  "homepage": "https://github.com/Harmeet10000/production-grade-auth-template#readme",
+  "bugs": {
+    "url": "https://github.com/Harmeet10000/production-grade-auth-template/issues"
   },
+  "license": "ISC",
+  "author": "Harmeet Singh",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Harmeet10000/production-grade-auth-template.git"
+  },
+  "type": "module",
+  "main": "index.js",
   "scripts": {
     "dev": "NODE_ENV=development nodemon src/index.js",
     "build": "rm -rf dist && cross-env NODE_ENV=production npx webpack --config webpack.config.js",
@@ -16,10 +24,11 @@
     "test:watch": "node --watch test-runner.js",
     "test:coverage": "node --test --coverage test-runner.js",
     "prepare": "husky",
-    "lint": "eslint .",
-    "lint:fix": "eslint . --fix",
-    "format": "prettier . --check",
-    "format:fix": "prettier . --write",
+    "lint": "oxlint",
+    "lint:fix": "oxlint --fix",
+    "format": "oxfmt --write",
+    "format:check": "oxfmt --check",
+    "check": "bun lint && bun format:check",
     "migrate:gen": "pnpm run db:generate",
     "migrate:exec": "pnpm run db:migrate",
     "seed": "pnpm run db:seed",
@@ -39,57 +48,6 @@
     "security:wizard": "snyk wizard",
     "snyk:setup": "bash scripts/snyk-setup.sh"
   },
-  "keywords": [],
-  "author": "Harmeet Singh",
-  "license": "ISC",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/Harmeet10000/production-grade-auth-template.git"
-  },
-  "bugs": {
-    "url": "https://github.com/Harmeet10000/production-grade-auth-template/issues"
-  },
-  "homepage": "https://github.com/Harmeet10000/production-grade-auth-template#readme",
-  "lint-staged": {
-    "*.js": [
-      "npm run lint:fix",
-      "npm run format:fix"
-    ]
-  },
-  "description": "",
-  "devDependencies": {
-    "@babel/cli": "^7.27.0",
-    "@babel/core": "^7.26.10",
-    "@babel/node": "^7.26.0",
-    "@babel/plugin-transform-class-properties": "^7.25.9",
-    "@babel/plugin-transform-object-rest-spread": "^7.25.9",
-    "@babel/plugin-transform-runtime": "^7.26.10",
-    "@babel/preset-env": "^7.26.9",
-    "@babel/runtime": "^7.27.0",
-    "@commitlint/cli": "^19.7.1",
-    "@commitlint/config-conventional": "^19.7.1",
-    "@eslint/js": "^9.24.0",
-    "babel-loader": "^10.0.0",
-    "dotenv-webpack": "^8.1.0",
-    "drizzle-kit": "0.31.5",
-    "eslint": "^9.24.0",
-    "eslint-config-prettier": "^10.1.2",
-    "glob": "11.0.3",
-    "globals": "16.3.0",
-    "husky": "^9.1.7",
-    "lint-staged": "^15.4.3",
-    "nodemon": "3.1.10",
-    "prettier": "3.5.2",
-    "supertest": "^7.1.0",
-    "swagger-autogen": "^2.23.7",
-    "swagger-jsdoc": "6.2.8",
-    "swagger-model-validator": "3.0.21",
-    "swagger-ui-express": "^5.0.1",
-    "terser-webpack-plugin": "^5.3.11",
-    "webpack": "^5.97.1",
-    "webpack-cli": "^6.0.1",
-    "webpack-node-externals": "^3.0.0"
-  },
   "dependencies": {
     "@aws-sdk/client-personalize": "3.896.0",
     "@aws-sdk/client-personalize-events": "3.896.0",
@@ -103,6 +61,7 @@
     "@novu/node": "2.6.6",
     "@openfga/sdk": "0.9.0",
     "@paralleldrive/cuid2": "2.2.2",
+    "@platformatic/kafka": "1.26.0",
     "amqplib": "0.10.7",
     "bcryptjs": "^3.0.2",
     "better-auth": "1.3.29",
@@ -131,6 +90,7 @@
     "libphonenumber-js": "^1.12.23",
     "mongoose": "^8.10.1",
     "nanoid": "5.1.5",
+    "neverthrow": "8.2.0",
     "node-cron": "^3.0.3",
     "overload-protection": "1.2.3",
     "prom-client": "15.1.3",
@@ -144,7 +104,54 @@
     "winston-loki": "6.1.3",
     "winston-mongodb": "^6.0.0"
   },
+  "devDependencies": {
+    "@babel/cli": "^7.27.0",
+    "@babel/core": "^7.26.10",
+    "@babel/node": "^7.26.0",
+    "@babel/plugin-transform-class-properties": "^7.25.9",
+    "@babel/plugin-transform-object-rest-spread": "^7.25.9",
+    "@babel/plugin-transform-runtime": "^7.26.10",
+    "@babel/preset-env": "^7.26.9",
+    "@babel/runtime": "^7.27.0",
+    "@commitlint/cli": "^19.7.1",
+    "@commitlint/config-conventional": "^19.7.1",
+    "@eslint/js": "^9.24.0",
+    "@types/bun": "1.3.9",
+    "babel-loader": "^10.0.0",
+    "dotenv-webpack": "^8.1.0",
+    "drizzle-kit": "0.31.5",
+    "eslint": "^9.24.0",
+    "eslint-config-prettier": "^10.1.2",
+    "glob": "11.0.3",
+    "globals": "16.3.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^15.4.3",
+    "nodemon": "3.1.10",
+    "oxfmt": "0.33.0",
+    "oxlint": "1.48.0",
+    "oxlint-tsgolint": "0.14.1",
+    "prettier": "3.5.2",
+    "supertest": "^7.1.0",
+    "swagger-autogen": "^2.23.7",
+    "swagger-jsdoc": "6.2.8",
+    "swagger-model-validator": "3.0.21",
+    "swagger-ui-express": "^5.0.1",
+    "terser-webpack-plugin": "^5.3.11",
+    "webpack": "^5.97.1",
+    "webpack-cli": "^6.0.1",
+    "webpack-node-externals": "^3.0.0"
+  },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx}": [
+      "oxfmt --write",
+      "oxlint --fix"
+    ]
+  },
   "config": {
     "unsafe-perm": true
+  },
+  "engines": {
+    "node": ">=22.14.0",
+    "npm": ">=10.7.0"
   }
 }

@@ -7,6 +7,7 @@ Based on your Express application, here's what an equivalent NestJS app would lo
 ## **High-Level Architecture Comparison**
 
 ### **Current Express Structure:**
+
 - Features-based organization with manual wiring
 - Functional programming approach
 - Manual dependency injection
@@ -14,6 +15,7 @@ Based on your Express application, here's what an equivalent NestJS app would lo
 - Custom error handling with global handler
 
 ### **NestJS Equivalent:**
+
 - Module-based architecture with automatic dependency injection
 - Class-based with decorators
 - Built-in DI container
@@ -25,6 +27,7 @@ Based on your Express application, here's what an equivalent NestJS app would lo
 ## **Core Application Structure**
 
 ### **1. Main Application File (main.ts)**
+
 ```typescript
 // Replaces: src/index.js + src/app.js
 
@@ -41,17 +44,21 @@ import { TimeoutInterceptor } from './common/interceptors/timeout.interceptor';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
-    logger: ['error', 'warn', 'log', 'debug'],
+    logger: ['error', 'warn', 'log', 'debug']
   });
 
   // Global prefix
   app.setGlobalPrefix('api/v1');
 
   // Security middleware
-  app.use(helmet({
-    contentSecurityPolicy: { /* your config */ },
-    // ... other helmet options
-  }));
+  app.use(
+    helmet({
+      contentSecurityPolicy: {
+        /* your config */
+      }
+      // ... other helmet options
+    })
+  );
 
   // Compression
   app.use(compression({ level: 6, threshold: 15000 }));
@@ -63,24 +70,23 @@ async function bootstrap() {
   app.enableCors({
     origin: 'http://localhost:5173',
     credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS']
   });
 
   // Global pipes (validation)
-  app.useGlobalPipes(new ValidationPipe({
-    whitelist: true,
-    forbidNonWhitelisted: true,
-    transform: true,
-  }));
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true
+    })
+  );
 
   // Global filters (error handling)
   app.useGlobalFilters(new AllExceptionsFilter());
 
   // Global interceptors
-  app.useGlobalInterceptors(
-    new LoggingInterceptor(),
-    new TimeoutInterceptor(30000),
-  );
+  app.useGlobalInterceptors(new LoggingInterceptor(), new TimeoutInterceptor(30000));
 
   // Swagger setup
   const config = new DocumentBuilder()
@@ -104,6 +110,7 @@ bootstrap();
 ---
 
 ## **2. Root Module (app.module.ts)**
+
 ```typescript
 // Replaces: src/app.js routing setup
 
@@ -131,14 +138,16 @@ import { RabbitMQModule } from './rabbitmq/rabbitmq.module';
     // Configuration
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: `.env.${process.env.NODE_ENV}`,
+      envFilePath: `.env.${process.env.NODE_ENV}`
     }),
 
     // Rate limiting (replaces express-rate-limit)
-    ThrottlerModule.forRoot([{
-      ttl: 60000,
-      limit: 100,
-    }]),
+    ThrottlerModule.forRoot([
+      {
+        ttl: 60000,
+        limit: 100
+      }
+    ]),
 
     // Prometheus metrics
     PrometheusModule.register(),
@@ -159,8 +168,8 @@ import { RabbitMQModule } from './rabbitmq/rabbitmq.module';
     NotificationsModule,
     StorageModule,
     GeminiModule,
-    RecommendationsModule,
-  ],
+    RecommendationsModule
+  ]
 })
 export class AppModule {}
 ```
@@ -168,6 +177,7 @@ export class AppModule {}
 ---
 
 ## **3. Feature Module Example (auth.module.ts)**
+
 ```typescript
 // Replaces: src/features/auth/authRoutes.js
 
@@ -188,23 +198,17 @@ import { JwtAuthGuard } from './guards/jwt-auth.guard';
   imports: [
     MongooseModule.forFeature([
       { name: User.name, schema: UserSchema },
-      { name: RefreshToken.name, schema: RefreshTokenSchema },
+      { name: RefreshToken.name, schema: RefreshTokenSchema }
     ]),
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.register({
       secret: process.env.ACCESS_TOKEN_SECRET,
-      signOptions: { expiresIn: '1h' },
-    }),
+      signOptions: { expiresIn: '1h' }
+    })
   ],
   controllers: [AuthController],
-  providers: [
-    AuthService,
-    AuthRepository,
-    TokenRepository,
-    JwtStrategy,
-    JwtAuthGuard,
-  ],
-  exports: [AuthService, JwtAuthGuard],
+  providers: [AuthService, AuthRepository, TokenRepository, JwtStrategy, JwtAuthGuard],
+  exports: [AuthService, JwtAuthGuard]
 })
 export class AuthModule {}
 ```
@@ -212,6 +216,7 @@ export class AuthModule {}
 ---
 
 ## **4. Controller (auth.controller.ts)**
+
 ```typescript
 // Replaces: src/features/auth/authController.js
 
@@ -226,7 +231,7 @@ import {
   Req,
   UseGuards,
   HttpCode,
-  HttpStatus,
+  HttpStatus
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { Response, Request } from 'express';
@@ -256,20 +261,17 @@ export class AuthController {
     return {
       success: true,
       message: 'Success',
-      data: { _id: newUser._id },
+      data: { _id: newUser._id }
     };
   }
 
   @Put('confirmation/:email')
   @ApiOperation({ summary: 'Confirm user account' })
-  async confirmation(
-    @Param('email') email: string,
-    @Query('code') code: string,
-  ) {
+  async confirmation(@Param('email') email: string, @Query('code') code: string) {
     await this.authService.confirmAccount(email, code);
     return {
       success: true,
-      message: 'Success',
+      message: 'Success'
     };
   }
 
@@ -279,10 +281,10 @@ export class AuthController {
   async login(
     @Body() loginDto: LoginDto,
     @Req() req: Request,
-    @Res({ passthrough: true }) res: Response,
+    @Res({ passthrough: true }) res: Response
   ) {
     const result = await this.authService.loginUser(loginDto, req);
-    
+
     // Set cookies
     res.cookie('accessToken', result.accessToken, {
       path: '/api/v1',
@@ -290,16 +292,16 @@ export class AuthController {
       sameSite: 'strict',
       maxAge: 3600000,
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: process.env.NODE_ENV === 'production'
     });
-    
+
     res.cookie('refreshToken', result.refreshToken, {
       path: '/api/v1',
       domain: result.domain,
       sameSite: 'strict',
       maxAge: 3600000,
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: process.env.NODE_ENV === 'production'
     });
 
     return {
@@ -308,8 +310,8 @@ export class AuthController {
       data: {
         accessToken: result.accessToken,
         refreshToken: result.refreshToken,
-        user: result.userForResponse,
-      },
+        user: result.userForResponse
+      }
     };
   }
 
@@ -317,18 +319,15 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'User logout' })
-  async logout(
-    @Req() req: Request,
-    @Res({ passthrough: true }) res: Response,
-  ) {
+  async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
     await this.authService.logoutUser(req.cookies.refreshToken);
-    
+
     res.clearCookie('accessToken', { path: '/api/v1' });
     res.clearCookie('refreshToken', { path: '/api/v1' });
 
     return {
       success: true,
-      message: 'Success',
+      message: 'Success'
     };
   }
 
@@ -336,19 +335,16 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Change password' })
-  async changePassword(
-    @CurrentUser() user: any,
-    @Body() changePasswordDto: ChangePasswordDto,
-  ) {
+  async changePassword(@CurrentUser() user: any, @Body() changePasswordDto: ChangePasswordDto) {
     await this.authService.changeUserPassword(
       user._id,
       changePasswordDto.oldPassword,
-      changePasswordDto.newPassword,
+      changePasswordDto.newPassword
     );
 
     return {
       success: true,
-      message: 'Success',
+      message: 'Success'
     };
   }
 
@@ -359,10 +355,16 @@ export class AuthController {
 ---
 
 ## **5. Service (auth.service.ts)**
+
 ```typescript
 // Replaces: src/features/auth/authService.js
 
-import { Injectable, BadRequestException, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  NotFoundException,
+  UnauthorizedException
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { AuthRepository } from './auth.repository';
 import { TokenRepository } from './token.repository';
@@ -380,7 +382,7 @@ export class AuthService {
     private readonly tokenRepository: TokenRepository,
     private readonly jwtService: JwtService,
     private readonly redisService: RedisService,
-    private readonly emailService: EmailService,
+    private readonly emailService: EmailService
   ) {}
 
   async registerUser(registerDto: RegisterDto) {
@@ -416,9 +418,9 @@ export class AuthService {
         status: false,
         token,
         code,
-        timestamp: null,
+        timestamp: null
       },
-      consent,
+      consent
     });
 
     // Send confirmation email
@@ -458,7 +460,7 @@ export class AuthService {
 
     // Check cache first
     let user = await this.redisService.getHash('user', `email:${emailAddress}`);
-    
+
     if (!user) {
       user = await this.authRepository.findByEmailWithPassword(emailAddress);
     }
@@ -479,12 +481,12 @@ export class AuthService {
     // Generate tokens
     const accessToken = this.jwtService.sign(
       { userId: user._id, role: user.role, userIp: req.ip },
-      { expiresIn: '1h' },
+      { expiresIn: '1h' }
     );
 
     const refreshToken = this.jwtService.sign(
       { userId: user._id, role: user.role, userIp: req.ip },
-      { secret: process.env.REFRESH_TOKEN_SECRET, expiresIn: '7d' },
+      { secret: process.env.REFRESH_TOKEN_SECRET, expiresIn: '7d' }
     );
 
     // Update last login
@@ -503,7 +505,7 @@ export class AuthService {
       accessToken,
       refreshToken,
       userForResponse: userForCache,
-      domain: this.getDomain(),
+      domain: this.getDomain()
     };
   }
 
@@ -514,6 +516,7 @@ export class AuthService {
 ---
 
 ## **6. Repository (auth.repository.ts)**
+
 ```typescript
 // Replaces: src/features/auth/authRepository.js
 
@@ -524,9 +527,7 @@ import { User, UserDocument } from './schemas/user.schema';
 
 @Injectable()
 export class AuthRepository {
-  constructor(
-    @InjectModel(User.name) private userModel: Model<UserDocument>,
-  ) {}
+  constructor(@InjectModel(User.name) private userModel: Model<UserDocument>) {}
 
   async findByEmail(emailAddress: string): Promise<UserDocument | null> {
     return this.userModel.findOne({ emailAddress }).lean().exec();
@@ -551,14 +552,16 @@ export class AuthRepository {
 
   async updateLastLogin(userId: string): Promise<void> {
     await this.userModel.findByIdAndUpdate(userId, {
-      lastLoginAt: new Date(),
+      lastLoginAt: new Date()
     });
   }
 
   async findByResetToken(token: string): Promise<UserDocument | null> {
-    return this.userModel.findOne({
-      'passwordReset.token': token,
-    }).exec();
+    return this.userModel
+      .findOne({
+        'passwordReset.token': token
+      })
+      .exec();
   }
 }
 ```
@@ -566,6 +569,7 @@ export class AuthRepository {
 ---
 
 ## **7. DTOs (Validation)**
+
 ```typescript
 // Replaces: src/features/auth/authValidation.js
 
@@ -594,7 +598,7 @@ export class RegisterDto {
   @MinLength(8)
   @MaxLength(24)
   @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/, {
-    message: 'Password must contain uppercase, lowercase, number and special character',
+    message: 'Password must contain uppercase, lowercase, number and special character'
   })
   password: string;
 
@@ -621,6 +625,7 @@ export class LoginDto {
 ---
 
 ## **8. Guards (Authentication)**
+
 ```typescript
 // Replaces: src/features/auth/authMiddleware.js
 
@@ -645,16 +650,11 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
 ---
 
 ## **9. Exception Filter (Global Error Handler)**
+
 ```typescript
 // Replaces: src/middlewares/globalErrorHandler.js
 
-import {
-  ExceptionFilter,
-  Catch,
-  ArgumentsHost,
-  HttpException,
-  HttpStatus,
-} from '@nestjs/common';
+import { ExceptionFilter, Catch, ArgumentsHost, HttpException, HttpStatus } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { Logger } from '@nestjs/common';
 
@@ -668,18 +668,14 @@ export class AllExceptionsFilter implements ExceptionFilter {
     const request = ctx.getRequest<Request>();
 
     const status =
-      exception instanceof HttpException
-        ? exception.getStatus()
-        : HttpStatus.INTERNAL_SERVER_ERROR;
+      exception instanceof HttpException ? exception.getStatus() : HttpStatus.INTERNAL_SERVER_ERROR;
 
     const message =
-      exception instanceof HttpException
-        ? exception.getResponse()
-        : 'Internal server error';
+      exception instanceof HttpException ? exception.getResponse() : 'Internal server error';
 
     this.logger.error(
       `${request.method} ${request.url}`,
-      exception instanceof Error ? exception.stack : 'Unknown error',
+      exception instanceof Error ? exception.stack : 'Unknown error'
     );
 
     response.status(status).json({
@@ -687,7 +683,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
       statusCode: status,
       timestamp: new Date().toISOString(),
       path: request.url,
-      message,
+      message
     });
   }
 }
@@ -696,6 +692,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
 ---
 
 ## **10. Interceptors (Middleware Equivalents)**
+
 ```typescript
 // Replaces: src/middlewares/serverMiddleware.js (correlation ID, logging)
 
@@ -704,7 +701,7 @@ import {
   NestInterceptor,
   ExecutionContext,
   CallHandler,
-  RequestTimeoutException,
+  RequestTimeoutException
 } from '@nestjs/common';
 import { Observable, throwError, TimeoutError } from 'rxjs';
 import { catchError, timeout } from 'rxjs/operators';
@@ -728,12 +725,12 @@ export class TimeoutInterceptor implements NestInterceptor {
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     return next.handle().pipe(
       timeout(this.timeoutMs),
-      catchError(err => {
+      catchError((err) => {
         if (err instanceof TimeoutError) {
           return throwError(() => new RequestTimeoutException());
         }
         return throwError(() => err);
-      }),
+      })
     );
   }
 }
@@ -743,16 +740,16 @@ export class TimeoutInterceptor implements NestInterceptor {
 
 ## **Key Differences Summary**
 
-| **Aspect** | **Express (Current)** | **NestJS (Equivalent)** |
-|------------|----------------------|-------------------------|
-| **Architecture** | Functional, manual wiring | Class-based, decorator-driven |
-| **DI** | Manual imports | Automatic via @Injectable() |
-| **Validation** | Joi schemas | class-validator DTOs |
-| **Error Handling** | Custom httpError utility | Exception filters |
-| **Middleware** | Express middleware | Guards, Interceptors, Pipes |
-| **Routing** | Express Router | Decorators (@Get, @Post, etc.) |
-| **Documentation** | Swagger JSDoc comments | @ApiProperty decorators |
-| **Testing** | Manual setup | Built-in testing utilities |
-| **Type Safety** | JavaScript (loose) | TypeScript (strict) |
+| **Aspect**         | **Express (Current)**     | **NestJS (Equivalent)**        |
+| ------------------ | ------------------------- | ------------------------------ |
+| **Architecture**   | Functional, manual wiring | Class-based, decorator-driven  |
+| **DI**             | Manual imports            | Automatic via @Injectable()    |
+| **Validation**     | Joi schemas               | class-validator DTOs           |
+| **Error Handling** | Custom httpError utility  | Exception filters              |
+| **Middleware**     | Express middleware        | Guards, Interceptors, Pipes    |
+| **Routing**        | Express Router            | Decorators (@Get, @Post, etc.) |
+| **Documentation**  | Swagger JSDoc comments    | @ApiProperty decorators        |
+| **Testing**        | Manual setup              | Built-in testing utilities     |
+| **Type Safety**    | JavaScript (loose)        | TypeScript (strict)            |
 
 The NestJS version provides better structure, type safety, and built-in features while maintaining the same layered architecture principles.

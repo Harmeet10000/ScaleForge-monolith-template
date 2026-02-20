@@ -25,6 +25,7 @@ const getElasticsearchClient = () => {
   };
 
   connection = new Client(config);
+
   return connection;
 };
 
@@ -37,6 +38,7 @@ export const connectElasticsearch = asyncHandler(async () => {
 export const disconnectElasticsearch = asyncHandler(async () => {
   await client.close();
   logger.info('Elasticsearch connection closed');
+  connection = null;
 });
 
 export const client = getElasticsearchClient();

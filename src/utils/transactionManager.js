@@ -1,6 +1,6 @@
 import asyncHandler from 'express-async-handler';
 import { logger } from './logger.js';
-import { withTransaction } from '../connections/connectDB.js';
+// import { withTransaction } from '../connections/connectDB.js';
 
 const RETRY_CONFIG = {
   MAX_RETRIES: 3,
@@ -60,11 +60,11 @@ export const executeInTransaction = asyncHandler(
 
     while (retryCount <= maxRetries) {
       try {
-        const result = await withTransaction(callback, {
-          session,
-          transactionName,
-          _sessionTimeout: timeout
-        });
+        // const result = await withTransaction(callback, {
+        //   session,
+        //   transactionName,
+        //   _sessionTimeout: timeout
+        // });
 
         if (retryCount > 0) {
           logger.info(`Transaction succeeded after ${retryCount} retries`, {
@@ -85,7 +85,7 @@ export const executeInTransaction = asyncHandler(
           });
         }
 
-        return result;
+        return null; // result;
       } catch (error) {
         lastError = error;
 

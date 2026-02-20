@@ -3,7 +3,7 @@ import { consumer, producer } from '../db/connectKafka.js';
 import { logger } from '../utils/logger.js';
 
 export const produceMessage = async (topic, message) => {
-  new Promise((resolve, reject) => {
+  await new Promise((resolve, reject) => {
     try {
       if (!producer.isConnected()) {
         reject(new Error('Producer not connected'));

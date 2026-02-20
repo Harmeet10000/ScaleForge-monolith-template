@@ -2,9 +2,9 @@ name: OWASP ZAP Security Scan
 
 on:
   pull_request:
-    branches: [ main ]
+    branches: [main]
   push:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   zap-scan:
