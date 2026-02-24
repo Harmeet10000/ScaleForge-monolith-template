@@ -1,6 +1,19 @@
 // .oxfmtrc.jsonc
 {
   "$schema": "./node_modules/oxfmt/configuration_schema.json",
+  "ignorePatterns": [
+    "dist/**",
+    "node_modules/**",
+    "build/**",
+    ".husky/**",
+    ".github/**",
+    ".amazonq/rules/**",
+    "docker/**",
+    "logs/**",
+    "scripts/**",
+    "nginx/**",
+    "docs/**"
+  ],
   "printWidth": 100,
   "tabWidth": 2,
   "useTabs": false,

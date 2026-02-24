@@ -61,7 +61,7 @@ const notificationPreferencesSchema = new mongoose.Schema(
             try {
               Intl.DateTimeFormat(undefined, { timeZone: v });
               return true;
-            } catch (e) {
+            } catch {
               return false;
             }
           },

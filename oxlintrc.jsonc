@@ -1,21 +1,12 @@
 // oxlintrc.jsonc
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "ignores": [
-    "node_modules/",
-    "dist/**",
-    "build/",
-    ".husky/",
-    ".github/",
-    ".amazonq/rules/",
-    "docker/",
-    "logs/",
-    "scripts/**",
-    "nginx/",
-    "docs/**",
-    "test/**",
-    "test-runner.js"
+  "plugins": [
+    "typescript"
   ],
+  "categories": {
+    "correctness": "warn"
+  },
   "rules": {
     // Possible Errors (maps to your 'no-*' rules)
     "no-console": "warn", // oxlint doesn't have env-based; use warn always or script
@@ -49,7 +40,4 @@
     "typescript/no-floating-promises": "error",
     "typescript/no-misused-promises": "error"
   },
-  "parserOptions": {
-    "project": "./tsconfig.json"
-  }
 }

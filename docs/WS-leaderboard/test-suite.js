@@ -54,7 +54,7 @@ async function stressTest(serverUrl, numUsers = 10000, duration = 60000) {
       try {
         await randomClient.client.getLeaderboard(1, 50);
         results.leaderboardFetches++;
-      } catch (e) {
+      } catch  {
         // Expected some failures
       }
     }
@@ -344,7 +344,7 @@ async function loadTest(serverUrl, duration = 30000) {
     try {
       await client.getLeaderboard(1, 100);
       metrics.leaderboardLatency = Date.now() - fetchTime;
-    } catch (e) {
+    } catch  {
       // Expected some failures under load
     }
   }, 2000);

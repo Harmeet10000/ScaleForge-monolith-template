@@ -3,7 +3,7 @@ services:
     image: nginx:alpine
     container_name: nginx
     ports:
-      - '80:8000'
+      - "80:8000"
     volumes:
       - ./nginx/http.conf:/etc/nginx/nginx.conf:ro
     # - ./certs:/etc/nginx/certs:ro  # Mount SSL certificates
@@ -23,7 +23,7 @@ services:
       dockerfile: docker/dev.Dockerfile
     container_name: auth-service-1
     ports:
-      - '8000:8000'
+      - "8000:8000"
     env_file:
       - .env.development
     environment:
@@ -32,14 +32,14 @@ services:
     volumes:
       - ./src:/usr/src/backend-app/src
       - ./package.json:/usr/src/backend-app/package.json
-      - ./pnpm-lock.yaml:/usr/src/backend-app/pnpm-lock.yaml
+      - ./bun.lock:/usr/src/backend-app/bun.lock
     networks:
       - auth-network
     healthcheck:
       test:
         [
-          'CMD-SHELL',
-          'wget --no-verbose --tries=1 --spider http://localhost:8000/api/v1/health/self || exit 1'
+          "CMD-SHELL",
+          "wget --no-verbose --tries=1 --spider http://localhost:8000/api/v1/health/self || exit 1",
         ]
       interval: 30s
       timeout: 10s
@@ -53,7 +53,7 @@ services:
       dockerfile: docker/dev.Dockerfile
     container_name: auth-service-2
     ports:
-      - '8001:8000'
+      - "8001:8000"
     env_file:
       - .env.development
     environment:
@@ -62,14 +62,14 @@ services:
     volumes:
       - ./src:/usr/src/backend-app/src
       - ./package.json:/usr/src/backend-app/package.json
-      - ./pnpm-lock.yaml:/usr/src/backend-app/pnpm-lock.yaml
+      - ./bun.lock:/usr/src/backend-app/bun.lock
     networks:
       - auth-network
     healthcheck:
       test:
         [
-          'CMD-SHELL',
-          'wget --no-verbose --tries=1 --spider http://localhost:8000/api/v1/health/self || exit 1'
+          "CMD-SHELL",
+          "wget --no-verbose --tries=1 --spider http://localhost:8000/api/v1/health/self || exit 1",
         ]
       interval: 30s
       timeout: 10s

@@ -911,10 +911,7 @@ export const getNotificationStats = asyncHandler(async (userId = null, options =
     try {
       const user = await User.findById(userId).select('novuSubscriberId');
       if (user?.novuSubscriberId) {
-        const novuStats = await novuHelper.getNovuNotificationStats(user.novuSubscriberId, {
-          page: 0,
-          limit: 50
-        });
+        const novuStats = { ye: 'karlo phele' };
 
         stats.novu = {
           totalCount: novuStats.totalCount || 0,

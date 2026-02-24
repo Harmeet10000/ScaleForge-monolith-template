@@ -35,7 +35,14 @@ RedisGears: You can write Python or JS scripts that run inside Redis. When a GET
 1. transfer all the required info in the state event itself (event carried state transfer)
 1. use // ✅ CORRECT: Proper cache with limits
 const LRU = require('lru-cache');
+1. use bunfig.toml ans replace npmrc nvmrc 
+1. use debezium CDC for transactional outbox pattern for workers with rabbitmq-client package
+   teams end up running Debezium (or Airbyte) + Kafka/Redpanda and just consume events in Node.js with excellent TypeScript support via kafkajs.
 ```
+anti pattern - starting a consumer from a server.js and consuming off a queue and doing a CPU heavy op thus blocking the event loop
+starting a background processing(CPU heavy task) after sending a fulfill response even worse anti pattern 
+what to do - each kind of traffic in out system needs to have a separate event loop (http server needs to be separate from queue based system)
+
 
 // Different worker patterns for different needs
 
@@ -101,6 +108,66 @@ const result = heavyProcess(msg.items[i]);
 // ❌ ANTI-PATTERN 4: Mixed concerns in one service
 // API server + worker + cron jobs + WebSocket all in one
 // = One slow task breaks everything
+
+odular Monolith with Worker Structure
+project/
+├── src/
+│   ├── Api/                    # HTTP layer (controllers, endpoints)
+│   ├── Core/                   # Shared domain logic, events, interfaces
+│   ├── Modules/
+│   │   ├── Orders/             # Business module
+│   │   │   ├── Services/
+│   │   │   ├── Entities/
+│   │   │   ├── DTOs/
+│   │   │   └── Events/         # OrderCreated, OrderShipped, etc.
+│   │   └── Products/
+│   ├── Workers/
+│   │   └── OrderProcessor/     # Background worker
+│   └── Infrastructure/
+│       ├── Messaging/          # RabbitMQ, Redis, etc.
+│       └── Persistence/
+└── Worker/                     # Separate entry point (optional)
+    └── Program.cs
+Request & Event Flow
+┌─────────────────────────────────────────────────────────────────────┐
+│                        HTTP REQUEST                                 │
+└─────────────────────────────────────────────────────────────────────┘
+                                │
+                                ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│  API (Controller)                                                   │
+│  POST /orders                                                       │
+└─────────────────────────────────────────────────────────────────────┘
+                                │
+                                ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│  OrderService.CreateOrder()                                        │
+│  - Validates input                                                  │
+│  - Saves to database                                                │
+│  - Publishes OrderCreatedEvent                                     │
+└─────────────────────────────────────────────────────────────────────┘
+                                │
+                                ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│  Message Broker (RabbitMQ / Redis Pub-Sub / In-Memory)           │
+│  Queue: order.created                                               │
+└─────────────────────────────────────────────────────────────────────┘
+                                │
+                                ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│  Worker Service (Background Processor)                             │
+│  - Consumes OrderCreatedEvent                                       │
+│  - Processes asynchronously                                        │
+│  (e.g., send email, sync to external system, generate invoice)    │
+└─────────────────────────────────────────────────────────────────────┘
+Key Components
+| Component | Purpose |
+|-----------|---------|
+| Event Bus | Decouples modules - publisher doesn't know about subscribers |
+| Message Broker | Persists events if worker is down (Redis, RabbitMQ, Kafka) |
+| Shared Kernel | Core module with events, interfaces used by all modules |
+| Outbox Pattern | Ensures event is published when DB transaction commits |
+
 
 <!-- react three fiber
 react 360

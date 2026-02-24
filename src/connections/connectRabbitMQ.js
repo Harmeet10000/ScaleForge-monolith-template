@@ -88,3 +88,65 @@ export const disconnectRabbitMQ = asyncHandler(async () => {
   connection = null;
   isClosing = false;
 });
+
+// import { Connection } from 'rabbitmq-client';
+// import { logger } from '../utils/logger.js';
+// import asyncHandler from 'express-async-handler';
+
+// let rabbit = null;
+
+// export const getRabbitMQ = async () => {
+//   if (rabbit) return rabbit;
+
+//   const url = process.env.RABBITMQ_URL;
+
+//   rabbit = new Connection({
+//     url,
+//     // Recommended defaults for resilience
+//     reconnect: true,                    // auto reconnect (default)
+//     reconnectInterval: 5000,            // initial delay
+//     maxReconnectAttempts: 0,            // 0 = infinite (with backoff)
+//     // Or custom backoff strategy
+//     // reconnectBackoff: { min: 1000, max: 30000, factor: 2, jitter: 0.2 }
+//     heartbeat: 30,                      // seconds
+//     // publish retries (useful later)
+//     confirm: true,
+//     maxRetries: 3,
+//   });
+
+//   // Logging integration
+//   rabbit.on('connection', () => {
+//     logger.info('Connected to RabbitMQ');
+//   });
+
+//   rabbit.on('error', (err, where) => {
+//     logger.error(`RabbitMQ error in ${where}`, { error: err });
+//   });
+
+//   rabbit.on('disconnect', ({ reason }) => {
+//     logger.warn('RabbitMQ disconnected', { reason });
+//   });
+
+//   // Wait for first successful connection (optional but recommended)
+//   await rabbit.connect();
+
+//   return rabbit;
+// };
+
+// // Usage example (in your services/consumers)
+// const rabbit = await getRabbitMQ();
+// const publisher = rabbit.createPublisher({ confirm: true });
+
+// // Or create consumer with auto re-subscribe on reconnect
+// rabbit.createConsumer(
+//   { queue: 'my-queue', queueOptions: { durable: true } },
+//   async (msg) => { /* handle */ }
+// );
+
+// // Graceful shutdown
+// export const disconnectRabbitMQ = asyncHandler(async () => {
+//   if (!rabbit) return;
+//   await rabbit.close();
+//   rabbit = null;
+//   logger.info('RabbitMQ connection closed');
+// });
